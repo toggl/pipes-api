@@ -1,0 +1,5 @@
+toggl-pipes
+dist/*
+bin
+pkg
+config
