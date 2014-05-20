@@ -1,4 +1,4 @@
-APPNAME=toggl-pipes
+APPNAME=pipes-api
 export GOPATH=$(shell pwd)
 
 default: clean build fmt lint
