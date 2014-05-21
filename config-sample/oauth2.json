@@ -1,0 +1,35 @@
+{
+	"basecamp_development": {
+		"ClientId": "<client id>",
+		"ClientSecret": "<client secret>",
+		"Scope": "",
+		"AuthURL": "https://launchpad.37signals.com/authorization/new",
+		"TokenURL": "https://launchpad.37signals.com/authorization/token",
+		"RedirectURL": "<redirect url based on registrated one>",
+		"TokenCache": null,
+		"AccessType": "",
+		"ApprovalPrompt": "force"
+	},
+	"basecamp_staging": {
+		"ClientId": "<client id>",
+		"ClientSecret": "<client secret>",
+		"Scope": "",
+		"AuthURL": "https://launchpad.37signals.com/authorization/new",
+		"TokenURL": "https://launchpad.37signals.com/authorization/token",
+		"RedirectURL": "<redirect url based on registrated one>",
+		"TokenCache": null,
+		"AccessType": "",
+		"ApprovalPrompt": "force"
+	},
+	"basecamp_production": {
+		"ClientId": "<client id>",
+		"ClientSecret": "<client secret>",
+		"Scope": "",
+		"AuthURL": "https://launchpad.37signals.com/authorization/new",
+		"TokenURL": "https://launchpad.37signals.com/authorization/token",
+		"RedirectURL": "<redirect url based on registrated one>",
+		"TokenCache": null,
+		"AccessType": "",
+		"ApprovalPrompt": "force"
+	}
+}

@@ -1,0 +1,21 @@
+{
+  "return_url": {
+    "development": "<url for redirect in UI after oauth return>",
+    "staging":     "<url for redirect in UI after oauth return>",
+    "production":  "<url for redirect in UI after oauth return>"
+  },
+  "toggl_api_host": {
+    "development": "https://www.toggl.com",
+    "staging":     "https://www.toggl.com",
+    "production":  "https://www.toggl.com"
+  },
+  "pipes_api_host": {
+    "development": "http://0.0.0.0:8100",
+    "staging":     "<staging url>",
+    "production":  "<production url>"
+  },
+  "cors_whitelist": {
+    "development": ["<UI location in development>"],
+    "staging":     ["<UI location in production>", "<2nd UI location in development>"]
+  }
+}
