@@ -17,6 +17,7 @@ type Pipe struct {
 	Automatic       bool        `json:"automatic,omitempty"`
 	AutomaticOption bool        `json:"automatic_option"`
 	Configured      bool        `json:"configured"`
+	Premium         bool        `json:"premium"`
 	PipeStatus      *PipeStatus `json:"pipe_status,omitempty"`
 
 	authorization *Authorization

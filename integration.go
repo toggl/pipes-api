@@ -43,6 +43,13 @@ var automaticOptions = map[string]bool{
 	"basecamp:todos":     true,
 }
 
+var premiumOptions = map[string]bool{
+	"basecamp:users":     false,
+	"basecamp:projects":  false,
+	"basecamp:todolists": true,
+	"basecamp:todos":     true,
+}
+
 func NewIntegration(serviceName string) *Integration {
 	integration := Integration{
 		ID:       serviceName,
@@ -85,6 +92,7 @@ func workspaceIntegrations(workspaceID int) ([]*Integration, error) {
 				pipe = NewPipe(workspaceID, serviceID, pipeID)
 			}
 			pipe.PipeStatus = pipeStatuses[key]
+			pipe.Premium = premiumOptions[key]
 			pipe.Description = availableDescriptions[key]
 			pipe.AutomaticOption = automaticOptions[key]
 			integration.Pipes = append(integration.Pipes, pipe)
