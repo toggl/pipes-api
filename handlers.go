@@ -244,6 +244,18 @@ func postPipeRun(req Request) Response {
 	return ok(nil)
 }
 
+type (
+	statusResponse struct {
+		Reasons []string `json:"reasons"`
+	}
+)
+
 func getStatus(req Request) Response {
+	if dbIsDown() {
+		resp := &statusResponse{}
+		resp.Reasons = make([]string, 1)
+		resp.Reasons[0] = "Database is down"
+		return serviceUnavailable(resp)
+	}
 	return ok("OK")
 }

@@ -77,6 +77,10 @@ func badGateway(err string) Response {
 	return Response{http.StatusBadGateway, err, "application/json"}
 }
 
+func serviceUnavailable(reasons interface{}) Response {
+	return Response{http.StatusServiceUnavailable, reasons, "application/json"}
+}
+
 func (req Request) redirectWithError(err string) Response {
 	return found(urls.ReturnURL[*environment] + "?err=" + url.QueryEscape(err))
 }

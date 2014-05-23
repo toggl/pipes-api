@@ -17,3 +17,10 @@ func connectDB(host string, port int, name string, user string, pass string) *sq
 	}
 	return result
 }
+
+func dbIsDown() bool {
+	if _, err := db.Exec("SELECT 1"); err != nil {
+		return true
+	}
+	return false
+}
