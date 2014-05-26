@@ -1,26 +1,55 @@
 package freshbooks
 
 import (
-	"os"
+	"encoding/json"
+	"github.com/tambet/oauthplain"
+	"io/ioutil"
 	"testing"
 )
 
-func getCredentials(t *testing.T) (string, string) {
-	var account, token string
-	if account = os.Getenv("FRESHBOOKS_ACCOUNT"); account == "" {
-		t.Fatal("Unable to get FRESHBOOKS_ACCOUNT environment variable")
-	}
+type authConfig struct {
+	AccountName      string
+	AuthToken        string // Token-Based authentication (deprecated)
+	ConsumerKey      string // OAuth authentication
+	ConsumerSecret   string // OAuth authentication
+	OAuthToken       string // OAuth authentication
+	OAuthTokenSecret string // OAuth authentication
+}
 
-	if token = os.Getenv("FRESHBOOKS_TOKEN"); token == "" {
-		t.Fatal("Unable to get FRESHBOOKS_TOKEN environment variable")
+func loadTestConfig(t *testing.T) *authConfig {
+	file, e := ioutil.ReadFile("test-config.json")
+	if e != nil {
+		t.Fatal("Unable to load 'test-config.json'")
 	}
-	return account, token
+	var config authConfig
+	if err := json.Unmarshal(file, &config); err != nil {
+		t.Fatal("Unable to unmarshal 'test-config.json'")
+	}
+	return &config
 }
 
 func TestGetUsers(t *testing.T) {
-	api := NewApi(getCredentials(t))
+	conf := loadTestConfig(t)
+	api := NewApi(conf.AccountName, conf.AuthToken)
 	users, err := api.Users()
+	if err != nil {
+		t.Fatal("Freshbooks retured an error:", err.Error())
+	}
+	if len(users) < 1 {
+		t.Fatal("There should be at least one user")
+	}
+}
 
+func TestOAuth(t *testing.T) {
+	conf := loadTestConfig(t)
+	token := &oauthplain.Token{
+		ConsumerKey:      conf.ConsumerKey,
+		ConsumerSecret:   conf.ConsumerSecret,
+		OAuthToken:       conf.OAuthToken,
+		OAuthTokenSecret: conf.OAuthTokenSecret,
+	}
+	api := NewApi(conf.AccountName, token)
+	users, err := api.Users()
 	if err != nil {
 		t.Fatal("Freshbooks retured an error:", err.Error())
 	}

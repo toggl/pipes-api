@@ -5,19 +5,21 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/tambet/oauthplain"
 	"io/ioutil"
 	"net/http"
 )
 
 type (
 	Api struct {
-		apiUrl   string
-		apiToken string
-		perPage  int
-		users    []User
-		tasks    []Task
-		clients  []Client
-		projects []Project
+		apiUrl     string
+		apiToken   string
+		oAuthToken *oauthplain.Token
+		perPage    int
+		users      []User
+		tasks      []Task
+		clients    []Client
+		projects   []Project
 	}
 	Request struct {
 		XMLName xml.Name `xml:"request"`
@@ -97,13 +99,20 @@ type (
 	}
 )
 
-func NewApi(account string, token string) *Api {
+func NewApi(account string, token interface{}) *Api {
 	url := fmt.Sprintf("https://%s.freshbooks.com/api/2.1/xml-in", account)
-	fb := Api{apiUrl: url, apiToken: token, perPage: 25}
+	fb := Api{apiUrl: url, perPage: 25}
 	fb.users = make([]User, 0)
 	fb.tasks = make([]Task, 0)
 	fb.clients = make([]Client, 0)
 	fb.projects = make([]Project, 0)
+
+	switch token.(type) {
+	case string:
+		fb.apiToken = token.(string)
+	case *oauthplain.Token:
+		fb.oAuthToken = token.(*oauthplain.Token)
+	}
 	return &fb
 }
 
@@ -238,7 +247,13 @@ func (this *Api) makeRequest(request interface{}) (*[]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(this.apiToken, "X")
+
+	if this.apiToken != "" {
+		req.SetBasicAuth(this.apiToken, "X")
+	} else if this.oAuthToken != nil {
+		header := this.oAuthToken.AuthHeader()
+		req.Header.Set("Authorization", header)
+	}
 
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
