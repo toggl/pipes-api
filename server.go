@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/tambet/oauthplain"
 	"github.com/toggl/bugsnag"
 	"io/ioutil"
 	"log"
@@ -21,7 +22,8 @@ var (
 		CorsWhitelist map[string][]string `json:"cors_whitelist"`
 	}{}
 
-	knownOauthConfigs map[string]*oauth.Config
+	oAuth1Configs map[string]*oauthplain.Config
+	oAuth2Configs map[string]*oauth.Config
 )
 
 func main() {
@@ -48,7 +50,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := json.Unmarshal(b, &knownOauthConfigs); err != nil {
+	if err := json.Unmarshal(b, &oAuth2Configs); err != nil {
 		log.Fatal(err)
 	}
 

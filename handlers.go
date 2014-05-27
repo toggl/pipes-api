@@ -128,7 +128,7 @@ func postAuthorization(req Request) Response {
 		return badRequest("Missing code")
 	}
 
-	config, res := knownOauthConfigs[serviceID+"_"+*environment]
+	config, res := oAuth2Configs[serviceID+"_"+*environment]
 	if !res {
 		return badRequest("Oauth config not found!")
 	}
