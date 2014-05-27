@@ -90,7 +90,7 @@ func (s *BasecampService) Projects() ([]*Project, error) {
 // Map basecamp todos to tasks
 func (s *BasecampService) Tasks() ([]*Task, error) {
 	c := basecamp.Client{AccessToken: s.AccessToken}
-	foreignObjects, err := c.GetAllTotoLists(s.AccountID)
+	foreignObjects, err := c.GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 // Map basecamp todolists to tasks
 func (s *BasecampService) TodoLists() ([]*Task, error) {
 	c := basecamp.Client{AccessToken: s.AccessToken}
-	foreignObjects, err := c.GetAllTotoLists(s.AccountID)
+	foreignObjects, err := c.GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
 	}

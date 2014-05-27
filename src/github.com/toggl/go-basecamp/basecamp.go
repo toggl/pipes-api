@@ -125,7 +125,15 @@ func (c *Client) GetProjects(accountID int) ([]*Project, error) {
 	return result, nil
 }
 
-func (c *Client) GetAllTotoLists(accountID int) ([]*TodoList, error) {
+func (c *Client) GetTodoLists(accountID int) ([]*TodoList, error) {
+	return c.fetchTodoLists(accountID, "todolists.json")
+}
+
+func (c *Client) GetCompletedTodoLists(accountID int) ([]*TodoList, error) {
+	return c.fetchTodoLists(accountID, "todolists/completed.json")
+}
+
+func (c *Client) GetAllTodoLists(accountID int) ([]*TodoList, error) {
 	remaining, err := c.GetTodoLists(accountID)
 	if err != nil {
 		return nil, err
@@ -135,14 +143,6 @@ func (c *Client) GetAllTotoLists(accountID int) ([]*TodoList, error) {
 		return nil, err
 	}
 	return append(remaining, completed...), nil
-}
-
-func (c *Client) GetTodoLists(accountID int) ([]*TodoList, error) {
-	return c.fetchTodoLists(accountID, "todolists.json")
-}
-
-func (c *Client) GetCompletedTodoLists(accountID int) ([]*TodoList, error) {
-	return c.fetchTodoLists(accountID, "todolists/completed.json")
 }
 
 func (c *Client) fetchTodoLists(accountID int, listURL string) ([]*TodoList, error) {
