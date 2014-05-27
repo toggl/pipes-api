@@ -93,7 +93,7 @@ func loadAuthorizations(workspaceID int) (map[string]bool, error) {
 	return authorizations, nil
 }
 
-func getAuthURL(service string) string {
+func oAuth2URL(service string) string {
 	config, ok := knownOauthConfigs[service+"_"+*environment]
 	if !ok {
 		panic("Oauth config not found!")

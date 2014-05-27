@@ -24,6 +24,7 @@ func init() {
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", withService(withAuth(handleRequest(getServicePipeLog)))).Methods("GET")
 
 	v1.HandleFunc("/integrations/{service}/accounts", withAuth(handleRequest(getServiceAccounts))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/auth_url", withAuth(handleRequest(getAuthURL))).Methods("GET")
 	v1.HandleFunc("/integrations/{service}/authorizations", withAuth(handleRequest(postAuthorization))).Methods("POST")
 
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/users", withAuth(handleRequest(getServiceUsers))).Methods("GET")

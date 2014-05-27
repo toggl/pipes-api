@@ -103,6 +103,10 @@ func deletePipeSetup(req Request) Response {
 	return ok(nil)
 }
 
+func getAuthURL(req Request) Response {
+	return ok(nil)
+}
+
 func postAuthorization(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]

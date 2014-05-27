@@ -57,7 +57,7 @@ func NewIntegration(serviceName string) *Integration {
 		Name:     strings.Title(serviceName),
 		Image:    availableImages[serviceName],
 		AuthType: availableAuthorizations[serviceName],
-		AuthURL:  getAuthURL(serviceName),
+		AuthURL:  oAuth2URL(serviceName),
 	}
 	return &integration
 }
