@@ -109,6 +109,15 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 			}
 			tasks = append(tasks, &task)
 		}
+		for _, todo := range todoList.Todos.Completed {
+			task := Task{
+				ForeignID:        todo.Id,
+				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
+				Active:           false,
+				foreignProjectID: object.ProjectId,
+			}
+			tasks = append(tasks, &task)
+		}
 	}
 	return tasks, nil
 }
