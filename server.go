@@ -22,8 +22,8 @@ var (
 		CorsWhitelist map[string][]string `json:"cors_whitelist"`
 	}{}
 
-	oAuth1Configs map[string]*oauthplain.Config
 	oAuth2Configs map[string]*oauth.Config
+	oAuth1Configs map[string]*oauthplain.Config
 )
 
 func main() {
@@ -45,12 +45,18 @@ func main() {
 	if err := json.Unmarshal(b, &urls); err != nil {
 		log.Fatal(err)
 	}
-
 	b, err = ioutil.ReadFile(filepath.Join(*workdir, "config", "oauth2.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err := json.Unmarshal(b, &oAuth2Configs); err != nil {
+		log.Fatal(err)
+	}
+	b, err = ioutil.ReadFile(filepath.Join(*workdir, "config", "oauth1.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &oAuth1Configs); err != nil {
 		log.Fatal(err)
 	}
 

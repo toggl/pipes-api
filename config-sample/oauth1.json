@@ -1,0 +1,9 @@
+{
+	"freshbooks": {
+	  "ConsumerKey": "<consumer key>",
+	  "ConsumerSecret": "<consumer secret>",
+	  "RequestTokenUrl": "https://%s.freshbooks.com/oauth/oauth_request.php",
+	  "AuthorizeTokenUrl": "https://%s.freshbooks.com/oauth/oauth_authorize.php",
+	  "AccessTokenUrl": "https://%s.freshbooks.com/oauth/oauth_access.php"
+	}
+}
