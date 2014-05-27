@@ -24,6 +24,10 @@ const (
 		authorizations(workspace_id, service, data)
 		VALUES($1, $2, $3)
   `
+	deleteAuthorizationSQL = `DELETE FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+	`
 )
 
 func serviceNotAuthorized(s Service) bool {
@@ -72,6 +76,11 @@ func (a *Authorization) load(rows *sql.Rows) error {
 		return err
 	}
 	return nil
+}
+
+func (a *Authorization) destroy(s Service) error {
+	_, err := db.Exec(deleteAuthorizationSQL, s.WorkspaceID(), s.Name())
+	return err
 }
 
 func loadAuthorizations(workspaceID int) (map[string]bool, error) {

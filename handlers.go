@@ -152,6 +152,23 @@ func postAuthorization(req Request) Response {
 	return ok(nil)
 }
 
+func deleteAuthorization(req Request) Response {
+	workspaceID := currentWorkspaceID(req.r)
+	serviceID := mux.Vars(req.r)["service"]
+	if !serviceType.MatchString(serviceID) {
+		return badRequest("Missing or invalid service")
+	}
+	service := getService(serviceID, workspaceID)
+	authorization, err := loadAuth(service)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := authorization.destroy(service); err != nil {
+		return internalServerError(err.Error())
+	}
+	return ok(nil)
+}
+
 func getServiceAccounts(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
