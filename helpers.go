@@ -332,7 +332,6 @@ func fetchTodoLists(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	response.Tasks = tasks
 
 	var projectConnections, taskConnections *Connection
 
@@ -345,9 +344,14 @@ func fetchTodoLists(p *Pipe) error {
 		return err
 	}
 
-	for _, task := range response.Tasks {
-		task.ID = taskConnections.Data[strconv.Itoa(task.ForeignID)]
-		task.ProjectID = projectConnections.Data[strconv.Itoa(task.foreignProjectID)]
+	response.Tasks = make([]*Task, 0)
+	for _, task := range tasks {
+		id := taskConnections.Data[strconv.Itoa(task.ForeignID)]
+		if (id > 0) || task.Active {
+			task.ID = id
+			task.ProjectID = projectConnections.Data[strconv.Itoa(task.foreignProjectID)]
+			response.Tasks = append(response.Tasks, task)
+		}
 	}
 	return nil
 }

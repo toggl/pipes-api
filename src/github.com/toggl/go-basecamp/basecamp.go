@@ -125,6 +125,18 @@ func (c *Client) GetProjects(accountID int) ([]*Project, error) {
 	return result, nil
 }
 
+func (c *Client) GetAllTotoLists(accountID int) ([]*TodoList, error) {
+	remaining, err := c.GetTodoLists(accountID)
+	if err != nil {
+		return nil, err
+	}
+	completed, err := c.GetCompletedTodoLists(accountID)
+	if err != nil {
+		return nil, err
+	}
+	return append(remaining, completed...), nil
+}
+
 func (c *Client) GetTodoLists(accountID int) ([]*TodoList, error) {
 	return c.fetchTodoLists(accountID, "todolists.json")
 }
