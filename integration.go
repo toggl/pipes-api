@@ -17,16 +17,24 @@ type (
 	}
 )
 
+// FIXME: Refactor all settings to conf file
 var availableIntegration = map[string][]string{
 	"basecamp": {"users", "projects", "todolists", "todos"},
 }
 
 var availableAuthorizations = map[string]string{
-	"basecamp": "oauth",
+	"basecamp":   "oauth2",
+	"freshbooks": "oauth1",
 }
 
 var availableImages = map[string]string{
-	"basecamp": "/images/logo-basecamp.png",
+	"basecamp":   "/images/logo-basecamp.png",
+	"freshbooks": "/images/freshbooks.png",
+}
+
+var availableLinks = map[string]string{
+	"basecamp":   "http://support.toggl.com/basecamp",
+	"freshbooks": "http://support.toggl.com/freshbooks",
 }
 
 var availableDescriptions = map[string]string{
@@ -53,8 +61,8 @@ var premiumOptions = map[string]bool{
 func NewIntegration(serviceName string) *Integration {
 	integration := Integration{
 		ID:       serviceName,
-		Link:     "http://support.toggl.com/basecamp",
 		Name:     strings.Title(serviceName),
+		Link:     availableLinks[serviceName],
 		Image:    availableImages[serviceName],
 		AuthType: availableAuthorizations[serviceName],
 		AuthURL:  oAuth2URL(serviceName),
