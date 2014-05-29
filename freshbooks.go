@@ -1,15 +1,17 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
 	"os"
 )
 
 type FreshbooksService struct {
 	workspaceID int
-	AccountID   int
-	AccessToken string
+	accountName string
+	token       oauthplain.Token
 }
 
 func (s *FreshbooksService) Name() string {
@@ -25,11 +27,13 @@ func (s *FreshbooksService) keyFor(objectType string) string {
 }
 
 func (s *FreshbooksService) setAuthData(b []byte) error {
+	if err := json.Unmarshal(b, &s.token); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (s *FreshbooksService) setAccount(accountID int) {
-	s.AccountID = accountID
 }
 
 func (s *FreshbooksService) Accounts() ([]*Account, error) {

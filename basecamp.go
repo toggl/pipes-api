@@ -8,8 +8,8 @@ import (
 )
 
 type BasecampService struct {
-	AccountID   int
 	workspaceID int
+	AccountID   int
 	token       oauth.Token
 }
 
