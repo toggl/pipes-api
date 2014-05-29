@@ -60,7 +60,8 @@ func loadAuth(s Service) (*Authorization, error) {
 }
 
 func (a *Authorization) save() error {
-	_, err := db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.Data)
+	_, err := db.Exec(insertAuthorizationSQL,
+		a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
 	}
