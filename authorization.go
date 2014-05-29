@@ -103,7 +103,7 @@ func loadAuthorizations(workspaceID int) (map[string]bool, error) {
 func oAuth2URL(service string) string {
 	config, ok := oAuth2Configs[service+"_"+*environment]
 	if !ok {
-		panic("Oauth config not found!")
+		return ""
 	}
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
