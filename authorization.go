@@ -1,34 +1,44 @@
 package main
 
 import (
+	"code.google.com/p/goauth2/oauth"
 	"database/sql"
 	"encoding/json"
-	"time"
+	"errors"
+	"github.com/tambet/oauthplain"
 )
 
 type Authorization struct {
-	AccessToken    string
-	RefreshToken   string
+	WorkspaceID    int
+	ServiceID      string
 	WorkspaceToken string
-	Expiry         time.Time
+	Data           []byte
 }
 
 const (
-	selectAuthorizationSQL = `SELECT data
-    FROM authorizations
-    WHERE workspace_id = $1
-    AND service = $2
-    LIMIT 1
+	selectAuthorizationSQL = `SELECT
+		workspace_id, service, workspace_token, data
+		FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+		LIMIT 1
   `
 	insertAuthorizationSQL = `INSERT INTO
-		authorizations(workspace_id, service, data)
-		VALUES($1, $2, $3)
+		authorizations(workspace_id, service, workspace_token, data)
+		VALUES($1, $2, $3, $4)
   `
 	deleteAuthorizationSQL = `DELETE FROM authorizations
 		WHERE workspace_id = $1
 		AND service = $2
 	`
 )
+
+func NewAuthorization(workspaceID int, serviceID string) *Authorization {
+	return &Authorization{
+		WorkspaceID: workspaceID,
+		ServiceID:   serviceID,
+	}
+}
 
 func serviceNotAuthorized(s Service) bool {
 	if _, err := loadAuth(s); err != nil {
@@ -46,20 +56,18 @@ func loadAuth(s Service) (*Authorization, error) {
 	if !rows.Next() {
 		return nil, rows.Err()
 	}
-	var auth Authorization
-	if err := auth.load(rows); err != nil {
+	var authorization Authorization
+	if err := authorization.load(rows); err != nil {
 		return nil, err
 	}
-	s.setAuthData(&auth)
-	return &auth, nil
+	if err := s.setAuthData(authorization.Data); err != nil {
+		return nil, err
+	}
+	return &authorization, nil
 }
 
-func (a *Authorization) save(workspaceID int, serviceID string) error {
-	b, err := json.Marshal(a)
-	if err != nil {
-		return err
-	}
-	_, err = db.Exec(insertAuthorizationSQL, workspaceID, serviceID, b)
+func (a *Authorization) save() error {
+	_, err := db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.Data)
 	if err != nil {
 		return err
 	}
@@ -67,11 +75,7 @@ func (a *Authorization) save(workspaceID int, serviceID string) error {
 }
 
 func (a *Authorization) load(rows *sql.Rows) error {
-	var b []byte
-	if err := rows.Scan(&b); err != nil {
-		return err
-	}
-	err := json.Unmarshal(b, a)
+	err := rows.Scan(&a.WorkspaceID, &a.ServiceID, &a.WorkspaceToken, &a.Data)
 	if err != nil {
 		return err
 	}
@@ -108,4 +112,58 @@ func oAuth2URL(service string) string {
 		panic("Oauth config not found!")
 	}
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
+}
+
+func oAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
+	accountName := payload["account_name"].(string)
+	if accountName == "" {
+		return nil, errors.New("Missing account_name")
+	}
+	oAuthToken := payload["oauth_token"].(string)
+	if oAuthToken == "" {
+		return nil, errors.New("Missing oauth_token")
+	}
+	oAuthVerifier := payload["oauth_verifier"].(string)
+	if oAuthVerifier == "" {
+		return nil, errors.New("Missing oauth_verifier")
+	}
+
+	config, res := oAuth1Configs[serviceID]
+	if !res {
+		return nil, errors.New("Service OAuth config not found")
+	}
+	transport := &oauthplain.Transport{Config: config}
+	token := &oauthplain.Token{
+		OAuthToken:    oAuthToken,
+		OAuthVerifier: oAuthVerifier,
+	}
+	if err := transport.Exchange(token); err != nil {
+		return nil, err
+	}
+	b, err := json.Marshal(token)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func oAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
+	code := payload["code"].(string)
+	if code == "" {
+		return nil, errors.New("Missing code")
+	}
+	config, res := oAuth2Configs[serviceID+"_"+*environment]
+	if !res {
+		return nil, errors.New("Service OAuth config not found")
+	}
+	transport := &oauth.Transport{Config: config}
+	token, err := transport.Exchange(code)
+	if err != nil {
+		return nil, err
+	}
+	b, err := json.Marshal(token)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }

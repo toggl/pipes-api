@@ -61,8 +61,8 @@ type (
 	Service interface {
 		Name() string
 		WorkspaceID() int
-		setAuthData(*Authorization)
 		setAccount(int)
+		setAuthData([]byte) error
 		keyFor(string) string
 
 		Users() ([]*User, error)

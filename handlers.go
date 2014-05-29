@@ -1,7 +1,6 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -118,37 +117,28 @@ func postAuthorization(req Request) Response {
 		return badRequest("Missing payload")
 	}
 
-	var response map[string]interface{}
-	if err := json.Unmarshal(req.body, &response); err != nil {
+	var payload map[string]interface{}
+	err := json.Unmarshal(req.body, &payload)
+	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	code := response["code"].(string)
-	if code == "" {
-		return badRequest("Missing code")
-	}
+	authorization := NewAuthorization(workspaceID, serviceID)
+	authorization.WorkspaceToken = currentWorkspaceToken(req.r)
 
-	config, res := oAuth2Configs[serviceID+"_"+*environment]
-	if !res {
-		return badRequest("Oauth config not found!")
+	switch availableAuthorizations[serviceID] {
+	case "oauth1":
+		authorization.Data, err = oAuth1Exchange(serviceID, payload)
+	case "oauth2":
+		authorization.Data, err = oAuth2Exchange(serviceID, payload)
 	}
-	transport := &oauth.Transport{Config: config}
-	token, err := transport.Exchange(code)
 	if err != nil {
 		return badRequest(err.Error())
 	}
 
-	auth := Authorization{
-		AccessToken:    token.AccessToken,
-		RefreshToken:   token.RefreshToken,
-		Expiry:         token.Expiry,
-		WorkspaceToken: currentWorkspaceToken(req.r),
-	}
-
-	if err := auth.save(workspaceID, serviceID); err != nil {
+	if err := authorization.save(); err != nil {
 		return internalServerError(err.Error())
 	}
-
 	return ok(nil)
 }
 

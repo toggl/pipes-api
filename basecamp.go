@@ -1,14 +1,16 @@
 package main
 
 import (
+	"code.google.com/p/goauth2/oauth"
+	"encoding/json"
 	"fmt"
 	"github.com/toggl/go-basecamp"
 )
 
 type BasecampService struct {
-	workspaceID int
 	AccountID   int
-	AccessToken string
+	workspaceID int
+	token       oauth.Token
 }
 
 func (s *BasecampService) Name() string {
@@ -23,18 +25,24 @@ func (s *BasecampService) keyFor(objectType string) string {
 	return fmt.Sprintf("basecamp:account:%d:%s", s.AccountID, objectType)
 }
 
-func (s *BasecampService) setAuthData(a *Authorization) {
-	s.AccessToken = a.AccessToken
+func (s *BasecampService) setAuthData(b []byte) error {
+	if err := json.Unmarshal(b, &s.token); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *BasecampService) setAccount(accountID int) {
 	s.AccountID = accountID
 }
 
+func (s *BasecampService) client() *basecamp.Client {
+	return &basecamp.Client{AccessToken: s.token.AccessToken}
+}
+
 // Map basecamp accounts to local accounts
 func (s *BasecampService) Accounts() ([]*Account, error) {
-	c := basecamp.Client{AccessToken: s.AccessToken}
-	foreignObjects, err := c.GetAccounts()
+	foreignObjects, err := s.client().GetAccounts()
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +59,7 @@ func (s *BasecampService) Accounts() ([]*Account, error) {
 
 // Map basecamp people to local users
 func (s *BasecampService) Users() ([]*User, error) {
-	c := basecamp.Client{AccessToken: s.AccessToken}
-	foreignObjects, err := c.GetPeople(s.AccountID)
+	foreignObjects, err := s.client().GetPeople(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +77,7 @@ func (s *BasecampService) Users() ([]*User, error) {
 
 // Map basecamp projects to projects
 func (s *BasecampService) Projects() ([]*Project, error) {
-	c := basecamp.Client{AccessToken: s.AccessToken}
-	foreignObjects, err := c.GetProjects(s.AccountID)
+	foreignObjects, err := s.client().GetProjects(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +95,7 @@ func (s *BasecampService) Projects() ([]*Project, error) {
 
 // Map basecamp todos to tasks
 func (s *BasecampService) Tasks() ([]*Task, error) {
-	c := basecamp.Client{AccessToken: s.AccessToken}
+	c := s.client()
 	foreignObjects, err := c.GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
@@ -124,8 +130,7 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 
 // Map basecamp todolists to tasks
 func (s *BasecampService) TodoLists() ([]*Task, error) {
-	c := basecamp.Client{AccessToken: s.AccessToken}
-	foreignObjects, err := c.GetAllTodoLists(s.AccountID)
+	foreignObjects, err := s.client().GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
 	}

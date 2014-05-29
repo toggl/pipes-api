@@ -24,7 +24,8 @@ func (s *FreshbooksService) keyFor(objectType string) string {
 	return fmt.Sprintf("freshbooks:%s", objectType)
 }
 
-func (s *FreshbooksService) setAuthData(a *Authorization) {
+func (s *FreshbooksService) setAuthData(b []byte) error {
+	return nil
 }
 
 func (s *FreshbooksService) setAccount(accountID int) {
