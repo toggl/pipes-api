@@ -91,8 +91,10 @@ func (p *Pipe) save() error {
 
 func (p *Pipe) validate() string {
 	var message string
-	if p.AccountID == 0 {
+	if p.serviceID == "basecamp" && p.AccountID == 0 {
 		message = "Pipe account_id must be present"
+	} else if p.serviceID == "freshbooks" && p.AccountName == "" {
+		message = "Pipe account_name must be present"
 	}
 	return message
 }
