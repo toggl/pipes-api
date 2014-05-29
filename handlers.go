@@ -166,8 +166,7 @@ func getServiceAccounts(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := getService(serviceID, workspaceID)
-
-	if serviceNotAuthorized(service) {
+	if _, err := loadAuth(service); err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
 	accountsResponse, err := getAccounts(service)
@@ -188,12 +187,10 @@ func getServiceUsers(req Request) Response {
 	if !serviceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-
 	service := getService(serviceID, workspaceID)
-	if serviceNotAuthorized(service) {
+	if _, err := loadAuth(service); err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
-
 	pipeID := "users"
 	pipe, err := loadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {

@@ -40,13 +40,6 @@ func NewAuthorization(workspaceID int, serviceID string) *Authorization {
 	}
 }
 
-func serviceNotAuthorized(s Service) bool {
-	if _, err := loadAuth(s); err != nil {
-		return true
-	}
-	return false
-}
-
 func loadAuth(s Service) (*Authorization, error) {
 	rows, err := db.Query(selectAuthorizationSQL, s.WorkspaceID(), s.Name())
 	if err != nil {
