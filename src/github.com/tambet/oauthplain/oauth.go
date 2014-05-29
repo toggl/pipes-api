@@ -34,6 +34,14 @@ type (
 	}
 )
 
+func (c *Config) UpdateURLs(s ...interface{}) *Config {
+  config := *c
+  config.AccessTokenUrl = fmt.Sprintf(c.AccessTokenUrl, s...)
+  config.RequestTokenUrl = fmt.Sprintf(c.RequestTokenUrl, s...)
+  config.AuthorizeTokenUrl = fmt.Sprintf(c.AuthorizeTokenUrl, s...)
+  return &config
+}
+
 func (t *Token) AuthHeader() string {
 	params := map[string]string{
 		"oauth_version":          "1.0",

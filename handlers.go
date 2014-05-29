@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/tambet/oauthplain"
 	"net/http"
 	"regexp"
 )
@@ -103,7 +104,36 @@ func deletePipeSetup(req Request) Response {
 }
 
 func getAuthURL(req Request) Response {
-	return ok(nil)
+	serviceID := mux.Vars(req.r)["service"]
+	accountName := req.r.FormValue("account_name")
+	callbackURL := req.r.FormValue("callback_url")
+
+	if !serviceType.MatchString(serviceID) {
+		return badRequest("Missing or invalid service")
+	}
+	if accountName == "" {
+		return badRequest("Missing or invalid account_name")
+	}
+	if callbackURL == "" {
+		return badRequest("Missing or invalid callback_url")
+	}
+
+	config, found := oAuth1Configs[serviceID]
+	if !found {
+		return badRequest("Service OAuth config not found")
+	}
+	transport := &oauthplain.Transport{
+		Config: config.UpdateURLs(accountName),
+	}
+	token, err := transport.AuthCodeURL(callbackURL)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	return ok(struct {
+		AuthURL string `json:"auth_url"`
+	}{
+		token.AuthorizeUrl,
+	})
 }
 
 func postAuthorization(req Request) Response {
