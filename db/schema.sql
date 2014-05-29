@@ -1,5 +1,6 @@
 CREATE TABLE authorizations(
   workspace_id INTEGER,
+  workspace_token VARCHAR(50),
   service VARCHAR(50),
   data JSON
 );
