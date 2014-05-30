@@ -61,7 +61,7 @@ type (
 	Service interface {
 		Name() string
 		WorkspaceID() int
-		setAccount(int)
+		setParams([]byte) error
 		setAuthData([]byte) error
 		keyFor(string) string
 

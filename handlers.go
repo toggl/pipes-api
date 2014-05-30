@@ -63,11 +63,8 @@ func postPipeSetup(req Request) Response {
 	}
 
 	pipe := NewPipe(workspaceID, serviceID, pipeID)
-	if err := json.Unmarshal(req.body, &pipe); err != nil {
-		return internalServerError(err.Error())
-	}
-
-	if errorMsg := pipe.validate(); errorMsg != "" {
+	errorMsg := pipe.validateServiceConfig(req.body)
+	if errorMsg != "" {
 		return badRequest(errorMsg)
 	}
 
@@ -229,7 +226,9 @@ func getServiceUsers(req Request) Response {
 	if pipe == nil {
 		return badRequest("Pipe is not configured")
 	}
-	service.setAccount(pipe.AccountID)
+	if err := service.setParams(pipe.ServiceParams); err != nil {
+		return badRequest(err.Error())
+	}
 
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {

@@ -26,14 +26,15 @@ func (s *FreshbooksService) keyFor(objectType string) string {
 	return fmt.Sprintf("freshbooks:%s", objectType)
 }
 
+func (s *FreshbooksService) setParams(b []byte) error {
+	return nil
+}
+
 func (s *FreshbooksService) setAuthData(b []byte) error {
 	if err := json.Unmarshal(b, &s.token); err != nil {
 		return err
 	}
 	return nil
-}
-
-func (s *FreshbooksService) setAccount(accountID int) {
 }
 
 func (s *FreshbooksService) Accounts() ([]*Account, error) {

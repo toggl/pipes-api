@@ -3,14 +3,19 @@ package main
 import (
 	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/toggl/go-basecamp"
 )
 
 type BasecampService struct {
 	workspaceID int
-	AccountID   int
-	token       oauth.Token
+	*BasecampParams
+	token oauth.Token
+}
+
+type BasecampParams struct {
+	AccountID int `json:"account_id"`
 }
 
 func (s *BasecampService) Name() string {
@@ -22,7 +27,20 @@ func (s *BasecampService) WorkspaceID() int {
 }
 
 func (s *BasecampService) keyFor(objectType string) string {
+	if s.BasecampParams == nil {
+		return fmt.Sprintf("basecamp:account:%s", objectType)
+	}
 	return fmt.Sprintf("basecamp:account:%d:%s", s.AccountID, objectType)
+}
+
+func (s *BasecampService) setParams(b []byte) error {
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	if s.AccountID == 0 {
+		return errors.New("account_id must be present")
+	}
+	return nil
 }
 
 func (s *BasecampService) setAuthData(b []byte) error {
@@ -30,10 +48,6 @@ func (s *BasecampService) setAuthData(b []byte) error {
 		return err
 	}
 	return nil
-}
-
-func (s *BasecampService) setAccount(accountID int) {
-	s.AccountID = accountID
 }
 
 func (s *BasecampService) client() *basecamp.Client {

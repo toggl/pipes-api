@@ -12,13 +12,13 @@ type Pipe struct {
 	ID              string      `json:"id"`
 	Name            string      `json:"name"`
 	Description     string      `json:"description,omitempty"`
-	AccountID       int         `json:"account_id,omitempty"`
 	AccountName     string      `json:"account_name,omitempty"`
 	Automatic       bool        `json:"automatic,omitempty"`
 	AutomaticOption bool        `json:"automatic_option"`
 	Configured      bool        `json:"configured"`
 	Premium         bool        `json:"premium"`
 	PipeStatus      *PipeStatus `json:"pipe_status,omitempty"`
+	ServiceParams   []byte      `json:"service_params,omitempty"`
 
 	authorization *Authorization
 	workspaceID   int
@@ -89,14 +89,14 @@ func (p *Pipe) save() error {
 	return nil
 }
 
-func (p *Pipe) validate() string {
-	var message string
-	if p.serviceID == "basecamp" && p.AccountID == 0 {
-		message = "Pipe account_id must be present"
-	} else if p.serviceID == "freshbooks" && p.AccountName == "" {
-		message = "Pipe account_name must be present"
+func (p *Pipe) validateServiceConfig(payload []byte) string {
+	service := getService(p.serviceID, p.workspaceID)
+	err := service.setParams(payload)
+	if err != nil {
+		return err.Error()
 	}
-	return message
+	p.ServiceParams = payload
+	return ""
 }
 
 func (p *Pipe) validatePayload(payload []byte) string {
@@ -131,7 +131,7 @@ func (p *Pipe) NewStatus() error {
 
 func (p *Pipe) Service() Service {
 	service := getService(p.serviceID, p.workspaceID)
-	service.setAccount(p.AccountID)
+	service.setParams(p.ServiceParams)
 	loadAuth(service)
 	return service
 }
