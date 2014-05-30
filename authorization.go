@@ -111,20 +111,20 @@ func oAuth2URL(service string) string {
 func oAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
 	accountName := payload["account_name"].(string)
 	if accountName == "" {
-		return nil, errors.New("Missing account_name")
+		return nil, errors.New("missing account_name")
 	}
 	oAuthToken := payload["oauth_token"].(string)
 	if oAuthToken == "" {
-		return nil, errors.New("Missing oauth_token")
+		return nil, errors.New("missing oauth_token")
 	}
 	oAuthVerifier := payload["oauth_verifier"].(string)
 	if oAuthVerifier == "" {
-		return nil, errors.New("Missing oauth_verifier")
+		return nil, errors.New("missing oauth_verifier")
 	}
 
 	config, res := oAuth1Configs[serviceID]
 	if !res {
-		return nil, errors.New("Service OAuth config not found")
+		return nil, errors.New("service OAuth config not found")
 	}
 	transport := &oauthplain.Transport{Config: config}
 	token := &oauthplain.Token{
@@ -144,11 +144,11 @@ func oAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, e
 func oAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
 	code := payload["code"].(string)
 	if code == "" {
-		return nil, errors.New("Missing code")
+		return nil, errors.New("missing code")
 	}
 	config, res := oAuth2Configs[serviceID+"_"+*environment]
 	if !res {
-		return nil, errors.New("Service OAuth config not found")
+		return nil, errors.New("service OAuth config not found")
 	}
 	transport := &oauth.Transport{Config: config}
 	token, err := transport.Exchange(code)
