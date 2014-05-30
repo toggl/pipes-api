@@ -30,7 +30,7 @@ var availableAuthorizations = map[string]string{
 
 var availableImages = map[string]string{
 	"basecamp":   "/images/logo-basecamp.png",
-	"freshbooks": "/images/freshbooks.png",
+	"freshbooks": "/images/logo-freshbooks.png",
 }
 
 var availableLinks = map[string]string{
