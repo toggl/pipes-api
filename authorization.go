@@ -121,12 +121,13 @@ func oAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, e
 	if oAuthVerifier == "" {
 		return nil, errors.New("missing oauth_verifier")
 	}
-
 	config, res := oAuth1Configs[serviceID]
 	if !res {
 		return nil, errors.New("service OAuth config not found")
 	}
-	transport := &oauthplain.Transport{Config: config}
+	transport := &oauthplain.Transport{
+		Config: config.UpdateURLs(accountName),
+	}
 	token := &oauthplain.Token{
 		OAuthToken:    oAuthToken,
 		OAuthVerifier: oAuthVerifier,
