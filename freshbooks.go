@@ -58,6 +58,10 @@ func (s *FreshbooksService) Users() ([]*User, error) {
 	return users, nil
 }
 
+func (s *FreshbooksService) Clients() ([]*Client, error) {
+	return nil, nil
+}
+
 func (s *FreshbooksService) Projects() ([]*Project, error) {
 	return nil, nil
 }

@@ -32,6 +32,12 @@ type (
 		Users []*User `json:"users"`
 	}
 
+	Client struct {
+		ID        int    `json:"id,omitempty"`
+		Name      string `json:"name"`
+		ForeignID int    `json:"foreign_id,omitempty"`
+	}
+
 	Project struct {
 		ID        int    `json:"id,omitempty"`
 		Name      string `json:"name"`
@@ -67,6 +73,7 @@ type (
 
 		Users() ([]*User, error)
 		Tasks() ([]*Task, error)
+		Clients() ([]*Client, error)
 		TodoLists() ([]*Task, error)
 		Projects() ([]*Project, error)
 		Accounts() ([]*Account, error)

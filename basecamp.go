@@ -89,6 +89,11 @@ func (s *BasecampService) Users() ([]*User, error) {
 	return users, nil
 }
 
+// There are no clients in basecamp
+func (s *BasecampService) Clients() ([]*Client, error) {
+	return nil, nil
+}
+
 // Map basecamp projects to projects
 func (s *BasecampService) Projects() ([]*Project, error) {
 	foreignObjects, err := s.client().GetProjects(s.AccountID)
