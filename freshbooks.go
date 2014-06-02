@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
-	"os"
 )
 
 type FreshbooksService struct {
@@ -42,9 +41,7 @@ func (s *FreshbooksService) Accounts() ([]*Account, error) {
 }
 
 func (s *FreshbooksService) Users() ([]*User, error) {
-	account := os.Getenv("FRESHBOOKS_ACCOUNT")
-	token := os.Getenv("FRESHBOOKS_TOKEN")
-	apiClient := freshbooks.NewApi(account, token)
+	apiClient := freshbooks.NewApi(s.accountName, s.token)
 	foreignObjects, err := apiClient.Users()
 	if err != nil {
 		return nil, err
