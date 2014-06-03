@@ -79,17 +79,6 @@ func (s *FreshbooksService) Clients() ([]*Client, error) {
 	return clients, nil
 }
 
-func convertInt(s string) int {
-	if s == "" {
-		return 0
-	}
-	res, err := strconv.Atoi(s)
-	if err != nil {
-		return 0
-	}
-	return res
-}
-
 func (s *FreshbooksService) Projects() ([]*Project, error) {
 	foreignObjects, err := s.Api().Projects()
 	if err != nil {
@@ -105,4 +94,44 @@ func (s *FreshbooksService) Projects() ([]*Project, error) {
 		projects = append(projects, &project)
 	}
 	return projects, nil
+}
+
+func (s *FreshbooksService) Tasks() ([]*Task, error) {
+	foreignProjects, err := s.Api().Projects()
+	if err != nil {
+		return nil, err
+	}
+	foreignTasks, err := s.Api().Tasks()
+	if err != nil {
+		return nil, err
+	}
+
+	tasksMap := make(map[int]*freshbooks.Task)
+	for _, task := range foreignTasks {
+		tasksMap[task.TaskId] = &task
+	}
+
+	var tasks []*Task
+	for _, project := range foreignProjects {
+		for _, taskID := range project.TaskIds {
+			task := tasksMap[taskID]
+			tasks = append(tasks, &Task{
+				Name:             task.Name,
+				ForeignID:        task.TaskId,
+				foreignProjectID: project.ProjectId,
+			})
+		}
+	}
+	return tasks, nil
+}
+
+func convertInt(s string) int {
+	if s == "" {
+		return 0
+	}
+	res, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return res
 }
