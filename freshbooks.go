@@ -40,9 +40,12 @@ func (s *FreshbooksService) Accounts() ([]*Account, error) {
 	return nil, nil
 }
 
+func (s *FreshbooksService) apiClient() *freshbooks.Api {
+	return freshbooks.NewApi(s.accountName, s.token)
+}
+
 func (s *FreshbooksService) Users() ([]*User, error) {
-	apiClient := freshbooks.NewApi(s.accountName, s.token)
-	foreignObjects, err := apiClient.Users()
+	foreignObjects, err := s.apiClient().Users()
 	if err != nil {
 		return nil, err
 	}
