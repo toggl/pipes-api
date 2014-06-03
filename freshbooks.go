@@ -62,7 +62,19 @@ func (s *FreshbooksService) Users() ([]*User, error) {
 }
 
 func (s *FreshbooksService) Clients() ([]*Client, error) {
-	return nil, nil
+	foreignObjects, err := s.apiClient().Clients()
+	if err != nil {
+		return nil, err
+	}
+	var clients []*Client
+	for _, object := range foreignObjects {
+		client := Client{
+			ForeignID: object.ClientId,
+			Name:      object.Name,
+		}
+		clients = append(clients, &client)
+	}
+	return clients, nil
 }
 
 func (s *FreshbooksService) Projects() ([]*Project, error) {
