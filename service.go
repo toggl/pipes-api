@@ -39,10 +39,11 @@ type (
 	}
 
 	Project struct {
-		ID        int    `json:"id,omitempty"`
-		Name      string `json:"name"`
-		Active    bool   `json:"active"`
-		ForeignID int    `json:"foreign_id,omitempty"`
+		ID              int    `json:"id,omitempty"`
+		Name            string `json:"name"`
+		Active          bool   `json:"active"`
+		ForeignID       int    `json:"foreign_id,omitempty"`
+		foreignClientID int
 	}
 
 	Task struct {

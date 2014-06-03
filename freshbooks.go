@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
+	"strconv"
 )
 
 type FreshbooksService struct {
@@ -41,12 +42,12 @@ func (s *FreshbooksService) Accounts() ([]*Account, error) {
 	return nil, nil
 }
 
-func (s *FreshbooksService) apiClient() *freshbooks.Api {
+func (s *FreshbooksService) Api() *freshbooks.Api {
 	return freshbooks.NewApi(s.accountName, s.token)
 }
 
 func (s *FreshbooksService) Users() ([]*User, error) {
-	foreignObjects, err := s.apiClient().Users()
+	foreignObjects, err := s.Api().Users()
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func (s *FreshbooksService) Users() ([]*User, error) {
 }
 
 func (s *FreshbooksService) Clients() ([]*Client, error) {
-	foreignObjects, err := s.apiClient().Clients()
+	foreignObjects, err := s.Api().Clients()
 	if err != nil {
 		return nil, err
 	}
@@ -78,10 +79,30 @@ func (s *FreshbooksService) Clients() ([]*Client, error) {
 	return clients, nil
 }
 
-func (s *FreshbooksService) Projects() ([]*Project, error) {
-	return nil, nil
+func convertInt(s string) int {
+	if s == "" {
+		return 0
+	}
+	res, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return res
 }
 
-func (s *FreshbooksService) Tasks() ([]*Task, error) {
-	return nil, nil
+func (s *FreshbooksService) Projects() ([]*Project, error) {
+	foreignObjects, err := s.Api().Projects()
+	if err != nil {
+		return nil, err
+	}
+	var projects []*Project
+	for _, object := range foreignObjects {
+		project := Project{
+			Name:            object.Name,
+			ForeignID:       object.ProjectId,
+			foreignClientID: convertInt(object.ClientId),
+		}
+		projects = append(projects, &project)
+	}
+	return projects, nil
 }
