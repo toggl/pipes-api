@@ -78,6 +78,7 @@ type (
 		Projects() ([]*Project, error)
 		Accounts() ([]*Account, error)
 	}
+	emptyService struct{}
 )
 
 func getService(serviceID string, workspaceID int) Service {
@@ -90,3 +91,10 @@ func getService(serviceID string, workspaceID int) Service {
 		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
 	}
 }
+
+func (s *emptyService) Users() ([]*User, error)       { return nil, nil }
+func (s *emptyService) Tasks() ([]*Task, error)       { return nil, nil }
+func (s *emptyService) Clients() ([]*Client, error)   { return nil, nil }
+func (s *emptyService) TodoLists() ([]*Task, error)   { return nil, nil }
+func (s *emptyService) Projects() ([]*Project, error) { return nil, nil }
+func (s *emptyService) Accounts() ([]*Account, error) { return nil, nil }

@@ -8,6 +8,7 @@ import (
 )
 
 type FreshbooksService struct {
+	emptyService
 	workspaceID int
 	accountName string
 	token       oauthplain.Token
@@ -78,10 +79,6 @@ func (s *FreshbooksService) Clients() ([]*Client, error) {
 }
 
 func (s *FreshbooksService) Projects() ([]*Project, error) {
-	return nil, nil
-}
-
-func (s *FreshbooksService) TodoLists() ([]*Task, error) {
 	return nil, nil
 }
 
