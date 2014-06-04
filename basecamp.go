@@ -37,7 +37,7 @@ func (s *BasecampService) setParams(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	if s.AccountID == 0 {
+	if s.BasecampParams == nil || s.AccountID == 0 {
 		return errors.New("account_id must be present")
 	}
 	return nil
