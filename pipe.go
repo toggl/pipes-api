@@ -197,7 +197,7 @@ func (p *Pipe) postObjects(saveStatus bool) (err error) {
 }
 
 func (p *Pipe) endSync(saveStatus bool, err error) error {
-	if err != nil {
+	if err != nil && saveStatus {
 		p.PipeStatus.addError(err)
 	}
 	if saveStatus {
