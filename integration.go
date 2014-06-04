@@ -20,7 +20,7 @@ type (
 // FIXME: Refactor all settings to conf file
 var availableIntegration = map[string][]string{
 	"basecamp":   {"users", "projects", "todolists", "todos"},
-	"freshbooks": {"users"},
+	"freshbooks": {"users", "projects"},
 }
 
 var availableAuthorizations = map[string]string{
@@ -39,27 +39,30 @@ var availableLinks = map[string]string{
 }
 
 var availableDescriptions = map[string]string{
-	"basecamp:users":     "Basecamp users will be imported as Toggl users. Existing users are matched by e-mail.",
-	"basecamp:projects":  "Basecamp projects will be imported as Toggl projects. Existing projects are matched by name.",
-	"basecamp:todolists": "Basecamp todolists will be imported as Toggl tasks. Existing tasks are matched by name.",
-	"basecamp:todos":     "Basecamp todos will be imported as Toggl tasks. Existing tasks are matched by name.",
-	"freshbooks:users":   "Freshbooks users will be imported as Toggl users. Existing users are matched by e-mail.",
+	"basecamp:users":      "Basecamp users will be imported as Toggl users. Existing users are matched by e-mail.",
+	"basecamp:projects":   "Basecamp projects will be imported as Toggl projects. Existing projects are matched by name.",
+	"basecamp:todolists":  "Basecamp todolists will be imported as Toggl tasks. Existing tasks are matched by name.",
+	"basecamp:todos":      "Basecamp todos will be imported as Toggl tasks. Existing tasks are matched by name.",
+	"freshbooks:users":    "Freshbooks users will be imported as Toggl users. Existing users are matched by e-mail.",
+	"freshbooks:projects": "Freshbooks projects will be imported as Toggl projects. Existing projects are matched by name.",
 }
 
 var automaticOptions = map[string]bool{
-	"basecamp:users":     false,
-	"basecamp:projects":  true,
-	"basecamp:todolists": true,
-	"basecamp:todos":     true,
-	"freshbooks:users":   false,
+	"basecamp:users":      false,
+	"basecamp:projects":   true,
+	"basecamp:todolists":  true,
+	"basecamp:todos":      true,
+	"freshbooks:users":    false,
+	"freshbooks:projects": true,
 }
 
 var premiumOptions = map[string]bool{
-	"basecamp:users":     false,
-	"basecamp:projects":  false,
-	"basecamp:todolists": true,
-	"basecamp:todos":     true,
-	"freshbooks:users":   false,
+	"basecamp:users":      false,
+	"basecamp:projects":   false,
+	"basecamp:todolists":  true,
+	"basecamp:todos":      true,
+	"freshbooks:users":    false,
+	"freshbooks:projects": false,
 }
 
 func NewIntegration(serviceName string) *Integration {
