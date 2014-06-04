@@ -36,7 +36,7 @@ func (s *FreshbooksService) setParams(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	if s.AccountName == "" {
+	if s.FreshbooksParams == nil || s.AccountName == "" {
 		return errors.New("account_name must be present")
 	}
 	return nil
