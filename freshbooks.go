@@ -54,7 +54,7 @@ func (s *FreshbooksService) Accounts() ([]*Account, error) {
 }
 
 func (s *FreshbooksService) Api() *freshbooks.Api {
-	return freshbooks.NewApi(s.AccountName, s.token)
+	return freshbooks.NewApi(s.AccountName, &s.token)
 }
 
 func (s *FreshbooksService) Users() ([]*User, error) {
