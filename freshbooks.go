@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
@@ -11,8 +12,12 @@ import (
 type FreshbooksService struct {
 	emptyService
 	workspaceID int
-	accountName string
-	token       oauthplain.Token
+	*FreshbooksParams
+	token oauthplain.Token
+}
+
+type FreshbooksParams struct {
+	AccountName string `json:"account_name"`
 }
 
 func (s *FreshbooksService) Name() string {
@@ -28,6 +33,12 @@ func (s *FreshbooksService) keyFor(objectType string) string {
 }
 
 func (s *FreshbooksService) setParams(b []byte) error {
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	if s.AccountName == "" {
+		return errors.New("account_name must be present")
+	}
 	return nil
 }
 
@@ -43,7 +54,7 @@ func (s *FreshbooksService) Accounts() ([]*Account, error) {
 }
 
 func (s *FreshbooksService) Api() *freshbooks.Api {
-	return freshbooks.NewApi(s.accountName, s.token)
+	return freshbooks.NewApi(s.AccountName, s.token)
 }
 
 func (s *FreshbooksService) Users() ([]*User, error) {
