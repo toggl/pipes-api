@@ -139,7 +139,6 @@ func postAuthorization(req Request) Response {
 	if !serviceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-
 	if len(req.body) == 0 {
 		return badRequest("Missing payload")
 	}

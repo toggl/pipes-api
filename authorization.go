@@ -135,6 +135,8 @@ func oAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, e
 	if err := transport.Exchange(token); err != nil {
 		return nil, err
 	}
+	token.Extra = make(map[string]string)
+	token.Extra["account_name"] = accountName
 	b, err := json.Marshal(token)
 	if err != nil {
 		return nil, err
