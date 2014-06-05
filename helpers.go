@@ -166,6 +166,10 @@ func postUsers(p *Pipe) error {
 	return nil
 }
 
+func postClients(p *Pipe) error {
+	return nil
+}
+
 func postProjects(p *Pipe) error {
 	s := p.Service()
 	projectsResponse, err := getProjects(s)
@@ -284,7 +288,6 @@ func fetchUsers(p *Pipe) error {
 	users, err := p.Service().Users()
 	response := UsersResponse{Users: users}
 	defer func() { saveObject(p, "users", response) }()
-
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -293,23 +296,35 @@ func fetchUsers(p *Pipe) error {
 }
 
 func fetchClients(p *Pipe) error {
-	response := ClientsResponse{}
+	clients, err := p.Service().Clients()
+	response := ClientsResponse{Clients: clients}
 	defer func() { saveObject(p, "clients", response) }()
-	return nil
-}
-
-func fetchProjects(p *Pipe) error {
-	s := p.Service()
-	projects, err := s.Projects()
-	response := ProjectsResponse{Projects: projects}
-	defer func() { saveObject(p, "projects", response) }()
-
 	if err != nil {
 		response.Error = err.Error()
 		return err
 	}
+	return nil
+}
 
-	connections, err := loadConnection(s, "projects")
+func fetchProjects(p *Pipe) error {
+	response := ProjectsResponse{}
+	defer func() { saveObject(p, "projects", response) }()
+
+	if err := fetchClients(p); err != nil {
+		response.Error = err.Error()
+		return err
+	}
+	if err := postClients(p); err != nil {
+		response.Error = err.Error()
+		return err
+	}
+	projects, err := p.Service().Projects()
+	if err != nil {
+		response.Error = err.Error()
+		return err
+	}
+	response.Projects = projects
+	connections, err := loadConnection(p.Service(), "projects")
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -374,6 +389,7 @@ func fetchTasks(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
+
 	tasks, err := p.Service().Tasks()
 	if err != nil {
 		response.Error = err.Error()
