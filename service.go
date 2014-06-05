@@ -65,6 +65,11 @@ type (
 		Tasks []*Task `json:"tasks"`
 	}
 
+	ClientsResponse struct {
+		Error   string    `json:"error"`
+		Clients []*Client `json:"clients"`
+	}
+
 	Service interface {
 		Name() string
 		WorkspaceID() int

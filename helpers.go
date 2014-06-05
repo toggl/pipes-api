@@ -292,6 +292,12 @@ func fetchUsers(p *Pipe) error {
 	return nil
 }
 
+func fetchClients(p *Pipe) error {
+	response := ClientsResponse{}
+	defer func() { saveObject(p, "clients", response) }()
+	return nil
+}
+
 func fetchProjects(p *Pipe) error {
 	s := p.Service()
 	projects, err := s.Projects()
