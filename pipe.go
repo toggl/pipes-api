@@ -172,7 +172,7 @@ func (p *Pipe) fetchObjects(saveStatus bool) (err error) {
 		err = fetchProjects(p)
 	case "todolists":
 		err = fetchTodoLists(p)
-	case "todos":
+	case "todos", "tasks":
 		err = fetchTasks(p)
 	default:
 		panic(fmt.Sprintf("fetchObjects: Unrecognized pipeID - %s", p.ID))

@@ -13,7 +13,7 @@ type Selector struct {
 }
 
 var serviceType = regexp.MustCompile("basecamp|freshbooks")
-var pipeType = regexp.MustCompile("users|projects|todolists|todos")
+var pipeType = regexp.MustCompile("users|projects|todolists|todos|tasks")
 
 func getIntegrations(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)

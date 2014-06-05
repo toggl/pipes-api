@@ -20,7 +20,7 @@ type (
 // FIXME: Refactor all settings to conf file
 var availableIntegration = map[string][]string{
 	"basecamp":   {"users", "projects", "todolists", "todos"},
-	"freshbooks": {"users", "projects"},
+	"freshbooks": {"users", "projects", "tasks"},
 }
 
 var availableAuthorizations = map[string]string{
@@ -45,6 +45,7 @@ var availableDescriptions = map[string]string{
 	"basecamp:todos":      "Basecamp todos will be imported as Toggl tasks. Existing tasks are matched by name.",
 	"freshbooks:users":    "Freshbooks users will be imported as Toggl users. Existing users are matched by e-mail.",
 	"freshbooks:projects": "Freshbooks projects will be imported as Toggl projects. Existing projects are matched by name.",
+	"freshbooks:tasks":    "Freshbooks tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
 }
 
 var automaticOptions = map[string]bool{
@@ -54,6 +55,7 @@ var automaticOptions = map[string]bool{
 	"basecamp:todos":      true,
 	"freshbooks:users":    false,
 	"freshbooks:projects": true,
+	"freshbooks:tasks":    true,
 }
 
 var premiumOptions = map[string]bool{
@@ -63,6 +65,7 @@ var premiumOptions = map[string]bool{
 	"basecamp:todos":      true,
 	"freshbooks:users":    false,
 	"freshbooks:projects": false,
+	"freshbooks:tasks":    true,
 }
 
 func NewIntegration(serviceName string) *Integration {
