@@ -117,6 +117,7 @@ func (s *FreshbooksService) Tasks() ([]*Task, error) {
 		for _, taskID := range project.TaskIds {
 			task := tasksMap[taskID]
 			tasks = append(tasks, &Task{
+				Active:           true,
 				Name:             task.Name,
 				ForeignID:        task.TaskId,
 				foreignProjectID: project.ProjectId,

@@ -188,7 +188,7 @@ func (p *Pipe) postObjects(saveStatus bool) (err error) {
 		err = postProjects(p)
 	case "todolists":
 		err = postTodoLists(p)
-	case "todos":
+	case "todos", "tasks":
 		err = postTasks(p)
 	default:
 		panic(fmt.Sprintf("postObjects: Unrecognized pipeID - %s", p.ID))
