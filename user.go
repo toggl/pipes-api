@@ -2,13 +2,14 @@ package main
 
 type (
 	WorkspaceUser struct {
-		ID       int64  `json:"id"`
-		UID      int64  `json:"uid"`
-		Wid      int64  `json:"wid"`
-		Admin    bool   `json:"admin"`
-		Active   bool   `json:"active"`
-		Email    string `json:"email"`
-		Inactive bool   `json:"inactive"`
+		ID        int    `json:"id"`
+		Uid       int    `json:"uid"`
+		Wid       int    `json:"wid"`
+		Admin     bool   `json:"admin"`
+		Active    bool   `json:"active"`
+		Email     string `json:"email"`
+		Inactive  bool   `json:"inactive"`
+		ForeignID int    `json:"foreign_id,omitempty"`
 	}
 
 	usersRequest struct {

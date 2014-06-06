@@ -162,6 +162,14 @@ func postUsers(p *Pipe) error {
 		return err
 	}
 
+	connection := NewConnection(s, "users")
+	for _, user := range usersImport.WorkspaceUsers {
+		connection.Data[strconv.Itoa(user.ForeignID)] = user.Uid
+	}
+	if err := connection.save(); err != nil {
+		return err
+	}
+
 	p.PipeStatus.complete("users", usersImport.Notifications, usersImport.Count())
 	return nil
 }
