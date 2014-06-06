@@ -88,6 +88,7 @@ func (s *FreshbooksService) Projects() ([]*Project, error) {
 	var projects []*Project
 	for _, object := range foreignObjects {
 		project := Project{
+			Active:          true,
 			Name:            object.Name,
 			ForeignID:       object.ProjectId,
 			foreignClientID: convertInt(object.ClientId),
