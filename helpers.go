@@ -143,16 +143,16 @@ func postUsers(p *Pipe) error {
 		return err
 	}
 
-	var emails []string
+	var users []*User
 	for _, userID := range selector.IDs {
 		for _, user := range usersResponse.Users {
 			if user.ForeignID == userID {
-				emails = append(emails, user.Email)
+				users = append(users, user)
 			}
 		}
 	}
-	users := usersRequest{Emails: emails}
-	b, err := postPipesAPI(p.authorization.WorkspaceToken, "users", users)
+
+	b, err := postPipesAPI(p.authorization.WorkspaceToken, "users", usersRequest{Users: users})
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func postUsers(p *Pipe) error {
 
 	connection := NewConnection(s, "users")
 	for _, user := range usersImport.WorkspaceUsers {
-		connection.Data[strconv.Itoa(user.ForeignID)] = user.Uid
+		connection.Data[strconv.Itoa(user.ForeignID)] = user.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
