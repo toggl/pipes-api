@@ -200,6 +200,9 @@ func postClients(p *Pipe) error {
 	clients := clientRequest{
 		Clients: clientsResponse.Clients,
 	}
+	if len(clientsResponse.Clients) == 0 {
+		return nil
+	}
 	b, err := postPipesAPI(p.authorization.WorkspaceToken, "clients", clients)
 	if err != nil {
 		return err
