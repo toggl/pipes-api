@@ -42,6 +42,7 @@ type (
 		ID              int    `json:"id,omitempty"`
 		Name            string `json:"name"`
 		Active          bool   `json:"active"`
+		ClientID        int    `json:"cid"`
 		ForeignID       int    `json:"foreign_id,omitempty"`
 		foreignClientID int
 	}

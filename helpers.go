@@ -100,6 +100,20 @@ func getUsers(s Service) (*UsersResponse, error) {
 	return &usersResponse, nil
 }
 
+func getClients(s Service) (*ClientsResponse, error) {
+	b, err := getObject(s, "clients")
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var clientsResponse ClientsResponse
+	err = json.Unmarshal(b, &clientsResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &clientsResponse, nil
+}
+
 func getProjects(s Service) (*ProjectsResponse, error) {
 	b, err := getObject(s, "projects")
 	if err != nil || b == nil {
@@ -175,6 +189,34 @@ func postUsers(p *Pipe) error {
 }
 
 func postClients(p *Pipe) error {
+	service := p.Service()
+	clientsResponse, err := getClients(service)
+	if err != nil {
+		return errors.New("unable to get clients from DB")
+	}
+	if clientsResponse == nil {
+		return errors.New("service clients not found")
+	}
+	clients := clientRequest{
+		Clients: clientsResponse.Clients,
+	}
+	b, err := postPipesAPI(p.authorization.WorkspaceToken, "clients", clients)
+	if err != nil {
+		return err
+	}
+	var clientsImport ClientsImport
+	if err := json.Unmarshal(b, &clientsImport); err != nil {
+		return err
+	}
+
+	connection := NewConnection(service, "clients")
+	for _, client := range clientsImport.Clients {
+		connection.Data[strconv.Itoa(client.ForeignID)] = client.ID
+	}
+	if err := connection.save(); err != nil {
+		return err
+	}
+	p.PipeStatus.complete("clients", clientsImport.Notifications, clientsImport.Count())
 	return nil
 }
 
@@ -311,6 +353,14 @@ func fetchClients(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
+	connections, err := loadConnection(p.Service(), "clients")
+	if err != nil {
+		response.Error = err.Error()
+		return err
+	}
+	for _, client := range response.Clients {
+		client.ID = connections.Data[strconv.Itoa(client.ForeignID)]
+	}
 	return nil
 }
 
@@ -332,13 +382,20 @@ func fetchProjects(p *Pipe) error {
 		return err
 	}
 	response.Projects = projects
-	connections, err := loadConnection(p.Service(), "projects")
-	if err != nil {
+
+	var clientConnections, projectConnections *Connection
+	if clientConnections, err = loadConnection(p.Service(), "clients"); err != nil {
 		response.Error = err.Error()
 		return err
 	}
+	if projectConnections, err = loadConnection(p.Service(), "projects"); err != nil {
+		response.Error = err.Error()
+		return err
+	}
+
 	for _, project := range response.Projects {
-		project.ID = connections.Data[strconv.Itoa(project.ForeignID)]
+		project.ID = projectConnections.Data[strconv.Itoa(project.ForeignID)]
+		project.ClientID = clientConnections.Data[strconv.Itoa(project.foreignClientID)]
 	}
 
 	return nil
