@@ -55,7 +55,7 @@ func (s *FreshbooksService) Users() ([]*User, error) {
 	var users []*User
 	for _, object := range foreignObjects {
 		user := User{
-			ForeignID: object.UserId,
+			ForeignID: strconv.Itoa(object.UserId),
 			Name:      fmt.Sprintf("%s %s", object.FirstName, object.LastName),
 			Email:     object.Email,
 		}
@@ -72,7 +72,7 @@ func (s *FreshbooksService) Clients() ([]*Client, error) {
 	var clients []*Client
 	for _, object := range foreignObjects {
 		client := Client{
-			ForeignID: object.ClientId,
+			ForeignID: strconv.Itoa(object.ClientId),
 			Name:      object.Name,
 		}
 		clients = append(clients, &client)
@@ -90,7 +90,7 @@ func (s *FreshbooksService) Projects() ([]*Project, error) {
 		project := Project{
 			Active:          true,
 			Name:            object.Name,
-			ForeignID:       object.ProjectId,
+			ForeignID:       strconv.Itoa(object.ProjectId),
 			foreignClientID: convertInt(object.ClientId),
 		}
 		projects = append(projects, &project)
@@ -120,7 +120,7 @@ func (s *FreshbooksService) Tasks() ([]*Task, error) {
 			tasks = append(tasks, &Task{
 				Active:           true,
 				Name:             task.Name,
-				ForeignID:        task.TaskId,
+				ForeignID:        strconv.Itoa(task.TaskId),
 				foreignProjectID: project.ProjectId,
 			})
 		}

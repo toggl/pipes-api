@@ -24,7 +24,7 @@ type (
 		ID        int    `json:"id,omitempty"`
 		Email     string `json:"email"`
 		Name      string `json:"name"`
-		ForeignID int    `json:"foreign_id,omitempty"`
+		ForeignID string `json:"foreign_id,omitempty"`
 	}
 
 	UsersResponse struct {
@@ -35,7 +35,7 @@ type (
 	Client struct {
 		ID        int    `json:"id,omitempty"`
 		Name      string `json:"name"`
-		ForeignID int    `json:"foreign_id,omitempty"`
+		ForeignID string `json:"foreign_id,omitempty"`
 	}
 
 	Project struct {
@@ -43,7 +43,7 @@ type (
 		Name            string `json:"name"`
 		Active          bool   `json:"active"`
 		ClientID        int    `json:"cid"`
-		ForeignID       int    `json:"foreign_id,omitempty"`
+		ForeignID       string `json:"foreign_id,omitempty"`
 		foreignClientID int
 	}
 
@@ -51,7 +51,7 @@ type (
 		ID               int    `json:"id,omitempty"`
 		Name             string `json:"name"`
 		Active           bool   `json:"active"`
-		ForeignID        int    `json:"foreign_id,omitempty"`
+		ForeignID        string `json:"foreign_id,omitempty"`
 		ProjectID        int    `json:"pid"`
 		foreignProjectID int
 	}

@@ -160,7 +160,7 @@ func postUsers(p *Pipe) error {
 	var users []*User
 	for _, userID := range selector.IDs {
 		for _, user := range usersResponse.Users {
-			if user.ForeignID == userID {
+			if user.ForeignID == strconv.Itoa(userID) {
 				users = append(users, user)
 			}
 		}
@@ -178,7 +178,7 @@ func postUsers(p *Pipe) error {
 
 	connection := NewConnection(s, "users")
 	for _, user := range usersImport.WorkspaceUsers {
-		connection.Data[strconv.Itoa(user.ForeignID)] = user.ID
+		connection.Data[user.ForeignID] = user.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
@@ -214,7 +214,7 @@ func postClients(p *Pipe) error {
 
 	connection := NewConnection(service, "clients")
 	for _, client := range clientsImport.Clients {
-		connection.Data[strconv.Itoa(client.ForeignID)] = client.ID
+		connection.Data[client.ForeignID] = client.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
@@ -247,7 +247,7 @@ func postProjects(p *Pipe) error {
 
 	connection := NewConnection(s, "projects")
 	for _, project := range projectsImport.Projects {
-		connection.Data[strconv.Itoa(project.ForeignID)] = project.ID
+		connection.Data[project.ForeignID] = project.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
@@ -279,7 +279,7 @@ func postTodoLists(p *Pipe) error {
 
 	connection := NewConnection(s, "todolists")
 	for _, task := range tasksImport.Tasks {
-		connection.Data[strconv.Itoa(task.ForeignID)] = task.ID
+		connection.Data[task.ForeignID] = task.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
@@ -311,7 +311,7 @@ func postTasks(p *Pipe) error {
 
 	connection := NewConnection(s, "tasks")
 	for _, task := range tasksImport.Tasks {
-		connection.Data[strconv.Itoa(task.ForeignID)] = task.ID
+		connection.Data[task.ForeignID] = task.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
@@ -362,7 +362,7 @@ func fetchClients(p *Pipe) error {
 		return err
 	}
 	for _, client := range response.Clients {
-		client.ID = connections.Data[strconv.Itoa(client.ForeignID)]
+		client.ID = connections.Data[client.ForeignID]
 	}
 	return nil
 }
@@ -397,7 +397,7 @@ func fetchProjects(p *Pipe) error {
 	}
 
 	for _, project := range response.Projects {
-		project.ID = projectConnections.Data[strconv.Itoa(project.ForeignID)]
+		project.ID = projectConnections.Data[project.ForeignID]
 		project.ClientID = clientConnections.Data[strconv.Itoa(project.foreignClientID)]
 	}
 
@@ -435,7 +435,7 @@ func fetchTodoLists(p *Pipe) error {
 
 	response.Tasks = make([]*Task, 0)
 	for _, task := range tasks {
-		id := taskConnections.Data[strconv.Itoa(task.ForeignID)]
+		id := taskConnections.Data[task.ForeignID]
 		if (id > 0) || task.Active {
 			task.ID = id
 			task.ProjectID = projectConnections.Data[strconv.Itoa(task.foreignProjectID)]
@@ -476,7 +476,7 @@ func fetchTasks(p *Pipe) error {
 
 	response.Tasks = make([]*Task, 0)
 	for _, task := range tasks {
-		id := taskConnections.Data[strconv.Itoa(task.ForeignID)]
+		id := taskConnections.Data[task.ForeignID]
 		if (id > 0) || task.Active {
 			task.ID = id
 			task.ProjectID = projectConnections.Data[strconv.Itoa(task.foreignProjectID)]

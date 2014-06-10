@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/toggl/go-basecamp"
+	"strconv"
 )
 
 type BasecampService struct {
@@ -80,7 +81,7 @@ func (s *BasecampService) Users() ([]*User, error) {
 	var users []*User
 	for _, object := range foreignObjects {
 		user := User{
-			ForeignID: object.Id,
+			ForeignID: strconv.Itoa(object.Id),
 			Name:      object.Name,
 			Email:     object.Email,
 		}
@@ -104,7 +105,7 @@ func (s *BasecampService) Projects() ([]*Project, error) {
 	for _, object := range foreignObjects {
 		project := Project{
 			Active:    true,
-			ForeignID: object.Id,
+			ForeignID: strconv.Itoa(object.Id),
 			Name:      object.Name,
 		}
 		projects = append(projects, &project)
@@ -127,7 +128,7 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 		}
 		for _, todo := range todoList.Todos.Remaining {
 			task := Task{
-				ForeignID:        todo.Id,
+				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
 				Active:           true,
 				foreignProjectID: object.ProjectId,
@@ -136,7 +137,7 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 		}
 		for _, todo := range todoList.Todos.Completed {
 			task := Task{
-				ForeignID:        todo.Id,
+				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
 				Active:           false,
 				foreignProjectID: object.ProjectId,
@@ -156,7 +157,7 @@ func (s *BasecampService) TodoLists() ([]*Task, error) {
 	var tasks []*Task
 	for _, object := range foreignObjects {
 		task := Task{
-			ForeignID:        object.Id,
+			ForeignID:        strconv.Itoa(object.Id),
 			Name:             object.Name,
 			Active:           !object.Completed,
 			foreignProjectID: object.ProjectId,
