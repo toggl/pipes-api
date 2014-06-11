@@ -232,7 +232,11 @@ func (this *Api) SaveTimeEntry(timeEntry *TimeEntry) (int, error) {
 	if err := xml.Unmarshal(*result, &parsedInto); err != nil {
 		return 0, err
 	}
+
 	if parsedInto.Status == "ok" {
+		if timeEntry.TimeEntryId != 0 {
+			parsedInto.TimeEntryId = timeEntry.TimeEntryId
+		}
 		return parsedInto.TimeEntryId, nil
 	}
 	return 0, errors.New(parsedInto.Error)
