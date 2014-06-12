@@ -27,10 +27,10 @@ func postTimeEntries(p *Pipe) error {
 		return err
 	}
 
-	// FIXME: Provide since
-	// FIXME: Provide projects ids
-	// FIXME: Provide failed time entry ids
-	timeEntries, err := getTogglTimeEntries(p.authorization.WorkspaceToken)
+	timeEntries, err := getTogglTimeEntries(
+		p.authorization.WorkspaceToken, p.lastSync,
+		usersCon.getKeys(), projectsCon.getKeys(),
+	)
 	if err != nil {
 		return err
 	}
@@ -52,5 +52,6 @@ func postTimeEntries(p *Pipe) error {
 	if err := entriesCon.save(); err != nil {
 		return err
 	}
+	p.PipeStatus.complete("timeentries", []string{}, len(timeEntries))
 	return nil
 }

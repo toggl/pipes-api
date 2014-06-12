@@ -14,9 +14,10 @@ type workspaceResponse struct {
 	Workspace *Workspace `json:"data"`
 }
 
-func getTogglTimeEntries(APIToken string) ([]TimeEntry, error) {
+func getTogglTimeEntries(APIToken string, lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d",
-		urls.TogglAPIHost[*environment], 1402475211)
+	  urls.TogglAPIHost[*environment], lastSync.Unix())
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err

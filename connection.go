@@ -58,6 +58,14 @@ func (c *ReversedConnection) getInt(key int) int {
 	return res
 }
 
+func (c *ReversedConnection) getKeys() []int {
+	keys := make([]int, 0, len(c.Data))
+	for key := range c.Data {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
 func loadConnection(s Service, pipeID string) (*Connection, error) {
 	rows, err := db.Query(selectConnectionSQL, s.WorkspaceID(), s.keyFor(pipeID))
 	if err != nil {

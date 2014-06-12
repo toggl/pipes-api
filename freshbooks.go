@@ -90,6 +90,7 @@ func (s *FreshbooksService) Projects() ([]*Project, error) {
 	for _, object := range foreignObjects {
 		project := Project{
 			Active:          true,
+			Billable:        true,
 			Name:            object.Name,
 			ForeignID:       strconv.Itoa(object.ProjectId),
 			foreignClientID: convertInt(object.ClientId),
