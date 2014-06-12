@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/toggl/bugsnag"
 	"strings"
+	"time"
 )
 
 type Pipe struct {
@@ -26,6 +27,7 @@ type Pipe struct {
 	pipeID        string
 	key           string
 	payload       []byte
+	lastSync      time.Time
 }
 
 const (
@@ -125,6 +127,7 @@ func (p *Pipe) load(rows *sql.Rows) error {
 }
 
 func (p *Pipe) NewStatus() error {
+	p.loadLastSync()
 	p.PipeStatus = NewPipeStatus(p.workspaceID, p.serviceID, p.ID)
 	return p.PipeStatus.save()
 }
@@ -161,6 +164,13 @@ func (p *Pipe) run() {
 	}
 	if err = p.postObjects(false); err != nil {
 		return
+	}
+}
+
+func (p *Pipe) loadLastSync() {
+	err := db.QueryRow(lastSyncSQL, p.workspaceID, p.key).Scan(&p.lastSync)
+	if err != nil {
+		p.lastSync = time.Now()
 	}
 }
 

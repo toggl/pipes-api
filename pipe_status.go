@@ -25,9 +25,19 @@ type PipeStatus struct {
 const (
 	startStatus         = "running"
 	selectPipeStatusSQL = `SELECT key, data
-    FROM pipes_status WHERE workspace_id = $1`
+    FROM pipes_status
+    WHERE workspace_id = $1
+  `
 	singlePipeStatusSQL = `SELECT data
-    FROM pipes_status WHERE workspace_id = $1 AND key = $2 LIMIT 1`
+    FROM pipes_status
+    WHERE workspace_id = $1
+    AND key = $2 LIMIT 1
+  `
+	lastSyncSQL = `SELECT (data->>'sync_date')::timestamp
+    FROM pipes_status
+    WHERE workspace_id = $1
+    AND key = $2
+  `
 	insertPipeStatusSQL = `
     WITH existing_status AS (
       UPDATE pipes_status SET data = $3
@@ -43,7 +53,7 @@ const (
     SELECT * FROM inserted_status
     UNION
     SELECT * FROM existing_status
-    `
+  `
 )
 
 func NewPipeStatus(workspaceID int, serviceID, pipeID string) *PipeStatus {
