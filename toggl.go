@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,9 +16,17 @@ type workspaceResponse struct {
 	Workspace *Workspace `json:"data"`
 }
 
+func stringify(values []int) string {
+	s := make([]string, 0, len(values))
+	for _, value := range values {
+		s = append(s, strconv.Itoa(value))
+	}
+	return strings.Join(s, ",")
+}
+
 func getTogglTimeEntries(APIToken string, lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error) {
-	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d",
-	  urls.TogglAPIHost[*environment], lastSync.Unix())
+	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
+		urls.TogglAPIHost[*environment], lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

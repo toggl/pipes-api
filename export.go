@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -44,7 +43,6 @@ func postTimeEntries(p *Pipe) error {
 		entryID, err := service.ExportTimeEntry(&entry)
 		if err != nil {
 			p.PipeStatus.addError(err)
-			fmt.Println("FIXME: logging errors>>", err)
 		} else {
 			entriesCon.Data[strconv.Itoa(entry.ID)] = entryID
 		}
