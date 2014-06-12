@@ -174,6 +174,8 @@ func (p *Pipe) fetchObjects(saveStatus bool) (err error) {
 		err = fetchTodoLists(p)
 	case "todos", "tasks":
 		err = fetchTasks(p)
+	case "timeentries":
+		err = fetchTimeEntries(p)
 	default:
 		panic(fmt.Sprintf("fetchObjects: Unrecognized pipeID - %s", p.ID))
 	}
@@ -190,6 +192,8 @@ func (p *Pipe) postObjects(saveStatus bool) (err error) {
 		err = postTodoLists(p)
 	case "todos", "tasks":
 		err = postTasks(p)
+	case "timeentries":
+		err = postTimeEntries(p)
 	default:
 		panic(fmt.Sprintf("postObjects: Unrecognized pipeID - %s", p.ID))
 	}

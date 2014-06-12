@@ -166,3 +166,7 @@ func (s *BasecampService) TodoLists() ([]*Task, error) {
 	}
 	return tasks, nil
 }
+
+func (s *BasecampService) ExportTimeEntry(t *TimeEntry) (int, error) {
+	return 0, nil
+}

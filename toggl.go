@@ -14,6 +14,36 @@ type workspaceResponse struct {
 	Workspace *Workspace `json:"data"`
 }
 
+func getTogglTimeEntries(APIToken string) ([]TimeEntry, error) {
+	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d",
+		urls.TogglAPIHost[*environment], 1402475211)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "toggl-pipes")
+	req.SetBasicAuth(APIToken, "api_token")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	var b []byte
+	defer resp.Body.Close()
+	b, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if http.StatusOK != resp.StatusCode {
+		return nil, fmt.Errorf("GET time_entries failed %d", resp.StatusCode)
+	}
+	var timeEntries []TimeEntry
+	if err := json.Unmarshal(b, &timeEntries); err != nil {
+		return nil, err
+	}
+	return timeEntries, nil
+}
+
 func getTogglWorkspaceID(APIToken string) (int, error) {
 	var workspaceID int
 	url := fmt.Sprintf("%s/api/pipes/workspace", urls.TogglAPIHost[*environment])

@@ -56,6 +56,22 @@ type (
 		foreignProjectID int
 	}
 
+	TimeEntry struct {
+		ID                int    `json:"id"`
+		ProjectID         int    `json:"pid,omitempty"`
+		TaskID            int    `json:"tid,omitempty"`
+		UserID            int    `json:"uid,omitempty"`
+		Billable          bool   `json:"billable"`
+		Start             string `json:"start"`
+		Stop              string `json:"stop,omitempty"`
+		DurationInSeconds int    `json:"duration"`
+		Description       string `json:"description,omitempty"`
+		foreignID         int
+		foreignTaskID     int
+		foreignUserID     int
+		foreignProjectID  int
+	}
+
 	ProjectsResponse struct {
 		Error    string     `json:"error"`
 		Projects []*Project `json:"projects"`
@@ -84,6 +100,7 @@ type (
 		TodoLists() ([]*Task, error)
 		Projects() ([]*Project, error)
 		Accounts() ([]*Account, error)
+		ExportTimeEntry(*TimeEntry) (int, error)
 	}
 	emptyService struct{}
 )

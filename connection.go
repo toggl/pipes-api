@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -30,13 +32,18 @@ const (
   `
 )
 
-type Connection struct {
-	workspaceID int
-	serviceID   string
-	pipeID      string
-	key         string
-	Data        map[string]int
-}
+type (
+	Connection struct {
+		workspaceID int
+		serviceID   string
+		pipeID      string
+		key         string
+		Data        map[string]int
+	}
+	ReversedConnection struct {
+		Data map[int]string
+	}
+)
 
 func NewConnection(s Service, pipeID string) *Connection {
 	return &Connection{
@@ -46,19 +53,40 @@ func NewConnection(s Service, pipeID string) *Connection {
 	}
 }
 
+func (c *ReversedConnection) getInt(key int) int {
+	res, _ := strconv.Atoi(strings.Split(c.Data[key], "-")[0])
+	return res
+}
+
 func loadConnection(s Service, pipeID string) (*Connection, error) {
 	rows, err := db.Query(selectConnectionSQL, s.WorkspaceID(), s.keyFor(pipeID))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	connection := Connection{Data: make(map[string]int)}
+	connection := Connection{
+		workspaceID: s.WorkspaceID(),
+		Data:        make(map[string]int),
+		key:         s.keyFor(pipeID),
+	}
 	if rows.Next() {
 		if err := connection.load(rows); err != nil {
 			return nil, err
 		}
 	}
 	return &connection, nil
+}
+
+func loadConnectionRev(s Service, pipeID string) (*ReversedConnection, error) {
+	connection, err := loadConnection(s, pipeID)
+	if err != nil {
+		return nil, err
+	}
+	reversed := &ReversedConnection{make(map[int]string)}
+	for key, value := range connection.Data {
+		reversed.Data[value] = key
+	}
+	return reversed, nil
 }
 
 func (c *Connection) save() error {

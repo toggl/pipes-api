@@ -49,6 +49,7 @@ const (
 func NewPipeStatus(workspaceID int, serviceID, pipeID string) *PipeStatus {
 	return &PipeStatus{
 		Status:      startStatus,
+		SyncDate:    time.Now().Format(time.RFC3339),
 		workspaceID: workspaceID,
 		serviceID:   serviceID,
 		pipeID:      pipeID,
@@ -88,13 +89,11 @@ func (p *PipeStatus) load(rows *sql.Rows) error {
 func (p *PipeStatus) addError(err error) {
 	p.Status = "error"
 	p.Message = err.Error()
-	p.SyncDate = time.Now().Format(time.RFC3339)
 }
 
 func (p *PipeStatus) complete(objType string, notifications []string, objCount int) {
 	p.Status = "success"
 	p.Notifications = notifications
-	p.SyncDate = time.Now().Format(time.RFC3339)
 	p.ObjectCounts = append(p.ObjectCounts, fmt.Sprintf("%d %s", objCount, objType))
 	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log",
 		urls.PipesAPIHost[*environment], p.serviceID, p.pipeID)
