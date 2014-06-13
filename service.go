@@ -39,11 +39,12 @@ type (
 	}
 
 	Project struct {
-		ID              int    `json:"id,omitempty"`
-		Name            string `json:"name"`
-		Active          bool   `json:"active"`
-		Billable        bool   `json:"billable"`
-		ClientID        int    `json:"cid"`
+		ID       int    `json:"id,omitempty"`
+		Name     string `json:"name"`
+		Active   bool   `json:"active"`
+		Billable bool   `json:"billable"`
+		ClientID int    `json:"cid"`
+
 		ForeignID       string `json:"foreign_id,omitempty"`
 		foreignClientID int
 	}

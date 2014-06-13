@@ -6,6 +6,7 @@ import (
 	"github.com/tambet/oauthplain"
 	"net/http"
 	"regexp"
+	"time"
 )
 
 type Selector struct {
@@ -275,8 +276,8 @@ func postPipeRun(req Request) Response {
 	if msg := pipe.validatePayload(req.body); msg != "" {
 		return badRequest(msg)
 	}
-
 	go pipe.run()
+	time.Sleep(500 * time.Millisecond)
 	return ok(nil)
 }
 
