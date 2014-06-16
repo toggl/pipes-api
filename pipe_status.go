@@ -68,8 +68,12 @@ func NewPipeStatus(workspaceID int, serviceID, pipeID string) *PipeStatus {
 }
 
 func (p *PipeStatus) save() error {
-	if p.Status == "success" && len(p.ObjectCounts) > 0 {
-		p.Message = fmt.Sprintf("%s successfully imported", strings.Join(p.ObjectCounts, ", "))
+	if p.Status == "success" {
+		if len(p.ObjectCounts) > 0 {
+			p.Message = fmt.Sprintf("%s successfully imported", strings.Join(p.ObjectCounts, ", "))
+		} else {
+			p.Message = fmt.Sprintf("There was nothing to import/export")
+		}
 	}
 	b, err := json.Marshal(p)
 	if err != nil {
@@ -104,7 +108,9 @@ func (p *PipeStatus) addError(err error) {
 func (p *PipeStatus) complete(objType string, notifications []string, objCount int) {
 	p.Status = "success"
 	p.Notifications = notifications
-	p.ObjectCounts = append(p.ObjectCounts, fmt.Sprintf("%d %s", objCount, objType))
+	if objCount > 0 {
+		p.ObjectCounts = append(p.ObjectCounts, fmt.Sprintf("%d %s", objCount, objType))
+	}
 	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log",
 		urls.PipesAPIHost[*environment], p.serviceID, p.pipeID)
 }
@@ -112,7 +118,7 @@ func (p *PipeStatus) complete(objType string, notifications []string, objCount i
 func (p *PipeStatus) generateLog() string {
 	warnings := strings.Join(p.Notifications, "\r\n")
 	splitter := "------------------------------------------------"
-	result := fmt.Sprintf("Import log for '%s %s' (%s)\r\n%s\r\n%s.\r\n%s",
+	result := fmt.Sprintf("Log for '%s %s' (%s)\r\n%s\r\n%s.\r\n%s",
 		p.serviceID, p.pipeID, time.Now().Format(time.RFC3339), splitter, p.Message, warnings)
 	return result
 }
