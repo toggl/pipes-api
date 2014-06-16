@@ -82,6 +82,9 @@ func (s *TeamweekService) Users() ([]*User, error) {
 	}
 	var users []*User
 	for _, object := range foreignObjects {
+		if object.Dummy {
+			continue
+		}
 		user := User{
 			ForeignID: strconv.FormatInt(object.ID, 10),
 			Name:      object.Name,
