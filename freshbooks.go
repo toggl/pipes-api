@@ -110,9 +110,9 @@ func (s *FreshbooksService) Tasks() ([]*Task, error) {
 		return nil, err
 	}
 
-	tasksMap := make(map[int]*freshbooks.Task)
+	tasksMap := make(map[int]freshbooks.Task)
 	for _, task := range foreignTasks {
-		tasksMap[task.TaskId] = &task
+		tasksMap[task.TaskId] = task
 	}
 
 	var tasks []*Task
