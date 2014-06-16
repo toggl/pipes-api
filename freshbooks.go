@@ -122,7 +122,7 @@ func (s *FreshbooksService) Tasks() ([]*Task, error) {
 			tasks = append(tasks, &Task{
 				Active:           true,
 				Name:             task.Name,
-				ForeignID:        strconv.Itoa(task.TaskId),
+				ForeignID:        fmt.Sprintf("%d-%d", task.TaskId, project.ProjectId),
 				foreignProjectID: project.ProjectId,
 			})
 		}

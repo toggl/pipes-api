@@ -106,6 +106,9 @@ func (p *PipeStatus) addError(err error) {
 }
 
 func (p *PipeStatus) complete(objType string, notifications []string, objCount int) {
+	if p.Status == "error" {
+		return
+	}
 	p.Status = "success"
 	p.Notifications = notifications
 	if objCount > 0 {
