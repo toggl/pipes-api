@@ -316,7 +316,7 @@ func postTasks(p *Pipe) error {
 	if err := connection.save(); err != nil {
 		return err
 	}
-	p.PipeStatus.complete("todos", tasksImport.Notifications, tasksImport.Count())
+	p.PipeStatus.complete(p.ID, tasksImport.Notifications, tasksImport.Count())
 	return nil
 }
 
