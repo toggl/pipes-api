@@ -21,21 +21,25 @@ type (
 var availableIntegration = map[string][]string{
 	"basecamp":   {"users", "projects", "todolists", "todos"},
 	"freshbooks": {"users", "projects", "tasks", "timeentries"},
+	"teamweek":   {"users", "projects", "tasks"},
 }
 
 var availableAuthorizations = map[string]string{
-	"basecamp":   "oauth2",
 	"freshbooks": "oauth1",
+	"basecamp":   "oauth2",
+	"teamweek":   "oauth2",
 }
 
 var availableImages = map[string]string{
 	"basecamp":   "/images/logo-basecamp.png",
 	"freshbooks": "/images/logo-freshbooks.png",
+	"teamweek":   "/images/logo-teamweek.png",
 }
 
 var availableLinks = map[string]string{
 	"basecamp":   "http://support.toggl.com/basecamp",
 	"freshbooks": "http://support.toggl.com/freshbooks",
+	"teamweek":   "http://support.toggl.com/teamweek",
 }
 
 var availableDescriptions = map[string]string{
@@ -47,6 +51,9 @@ var availableDescriptions = map[string]string{
 	"freshbooks:projects":    "Freshbooks projects will be imported as Toggl projects. Existing projects are matched by name.",
 	"freshbooks:tasks":       "Freshbooks tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
 	"freshbooks:timeentries": "Freshbooks tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
+	"teamweek:users":         "Teamweek users will be imported as Toggl users. Existing users are matched by e-mail.",
+	"teamweek:projects":      "Teamweek projects will be imported as Toggl projects. Existing projects are matched by name.",
+	"teamweek:tasks":         "Teamweek tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
 }
 
 var automaticOptions = map[string]bool{
@@ -58,6 +65,9 @@ var automaticOptions = map[string]bool{
 	"freshbooks:projects":    true,
 	"freshbooks:tasks":       true,
 	"freshbooks:timeentries": true,
+	"teamweek:users":         false,
+	"teamweek:projects":      true,
+	"teamweek:tasks":         true,
 }
 
 var premiumOptions = map[string]bool{
@@ -69,6 +79,9 @@ var premiumOptions = map[string]bool{
 	"freshbooks:projects":    false,
 	"freshbooks:tasks":       true,
 	"freshbooks:timeentries": true,
+	"teamweek:users":         false,
+	"teamweek:projects":      false,
+	"teamweek:tasks":         true,
 }
 
 func NewIntegration(serviceName string) *Integration {

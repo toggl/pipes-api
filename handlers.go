@@ -13,7 +13,7 @@ type Selector struct {
 	IDs []int `json:"ids"`
 }
 
-var serviceType = regexp.MustCompile("basecamp|freshbooks")
+var serviceType = regexp.MustCompile("basecamp|freshbooks|teamweek")
 var pipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
 
 func getIntegrations(req Request) Response {
@@ -160,7 +160,7 @@ func postAuthorization(req Request) Response {
 		authorization.Data, err = oAuth2Exchange(serviceID, payload)
 	}
 	if err != nil {
-		return badRequest(err.Error())
+		return internalServerError(err.Error())
 	}
 
 	if err := authorization.save(); err != nil {
