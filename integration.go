@@ -21,7 +21,7 @@ type (
 var availableIntegration = map[string][]string{
 	"basecamp":   {"users", "projects", "todolists", "todos"},
 	"freshbooks": {"users", "projects", "tasks", "timeentries"},
-	"teamweek":   {"users", "projects", "tasks"},
+	//"teamweek":   {"users", "projects", "tasks"},
 }
 
 var availableAuthorizations = map[string]string{
