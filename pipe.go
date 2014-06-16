@@ -67,7 +67,6 @@ const (
 func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
 	return &Pipe{
 		ID:          pipeID,
-		Name:        strings.Title(pipeID),
 		key:         pipesKey(serviceID, pipeID),
 		serviceID:   serviceID,
 		workspaceID: workspaceID,

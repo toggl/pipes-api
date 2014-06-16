@@ -50,7 +50,7 @@ var availableDescriptions = map[string]string{
 	"freshbooks:users":       "Freshbooks users will be imported as Toggl users. Existing users are matched by e-mail.",
 	"freshbooks:projects":    "Freshbooks projects will be imported as Toggl projects. Existing projects are matched by name.",
 	"freshbooks:tasks":       "Freshbooks tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
-	"freshbooks:timeentries": "Freshbooks tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
+	"freshbooks:timeentries": "Toggl time entries that are assigned to Freshbooks tasks will be exported your Freshbooks timesheet.",
 	"teamweek:users":         "Teamweek users will be imported as Toggl users. Existing users are matched by e-mail.",
 	"teamweek:projects":      "Teamweek projects will be imported as Toggl projects. Existing projects are matched by name.",
 	"teamweek:tasks":         "Teamweek tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
@@ -82,6 +82,16 @@ var premiumOptions = map[string]bool{
 	"teamweek:users":         false,
 	"teamweek:projects":      false,
 	"teamweek:tasks":         true,
+}
+
+var pipeNames = map[string]string{
+	"users":       "Users",
+	"tasks":       "Tasks",
+	"todos":       "Todos",
+	"clients":     "Clients",
+	"projects":    "Projects",
+	"todolists":   "Todo lists",
+	"timeentries": "Time entries export",
 }
 
 func NewIntegration(serviceName string) *Integration {
@@ -125,6 +135,7 @@ func workspaceIntegrations(workspaceID int) ([]*Integration, error) {
 			if pipe == nil {
 				pipe = NewPipe(workspaceID, serviceID, pipeID)
 			}
+			pipe.Name = pipeNames[pipeID]
 			pipe.PipeStatus = pipeStatuses[key]
 			pipe.Premium = premiumOptions[key]
 			pipe.Description = availableDescriptions[key]
