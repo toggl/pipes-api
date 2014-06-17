@@ -311,6 +311,7 @@ func (t *Transport) Refresh() error {
 	err := t.updateToken(t.Token, url.Values{
 		"grant_type":    {"refresh_token"},
 		"refresh_token": {t.RefreshToken},
+		"type":          {"refresh"},
 	})
 	if err != nil {
 		return err
