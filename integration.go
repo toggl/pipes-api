@@ -21,25 +21,29 @@ type (
 var availableIntegration = map[string][]string{
 	"basecamp":   {"users", "projects", "todolists", "todos"},
 	"freshbooks": {"users", "projects", "tasks", "timeentries"},
-	//"teamweek":   {"users", "projects", "tasks"},
+	"teamweek":   {"users", "projects", "tasks"},
+	"asana":      {"users", "projects", "tasks"},
 }
 
 var availableAuthorizations = map[string]string{
 	"freshbooks": "oauth1",
 	"basecamp":   "oauth2",
 	"teamweek":   "oauth2",
+	"asana":      "oauth2",
 }
 
 var availableImages = map[string]string{
 	"basecamp":   "/images/logo-basecamp.png",
 	"freshbooks": "/images/logo-freshbooks.png",
 	"teamweek":   "/images/logo-teamweek.png",
+	"asana":      "/images/logo-asana.png",
 }
 
 var availableLinks = map[string]string{
 	"basecamp":   "http://support.toggl.com/basecamp",
 	"freshbooks": "http://support.toggl.com/freshbooks",
 	"teamweek":   "http://support.toggl.com/teamweek",
+	"asana":      "http://support.toggl.com/asana",
 }
 
 var availableDescriptions = map[string]string{
@@ -54,6 +58,9 @@ var availableDescriptions = map[string]string{
 	"teamweek:users":         "Teamweek users will be imported as Toggl users. Existing users are matched by e-mail.",
 	"teamweek:projects":      "Teamweek projects will be imported as Toggl projects. Existing projects are matched by name.",
 	"teamweek:tasks":         "Teamweek tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
+	"asana:users":            "Asana users will be imported as Toggl users. Existing users are matched by e-mail.",
+	"asana:projects":         "Asana projects will be imported as Toggl projects. Existing projects are matched by name.",
+	"asana:tasks":            "Asana tasks will be imported as Toggl tasks. Existing tasks are matched by name.",
 }
 
 var automaticOptions = map[string]bool{
@@ -68,6 +75,9 @@ var automaticOptions = map[string]bool{
 	"teamweek:users":         false,
 	"teamweek:projects":      true,
 	"teamweek:tasks":         true,
+	"asana:users":            false,
+	"asana:projects":         true,
+	"asana:tasks":            true,
 }
 
 var premiumOptions = map[string]bool{
@@ -82,6 +92,9 @@ var premiumOptions = map[string]bool{
 	"teamweek:users":         false,
 	"teamweek:projects":      false,
 	"teamweek:tasks":         true,
+	"asana:users":            false,
+	"asana:projects":         false,
+	"asana:tasks":            true,
 }
 
 var pipeNames = map[string]string{

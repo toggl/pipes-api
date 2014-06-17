@@ -115,6 +115,8 @@ func getService(serviceID string, workspaceID int) Service {
 		return Service(&FreshbooksService{workspaceID: workspaceID})
 	case "teamweek":
 		return Service(&TeamweekService{workspaceID: workspaceID})
+	case "asana":
+		return Service(&AsanaService{workspaceID: workspaceID})
 	default:
 		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
 	}

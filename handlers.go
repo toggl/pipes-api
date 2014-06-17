@@ -13,7 +13,7 @@ type Selector struct {
 	IDs []int `json:"ids"`
 }
 
-var serviceType = regexp.MustCompile("basecamp|freshbooks|teamweek")
+var serviceType = regexp.MustCompile("basecamp|freshbooks|teamweek|asana")
 var pipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
 
 func getIntegrations(req Request) Response {
