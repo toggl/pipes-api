@@ -183,6 +183,10 @@ func deleteAuthorization(req Request) Response {
 	if err := authorization.destroy(service); err != nil {
 		return internalServerError(err.Error())
 	}
+	_, err = db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
+	if err != nil {
+		return internalServerError(err.Error())
+	}
 	return ok(nil)
 }
 

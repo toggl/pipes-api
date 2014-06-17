@@ -44,7 +44,7 @@ const (
   `
 	deletePipeSQL = `DELETE FROM pipes
     WHERE workspace_id = $1
-    AND key = $2
+    AND key LIKE $2
   `
 	insertPipesSQL = `
     WITH existing_pipe AS (
