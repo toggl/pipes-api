@@ -190,15 +190,18 @@ func (c *Config) AuthCodeURL(state string) string {
 	if err != nil {
 		panic("AuthURL malformed: " + err.Error())
 	}
-	q := url.Values{
+	values := url.Values{
 		"response_type":   {"code"},
 		"client_id":       {c.ClientId},
 		"redirect_uri":    {c.RedirectURL},
-		"scope":           {c.Scope},
 		"state":           {state},
 		"access_type":     {c.AccessType},
 		"approval_prompt": {c.ApprovalPrompt},
-	}.Encode()
+	}
+	if c.Scope != "" {
+		values.Add("scope", c.Scope)
+	}
+	q := values.Encode()
 	if url_.RawQuery == "" {
 		url_.RawQuery = q
 	} else {
