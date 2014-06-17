@@ -59,6 +59,36 @@ func loadAuth(s Service) (*Authorization, error) {
 	return &authorization, nil
 }
 
+func (a *Authorization) refresh() error {
+	if availableAuthorizations[a.ServiceID] != "oauth2" {
+		return nil
+	}
+	var token oauth.Token
+	if err := json.Unmarshal(a.Data, &token); err != nil {
+		return err
+	}
+	if !token.Expired() {
+		return nil
+	}
+	config, res := oAuth2Configs[a.ServiceID+"_"+*environment]
+	if !res {
+		return errors.New("service OAuth config not found")
+	}
+	transport := &oauth.Transport{Config: config, Token: &token}
+	if err := transport.Refresh(); err != nil {
+		return err
+	}
+	b, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+	a.Data = b
+	if err := a.save(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *Authorization) save() error {
 	_, err := db.Exec(insertAuthorizationSQL,
 		a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
