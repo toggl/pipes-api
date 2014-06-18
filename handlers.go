@@ -75,6 +75,35 @@ func postPipeSetup(req Request) Response {
 	return ok(nil)
 }
 
+func putPipeSetup(req Request) Response {
+	workspaceID := currentWorkspaceID(req.r)
+	serviceID := mux.Vars(req.r)["service"]
+	if !serviceType.MatchString(serviceID) {
+		return badRequest("Missing or invalid service")
+	}
+	pipeID := mux.Vars(req.r)["pipe"]
+	if !pipeType.MatchString(pipeID) {
+		return badRequest("Missing or invalid pipe")
+	}
+	if len(req.body) == 0 {
+		return badRequest("Missing payload")
+	}
+	pipe, err := loadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if pipe == nil {
+		return badRequest("Pipe is not configured")
+	}
+	if err := json.Unmarshal(req.body, &pipe); err != nil {
+		return internalServerError(err.Error())
+	}
+	if err := pipe.save(); err != nil {
+		return internalServerError(err.Error())
+	}
+	return ok(nil)
+}
+
 func deletePipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
@@ -85,7 +114,6 @@ func deletePipeSetup(req Request) Response {
 	if !pipeType.MatchString(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
-
 	pipe, err := loadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
@@ -93,11 +121,9 @@ func deletePipeSetup(req Request) Response {
 	if pipe == nil {
 		return badRequest("Pipe is not configured")
 	}
-
 	if err := pipe.destroy(workspaceID); err != nil {
 		return internalServerError(err.Error())
 	}
-
 	return ok(nil)
 }
 
