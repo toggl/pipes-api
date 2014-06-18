@@ -114,6 +114,6 @@ func postPipesAPI(APIToken, pipeID string, payload interface{}) ([]byte, error) 
 	if 200 != resp.StatusCode {
 		return b, fmt.Errorf("%s failed with status code %d", url, resp.StatusCode)
 	}
-	log.Println("Response from Toggl API:", string(b), "-", time.Since(start))
+	log.Println("Toggl request", url, "time", time.Since(start))
 	return b, nil
 }
