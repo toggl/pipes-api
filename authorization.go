@@ -24,7 +24,7 @@ const (
 		LIMIT 1
   `
 	insertAuthorizationSQL = `WITH existing_auth AS (
-		UPDATE authorizations SET data = $4
+		UPDATE authorizations SET data = $4, workspace_token = $3
 		WHERE workspace_id = $1 AND service = $2
 		RETURNING service
 	),
