@@ -23,9 +23,21 @@ const (
 		AND service = $2
 		LIMIT 1
   `
-	insertAuthorizationSQL = `INSERT INTO
+	insertAuthorizationSQL = `WITH existing_auth AS (
+		UPDATE authorizations SET data = $4
+		WHERE workspace_id = $1 AND service = $2
+		RETURNING service
+	),
+	inserted_auth AS (
+		INSERT INTO
 		authorizations(workspace_id, service, workspace_token, data)
-		VALUES($1, $2, $3, $4)
+		SELECT $1, $2, $3, $4
+		WHERE NOT EXISTS (SELECT 1 FROM existing_auth)
+		RETURNING service
+	)
+	SELECT * FROM inserted_auth
+	UNION
+	SELECT * FROM existing_auth
   `
 	deleteAuthorizationSQL = `DELETE FROM authorizations
 		WHERE workspace_id = $1

@@ -144,6 +144,9 @@ func (p *Pipe) loadAuth() error {
 	if err != nil {
 		return err
 	}
+	if err = auth.refresh(); err != nil {
+		return err
+	}
 	p.authorization = auth
 	return nil
 }
