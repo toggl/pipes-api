@@ -139,6 +139,9 @@ func (c *Client) Request(path string, opt *Filter, v interface{}) error {
 		opt = &Filter{}
 	}
 	if opt.OptFields == "" {
+		// default options should not modify provided options
+		newOpt := *opt
+		opt = &newOpt
 		opt.OptFields = defaultOptFields[path]
 	}
 	urlStr, err := addOptions(path, opt)
