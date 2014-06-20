@@ -276,8 +276,11 @@ func postTodoLists(p *Pipe) error {
 	if err := json.Unmarshal(b, &tasksImport); err != nil {
 		return err
 	}
+	connection, err := loadConnection(s, "todolists")
+	if err != nil {
+		return err
+	}
 
-	connection := NewConnection(s, "todolists")
 	for _, task := range tasksImport.Tasks {
 		connection.Data[task.ForeignID] = task.ID
 	}
@@ -308,8 +311,11 @@ func postTasks(p *Pipe) error {
 	if err := json.Unmarshal(b, &tasksImport); err != nil {
 		return err
 	}
+	connection, err := loadConnection(s, "tasks")
+	if err != nil {
+		return err
+	}
 
-	connection := NewConnection(s, "tasks")
 	for _, task := range tasksImport.Tasks {
 		connection.Data[task.ForeignID] = task.ID
 	}
@@ -416,7 +422,10 @@ func fetchTodoLists(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	tasks, err := p.Service().TodoLists()
+
+	service := p.Service()
+	service.setSince(p.lastSync)
+	tasks, err := service.TodoLists()
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -424,11 +433,11 @@ func fetchTodoLists(p *Pipe) error {
 
 	var projectConnections, taskConnections *Connection
 
-	if projectConnections, err = loadConnection(p.Service(), "projects"); err != nil {
+	if projectConnections, err = loadConnection(service, "projects"); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = loadConnection(p.Service(), "todolists"); err != nil {
+	if taskConnections, err = loadConnection(service, "todolists"); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -458,18 +467,20 @@ func fetchTasks(p *Pipe) error {
 		return err
 	}
 
-	tasks, err := p.Service().Tasks()
+	service := p.Service()
+	service.setSince(p.lastSync)
+	tasks, err := service.Tasks()
 	if err != nil {
 		response.Error = err.Error()
 		return err
 	}
 	var projectConnections, taskConnections *Connection
 
-	if projectConnections, err = loadConnection(p.Service(), "projects"); err != nil {
+	if projectConnections, err = loadConnection(service, "projects"); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = loadConnection(p.Service(), "tasks"); err != nil {
+	if taskConnections, err = loadConnection(service, "tasks"); err != nil {
 		response.Error = err.Error()
 		return err
 	}

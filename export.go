@@ -2,6 +2,7 @@ package main
 
 import (
 	"strconv"
+	"time"
 )
 
 func fetchTimeEntries(p *Pipe) error {
@@ -26,8 +27,13 @@ func postTimeEntries(p *Pipe) error {
 		return err
 	}
 
+	if p.lastSync == nil {
+		currentTime := time.Now()
+		p.lastSync = &currentTime
+	}
+
 	timeEntries, err := getTogglTimeEntries(
-		p.authorization.WorkspaceToken, p.lastSync,
+		p.authorization.WorkspaceToken, *p.lastSync,
 		usersCon.getKeys(), projectsCon.getKeys(),
 	)
 	if err != nil {

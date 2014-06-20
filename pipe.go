@@ -27,7 +27,7 @@ type Pipe struct {
 	pipeID        string
 	key           string
 	payload       []byte
-	lastSync      time.Time
+	lastSync      *time.Time
 }
 
 const (
@@ -170,10 +170,7 @@ func (p *Pipe) run() {
 }
 
 func (p *Pipe) loadLastSync() {
-	err := db.QueryRow(lastSyncSQL, p.workspaceID, p.key).Scan(&p.lastSync)
-	if err != nil {
-		p.lastSync = time.Now()
-	}
+	db.QueryRow(lastSyncSQL, p.workspaceID, p.key).Scan(&p.lastSync)
 }
 
 func (p *Pipe) fetchObjects(saveStatus bool) (err error) {

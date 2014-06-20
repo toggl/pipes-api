@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 const (
@@ -16,7 +17,8 @@ const (
 
 type (
 	Client struct {
-		AccessToken string
+		AccessToken   string
+		ModifiedSince *time.Time
 	}
 
 	Account struct {
@@ -177,12 +179,16 @@ func (c *Client) GetTodoList(accountID, projectID, listID int) (*TodoList, error
 }
 
 func (c *Client) get(url string) ([]byte, error) {
+	start := time.Now()
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+	if c.ModifiedSince != nil {
+		req.Header.Set("If-Modified-Since", c.ModifiedSince.Format(http.TimeFormat))
+	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -192,6 +198,10 @@ func (c *Client) get(url string) ([]byte, error) {
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	fmt.Println("BASECAMP REQ", url, "time", time.Since(start))
+	if 304 == resp.StatusCode {
+		return []byte("null"), nil
 	}
 	if 200 != resp.StatusCode {
 		return b, fmt.Errorf("%s failed with status code %d", url, resp.StatusCode)
