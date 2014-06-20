@@ -40,10 +40,10 @@ type (
 
 	Project struct {
 		ID       int    `json:"id,omitempty"`
-		Name     string `json:"name"`
-		Active   bool   `json:"active"`
-		Billable bool   `json:"billable"`
-		ClientID int    `json:"cid"`
+		Name     string `json:"name,omitempty"`
+		Active   bool   `json:"active,omitempty"`
+		Billable bool   `json:"billable,omitempty"`
+		ClientID int    `json:"cid,omitempty"`
 
 		ForeignID       string `json:"foreign_id,omitempty"`
 		foreignClientID int
