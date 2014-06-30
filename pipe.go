@@ -172,7 +172,18 @@ func (p *Pipe) run() {
 func (p *Pipe) loadLastSync() {
 	err := db.QueryRow(lastSyncSQL, p.workspaceID, p.key).Scan(&p.lastSync)
 	if err != nil {
-		p.lastSync = time.Now()
+		var err error
+		t := time.Now()
+		date := struct {
+			StartDate string `json:"start_date"`
+		}{}
+		if err = json.Unmarshal(p.ServiceParams, &date); err != nil {
+			p.lastSync = time.Now()
+		}
+		if t, err = time.Parse("2006-01-02", date.StartDate); err != nil {
+			p.lastSync = time.Now()
+		}
+		p.lastSync = t
 	}
 }
 
