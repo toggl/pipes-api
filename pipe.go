@@ -237,7 +237,10 @@ func (p *Pipe) endSync(saveStatus bool, err error) error {
 }
 
 func (p *Pipe) destroy(workspaceID int) error {
-	_, err := db.Exec(deletePipeSQL, workspaceID, p.key)
+	if _, err := db.Exec(deletePipeSQL, workspaceID, p.key); err != nil {
+		return err
+	}
+	_, err := db.Exec(deletePipeStatusSQL, workspaceID, p.key)
 	return err
 }
 

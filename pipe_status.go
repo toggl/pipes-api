@@ -33,6 +33,10 @@ const (
     WHERE workspace_id = $1
     AND key = $2 LIMIT 1
   `
+	deletePipeStatusSQL = `DELETE FROM pipes_status
+		WHERE workspace_id = $1
+		AND key LIKE $2
+  `
 	lastSyncSQL = `SELECT (data->>'sync_date')::timestamp with time zone
     FROM pipes_status
     WHERE workspace_id = $1
