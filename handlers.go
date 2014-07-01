@@ -223,12 +223,12 @@ func getServiceAccounts(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := getService(serviceID, workspaceID)
-	if auth, err := loadAuth(service); err != nil {
+	auth, err := loadAuth(service)
+	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
-	} else {
-		if err := auth.refresh(); err != nil {
-			return badRequest("oAuth refresh failed!")
-		}
+	}
+	if err := auth.refresh(); err != nil {
+		return badRequest("oAuth refresh failed!")
 	}
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {
