@@ -60,7 +60,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go autoSyncRunner()
+	if *environment == "production" {
+		go autoSyncRunner()
+	}
 
 	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", *environment, *port))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), http.DefaultServeMux))
