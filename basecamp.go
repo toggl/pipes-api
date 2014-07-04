@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"github.com/toggl/go-basecamp"
 	"strconv"
+	"time"
 )
 
 type BasecampService struct {
 	workspaceID int
 	*BasecampParams
-	token oauth.Token
+	token         oauth.Token
+	modifiedSince *time.Time
 }
 
 type BasecampParams struct {
@@ -51,8 +53,15 @@ func (s *BasecampService) setAuthData(b []byte) error {
 	return nil
 }
 
+func (s *BasecampService) setSince(since *time.Time) {
+	s.modifiedSince = since
+}
+
 func (s *BasecampService) client() *basecamp.Client {
-	return &basecamp.Client{AccessToken: s.token.AccessToken}
+	return &basecamp.Client{
+		ModifiedSince: s.modifiedSince,
+		AccessToken:   s.token.AccessToken,
+	}
 }
 
 // Map basecamp accounts to local accounts
@@ -121,10 +130,16 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 		return nil, err
 	}
 	var tasks []*Task
+	if len(foreignObjects) == 0 {
+		return tasks, nil
+	}
 	for _, object := range foreignObjects {
 		todoList, err := c.GetTodoList(s.AccountID, object.ProjectId, object.Id)
 		if err != nil {
 			return nil, err
+		}
+		if todoList == nil {
+			continue
 		}
 		for _, todo := range todoList.Todos.Remaining {
 			task := Task{

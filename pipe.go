@@ -27,7 +27,7 @@ type Pipe struct {
 	pipeID        string
 	key           string
 	payload       []byte
-	lastSync      time.Time
+	lastSync      *time.Time
 }
 
 const (
