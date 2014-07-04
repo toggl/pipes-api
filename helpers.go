@@ -385,7 +385,10 @@ func fetchProjects(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	projects, err := p.Service().Projects()
+
+	service := p.Service()
+	service.setSince(p.lastSync)
+	projects, err := service.Projects()
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -393,11 +396,11 @@ func fetchProjects(p *Pipe) error {
 	response.Projects = projects
 
 	var clientConnections, projectConnections *Connection
-	if clientConnections, err = loadConnection(p.Service(), "clients"); err != nil {
+	if clientConnections, err = loadConnection(service, "clients"); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if projectConnections, err = loadConnection(p.Service(), "projects"); err != nil {
+	if projectConnections, err = loadConnection(service, "projects"); err != nil {
 		response.Error = err.Error()
 		return err
 	}

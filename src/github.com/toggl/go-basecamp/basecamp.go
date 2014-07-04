@@ -41,22 +41,25 @@ type (
 		Description string `json:"description"`
 		Archived    bool   `json:"archived"`
 		Starred     bool   `json:"starred"`
+		UpdatedAt time.Time `json:"updated_at"`
 	}
 
 	Todo struct {
-		Id      int    `json:"id"`
-		Content string `json:"content"`
-		DueAt   string `json:"due_at"`
+		Id        int       `json:"id"`
+		Content   string    `json:"content"`
+		DueAt     string    `json:"due_at"`
+		UpdatedAt time.Time `json:"updated_at"`
 	}
 
 	TodoList struct {
-		Id             int    `json:"id"`
-		Name           string `json:"name"`
-		Description    string `json:"description"`
-		Completed      bool   `json:"completed"`
-		CompletedCount int    `json:"completed_count"`
-		RemainingCount int    `json:"remaining_count"`
-		ProjectId      int    `json:"project_id"`
+		Id             int       `json:"id"`
+		Name           string    `json:"name"`
+		Description    string    `json:"description"`
+		Completed      bool      `json:"completed"`
+		CompletedCount int       `json:"completed_count"`
+		RemainingCount int       `json:"remaining_count"`
+		ProjectId      int       `json:"project_id"`
+		UpdatedAt      time.Time `json:"updated_at"`
 
 		Bucket struct {
 			Id   int    `json:"id"`

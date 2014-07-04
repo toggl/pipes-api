@@ -76,7 +76,7 @@ func (p *PipeStatus) save() error {
 		if len(p.ObjectCounts) > 0 {
 			p.Message = fmt.Sprintf("%s successfully imported", strings.Join(p.ObjectCounts, ", "))
 		} else {
-			p.Message = fmt.Sprintf("There was nothing to import/export")
+			p.Message = fmt.Sprintf("No new %s were imported/exported", p.pipeID)
 		}
 	}
 	b, err := json.Marshal(p)

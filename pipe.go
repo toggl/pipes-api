@@ -177,13 +177,10 @@ func (p *Pipe) loadLastSync() {
 		date := struct {
 			StartDate string `json:"start_date"`
 		}{}
-		if err = json.Unmarshal(p.ServiceParams, &date); err != nil {
-			p.lastSync = time.Now()
+		if err = json.Unmarshal(p.ServiceParams, &date); err == nil {
+			t, _ = time.Parse("2006-01-02", date.StartDate)
 		}
-		if t, err = time.Parse("2006-01-02", date.StartDate); err != nil {
-			p.lastSync = time.Now()
-		}
-		p.lastSync = t
+		p.lastSync = &t
 	}
 }
 
