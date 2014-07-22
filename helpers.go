@@ -12,6 +12,7 @@ func getAccounts(s Service) (*AccountsResponse, error) {
 	rows, err := db.Query(`
 		SELECT data FROM imports
 		WHERE workspace_id = $1 AND key = $2
+		ORDER by created_at DESC
 		LIMIT 1
 	`, s.WorkspaceID(), s.keyFor("accounts"))
 	if err != nil {
