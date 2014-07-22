@@ -1,7 +1,7 @@
 APPNAME=pipes-api
 export GOPATH=$(shell pwd)
 
-default: clean build fmt lint
+default: clean build fmt
 
 vet:
 	go vet
