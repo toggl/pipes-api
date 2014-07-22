@@ -66,7 +66,7 @@ type (
 		StartTime      string   `json:"start_time,omitempty"`
 		EndTime        string   `json:"end_time,omitempty"`
 		Color          string   `json:"color,omitempty"`
-		EstimatedHours string   `json:"estimated_hours,omitempty"`
+		EstimatedHours float64  `json:"estimated_hours,omitempty"`
 		Pinned         bool     `json:"pinned,omitempty"`
 		Done           bool     `json:"done,omitempty"`
 		UserID         int64    `json:"user_id,omitempty"`
