@@ -6,6 +6,9 @@ default: clean build fmt
 vet:
 	go vet
 
+test:
+	go test
+
 run: vet fmt 
 	go build -o $(APPNAME) && ./$(APPNAME)
 
