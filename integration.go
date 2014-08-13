@@ -48,6 +48,7 @@ func workspaceIntegrations(workspaceID int) ([]Integration, error) {
 			if pipe == nil {
 				pipe = integrationPipe
 			}
+			pipe.Premium = integrationPipe.Premium
 			pipe.PipeStatus = pipeStatuses[key]
 			pipe.serviceID = integration.ID
 			pipe.workspaceID = workspaceID
