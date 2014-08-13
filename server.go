@@ -21,9 +21,10 @@ var (
 		PipesAPIHost  map[string]string   `json:"pipes_api_host"`
 		CorsWhitelist map[string][]string `json:"cors_whitelist"`
 	}{}
-
-	oAuth2Configs map[string]*oauth.Config
-	oAuth1Configs map[string]*oauthplain.Config
+	availableAuthorizations = map[string]string{}
+	oAuth2Configs           map[string]*oauth.Config
+	oAuth1Configs           map[string]*oauthplain.Config
+	availableIntegrations   []*Integration
 )
 
 func main() {
@@ -37,6 +38,8 @@ func main() {
 
 	db = connectDB(*dbHost, *dbPort, *dbName, *dbUser, *dbPass)
 	defer db.Close()
+
+	loadIntegrations()
 
 	b, err := ioutil.ReadFile(filepath.Join(*workdir, "config", "urls.json"))
 	if err != nil {
@@ -60,12 +63,26 @@ func main() {
 		log.Fatal(err)
 	}
 
+	for _, integration := range availableIntegrations {
+		availableAuthorizations[integration.ID] = integration.AuthType
+	}
+
 	if *environment == "production" {
 		go autoSyncRunner()
 	}
 
 	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", *environment, *port))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), http.DefaultServeMux))
+}
+
+func loadIntegrations() {
+	b, err := ioutil.ReadFile(filepath.Join(*workdir, "config", "integrations.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &availableIntegrations); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func isWhiteListedCorsOrigin(r *http.Request) (string, bool) {

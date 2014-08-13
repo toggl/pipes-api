@@ -19,8 +19,8 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
 	}
 
-  for i, _ := range integrations {
-	  integrations[i].Pipes = nil
+	for i, _ := range integrations {
+		integrations[i].Pipes = nil
 	}
 
 	want := []Integration{
@@ -43,36 +43,36 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 
 	want := [][]*Pipe{
-    { // Basecamp
-	    {ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
-	    {ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
-	    {ID: "todolists", Name: "Todo lists", Premium: true, AutomaticOption: true},
-	    {ID: "todos", Name: "Todos", Premium: true, AutomaticOption: true},
-    },
-    { // Freshbooks
-	    {ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
-	    {ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
-	    {ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true},
-	    {ID: "timeentries", Name: "Time entries", Premium: true, AutomaticOption: true},
-    },
-    { // Teamweek
-	    {ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
-	    {ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
-	    {ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true},
-    },
-    { // Asana
-	    {ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
-	    {ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
-	    {ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true},
-    },
+		{ // Basecamp
+			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false, workspaceID: 1, serviceID: "basecamp", key: "basecamp:users"},
+			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true, workspaceID: 1, serviceID: "basecamp", key: "basecamp:projects"},
+			{ID: "todolists", Name: "Todo lists", Premium: true, AutomaticOption: true, workspaceID: 1, serviceID: "basecamp", key: "basecamp:todolists"},
+			{ID: "todos", Name: "Todos", Premium: true, AutomaticOption: true, workspaceID: 1, serviceID: "basecamp", key: "basecamp:todos"},
+		},
+		{ // Freshbooks
+			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false, workspaceID: 1, serviceID: "freshbooks", key: "freshbooks:users"},
+			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true, workspaceID: 1, serviceID: "freshbooks", key: "freshbooks:projects"},
+			{ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true, workspaceID: 1, serviceID: "freshbooks", key: "freshbooks:tasks"},
+			{ID: "timeentries", Name: "Time entries", Premium: true, AutomaticOption: true, workspaceID: 1, serviceID: "freshbooks", key: "freshbooks:timeentries"},
+		},
+		{ // Teamweek
+			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false, workspaceID: 1, serviceID: "teamweek", key: "teamweek:users"},
+			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true, workspaceID: 1, serviceID: "teamweek", key: "teamweek:projects"},
+			{ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true, workspaceID: 1, serviceID: "teamweek", key: "teamweek:tasks"},
+		},
+		{ // Asana
+			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false, workspaceID: 1, serviceID: "asana", key: "asana:users"},
+			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true, workspaceID: 1, serviceID: "asana", key: "asana:projects"},
+			{ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true, workspaceID: 1, serviceID: "asana", key: "asana:tasks"},
+		},
 	}
 
-  for i, _ := range integrations {
-    for j, pipe := range integrations[i].Pipes {
-      pipe.Description = ""
-      if !reflect.DeepEqual(pipe, want[i][j]) {
-        t.Errorf("workspaceIntegrations returned %+v, want %+v", pipe, want[i][j])
-      }
-    }
-  }
+	for i, _ := range integrations {
+		for j, pipe := range integrations[i].Pipes {
+			pipe.Description = ""
+			if !reflect.DeepEqual(pipe, want[i][j]) {
+				t.Errorf("workspaceIntegrations returned %+v, want %+v", pipe, want[i][j])
+			}
+		}
+	}
 }
