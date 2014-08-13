@@ -13,6 +13,7 @@ install:
 before_script:
   - psql -c 'CREATE database pipes_test;' -U postgres
   - psql pipes_test < db/schema.sql
+  - mv config-sample config
   - export PATH=$HOME/gopath/bin:$PATH
   - export GOPATH=$TRAVIS_BUILD_DIR:$GOPATH
 
