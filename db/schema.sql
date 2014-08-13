@@ -1,3 +1,5 @@
+CREATE ROLE pipes_user WITH CREATEDB;
+
 CREATE TABLE authorizations(
   workspace_id INTEGER,
   workspace_token VARCHAR(50),
