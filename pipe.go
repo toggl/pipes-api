@@ -13,7 +13,6 @@ type Pipe struct {
 	ID              string      `json:"id"`
 	Name            string      `json:"name"`
 	Description     string      `json:"description,omitempty"`
-	AccountName     string      `json:"account_name,omitempty"`
 	Automatic       bool        `json:"automatic,omitempty"`
 	AutomaticOption bool        `json:"automatic_option"`
 	Configured      bool        `json:"configured"`
