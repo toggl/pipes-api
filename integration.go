@@ -24,9 +24,6 @@ var pipeNames = map[string]string{
 }
 
 func workspaceIntegrations(workspaceID int) ([]Integration, error) {
-	// FIXME: if authorizations, workspace pipes, pipe statues
-	// don't block each others loading, load all 3 at the same time.
-
 	authorizations, err := loadAuthorizations(workspaceID)
 	if err != nil {
 		return nil, err
