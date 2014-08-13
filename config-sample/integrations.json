@@ -1,0 +1,136 @@
+[
+	{
+		"id": "basecamp",
+		"name": "Basecamp",
+		"auth_type": "oauth2",
+		"image": "/images/logo-basecamp.png",
+		"link": "http://support.toggl.com/basecamp",
+		"pipes": [
+			{
+				"id": "users",
+				"name": "Users",
+				"premium": false,
+				"automatic_option": false,
+				"description": "Basecamp users will be imported as Toggl users. Existing users are matched by e-mail."
+			},
+			{
+				"id": "projects",
+				"name": "Projects",
+				"premium": false,
+				"automatic_option": true,
+				"description": "Basecamp projects will be imported as Toggl projects. Existing projects are matched by name."
+			},
+			{
+				"id": "todolists",
+				"name": "Todo lists",
+				"premium": true,
+				"automatic_option": true,
+				"description": "Basecamp todolists will be imported as Toggl tasks. Existing tasks are matched by name."
+			},
+			{
+				"id": "todos",
+				"name": "Todos",
+				"premium": true,
+				"automatic_option": true,
+				"description": "Basecamp todos will be imported as Toggl tasks. Existing tasks are matched by name."
+			}
+		]
+	},
+	{
+		"id": "freshbooks",
+		"name": "Freshbooks",
+		"auth_type": "oauth1",
+		"image": "/images/logo-freshbooks.png",
+		"link": "http://support.toggl.com/freshbooks",
+		"pipes": [
+			{
+				"id": "users",
+				"name": "Users",
+				"premium": false,
+				"automatic_option": false,
+				"description": "Freshbooks users will be imported as Toggl users. Existing users are matched by e-mail."
+			},
+			{
+				"id": "projects",
+				"name": "Projects",
+				"premium": false,
+				"automatic_option": true,
+				"description": "Freshbooks projects will be imported as Toggl projects. Existing projects are matched by name."
+			},
+			{
+				"id": "tasks",
+				"name": "Tasks",
+				"premium": true,
+				"automatic_option": true,
+				"description": "Freshbooks tasks will be imported as Toggl tasks. Existing tasks are matched by name."
+			},
+			{
+				"id": "timeentries",
+				"name": "Time entries",
+				"premium": true,
+				"automatic_option": true,
+				"description": "Toggl time entries that are assigned to Freshbooks tasks will be exported your Freshbooks timesheet."
+			}
+		]
+	},
+	{
+		"id": "teamweek",
+		"name": "Teamweek",
+		"auth_type": "oauth2",
+		"image": "/images/logo-teamweek.png",
+		"link": "http://support.toggl.com/teamweek",
+		"pipes": [
+			{
+				"id": "users",
+				"name": "Users",
+				"premium": false,
+				"automatic_option": false,
+				"description": "Teamweek users will be imported as Toggl users. Existing users are matched by e-mail."
+			},
+			{
+				"id": "projects",
+				"name": "Projects",
+				"premium": false,
+				"automatic_option": true,
+				"description": "Teamweek projects will be imported as Toggl projects. Existing projects are matched by name."
+			},
+			{
+				"id": "tasks",
+				"name": "Tasks",
+				"premium": true,
+				"automatic_option": true,
+				"description": "Teamweek tasks will be imported as Toggl tasks. Existing tasks are matched by name."
+			}
+		]
+	},
+	{
+		"id": "asana",
+		"name": "Asana",
+		"auth_type": "oauth2",
+		"image": "/images/logo-asana.png",
+		"link": "http://support.toggl.com/asana",
+		"pipes": [
+			{
+				"id": "users",
+				"name": "Users",
+				"premium": false,
+				"automatic_option": false,
+				"description": "Asana users will be imported as Toggl users. Existing users are matched by e-mail."
+			},
+			{
+				"id": "projects",
+				"name": "Projects",
+				"premium": false,
+				"automatic_option": true,
+				"description": "Asana projects will be imported as Toggl projects. Existing projects are matched by name."
+			},
+			{
+				"id": "tasks",
+				"name": "Tasks",
+				"premium": true,
+				"automatic_option": true,
+				"description": "Asana tasks will be imported as Toggl tasks. Existing tasks are matched by name."
+			}
+		]
+	}
+]
