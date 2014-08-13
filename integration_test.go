@@ -15,7 +15,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	integrations, err := workspaceIntegrations(workspaceID)
 
   if err != nil {
-    t.Errorf("workspaceIntegrations returned error: %v", err)
+    t.Fatalf("workspaceIntegrations returned error: %v", err)
   }
 
   for i, _ := range integrations {
