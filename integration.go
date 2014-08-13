@@ -107,7 +107,7 @@ var pipeNames = map[string]string{
 	"timeentries": "Time entries export",
 }
 
-func NewIntegration(serviceName string) *Integration {
+func NewIntegration(serviceName string) Integration {
 	integration := Integration{
 		ID:       serviceName,
 		Name:     strings.Title(serviceName),
@@ -116,10 +116,10 @@ func NewIntegration(serviceName string) *Integration {
 		AuthType: availableAuthorizations[serviceName],
 		AuthURL:  oAuth2URL(serviceName),
 	}
-	return &integration
+	return integration
 }
 
-func workspaceIntegrations(workspaceID int) ([]*Integration, error) {
+func workspaceIntegrations(workspaceID int) ([]Integration, error) {
 	// FIXME: if authorizations, workspace pipes, pipe statues
 	// don't block each others loading, load all 3 at the same time.
 
@@ -138,7 +138,7 @@ func workspaceIntegrations(workspaceID int) ([]*Integration, error) {
 		return nil, err
 	}
 
-	var integrations []*Integration
+	var integrations []Integration
 	for serviceID, pipeIDs := range availableIntegration {
 		integration := NewIntegration(serviceID)
 		integration.Authorized = authorizations[serviceID]
