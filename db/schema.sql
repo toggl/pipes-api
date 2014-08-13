@@ -1,4 +1,4 @@
-CREATE ROLE pipes_user WITH CREATEDB;
+CREATE ROLE pipes_user WITH LOGIN;
 
 CREATE TABLE authorizations(
   workspace_id INTEGER,
