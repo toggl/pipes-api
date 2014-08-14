@@ -13,16 +13,6 @@ type (
 	}
 )
 
-var pipeNames = map[string]string{
-	"users":       "Users",
-	"tasks":       "Tasks",
-	"todos":       "Todos",
-	"clients":     "Clients",
-	"projects":    "Projects",
-	"todolists":   "Todo lists",
-	"timeentries": "Time entries export",
-}
-
 func workspaceIntegrations(workspaceID int) ([]Integration, error) {
 	authorizations, err := loadAuthorizations(workspaceID)
 	if err != nil {
@@ -38,25 +28,26 @@ func workspaceIntegrations(workspaceID int) ([]Integration, error) {
 	}
 
 	var integrations []Integration
-	for _, integration := range availableIntegrations {
+	for j, _ := range availableIntegrations {
+		var integration = *availableIntegrations[j]
 		integration.AuthURL = oAuth2URL(integration.ID)
 		integration.Authorized = authorizations[integration.ID]
 		var pipes []*Pipe
-		for _, integrationPipe := range integration.Pipes {
-			key := pipesKey(integration.ID, integrationPipe.ID)
-			pipe := workspacePipes[key]
-			if pipe == nil {
-				pipe = integrationPipe
+		for i, _ := range integration.Pipes {
+			var pipe = *integration.Pipes[i]
+			key := pipesKey(integration.ID, pipe.ID)
+
+			existingPipe := workspacePipes[key]
+			if existingPipe != nil {
+				pipe.Automatic = existingPipe.Automatic
+				pipe.Configured = existingPipe.Configured
 			}
-			pipe.Premium = integrationPipe.Premium
+
 			pipe.PipeStatus = pipeStatuses[key]
-			pipe.serviceID = integration.ID
-			pipe.workspaceID = workspaceID
-			pipe.key = key
-			pipes = append(pipes, pipe)
+			pipes = append(pipes, &pipe)
 		}
 		integration.Pipes = pipes
-		integrations = append(integrations, *integration)
+		integrations = append(integrations, integration)
 	}
 	return integrations, nil
 }
