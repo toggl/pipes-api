@@ -28,8 +28,8 @@ var (
 	oAuth1Configs           map[string]*oauthplain.Config
 	availableIntegrations   []*Integration
 
-	serviceType = regexp.MustCompile("basecamp|freshbooks|teamweek|asana|github")
-	pipeType    = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
+	pipeType    *regexp.Regexp
+	serviceType *regexp.Regexp
 )
 
 func main() {
@@ -93,6 +93,7 @@ func loadIntegrations() {
 		ids = append(ids, availableIntegrations[i].ID)
 	}
 	serviceType = regexp.MustCompile(strings.Join(ids, "|"))
+	pipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
 }
 
 func isWhiteListedCorsOrigin(r *http.Request) (string, bool) {
