@@ -132,5 +132,21 @@
 				"description": "Asana tasks will be imported as Toggl tasks. Existing tasks are matched by name."
 			}
 		]
+	},
+	{
+		"id": "github",
+		"name": "Github",
+		"auth_type": "oauth2",
+		"image": "/images/logo-github.png",
+		"link": "https://github.com/toggl/pipes-api",
+		"pipes": [
+			{
+				"id": "projects",
+				"name": "Github repos",
+				"premium": false,
+				"automatic_option": true,
+				"description": "Github repos will be imported as Toggl projects. Existing projects are matched by name."
+			}
+		]
 	}
 ]
