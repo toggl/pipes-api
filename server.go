@@ -11,7 +11,9 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strings"
 )
 
 var (
@@ -25,6 +27,9 @@ var (
 	oAuth2Configs           map[string]*oauth.Config
 	oAuth1Configs           map[string]*oauthplain.Config
 	availableIntegrations   []*Integration
+
+	serviceType = regexp.MustCompile("basecamp|freshbooks|teamweek|asana|github")
+	pipeType    = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
 )
 
 func main() {
@@ -83,6 +88,11 @@ func loadIntegrations() {
 	if err := json.Unmarshal(b, &availableIntegrations); err != nil {
 		log.Fatal(err)
 	}
+	ids := make([]string, len(availableIntegrations))
+	for i, _ := range availableIntegrations {
+		ids = append(ids, availableIntegrations[i].ID)
+	}
+	serviceType = regexp.MustCompile(strings.Join(ids, "|"))
 }
 
 func isWhiteListedCorsOrigin(r *http.Request) (string, bool) {

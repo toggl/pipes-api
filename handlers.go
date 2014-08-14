@@ -5,16 +5,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/tambet/oauthplain"
 	"net/http"
-	"regexp"
 	"time"
 )
 
 type Selector struct {
 	IDs []int `json:"ids"`
 }
-
-var serviceType = regexp.MustCompile("basecamp|freshbooks|teamweek|asana")
-var pipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
 
 func getIntegrations(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
