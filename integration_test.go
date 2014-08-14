@@ -31,7 +31,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 
 	if len(integrations) != len(want) {
-		t.Fatalf("integration count does not match")
+		t.Fatalf("New integration(s) detected - please add tests!")
 	}
 
 	if !reflect.DeepEqual(want, integrations) {
@@ -72,7 +72,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 
 	if len(integrations) != len(want) {
-		t.Fatalf("integration count does not match")
+		t.Fatalf("New integration(s) detected - please add tests!")
 	}
 
 	for i, _ := range integrations {
