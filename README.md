@@ -18,7 +18,7 @@ Backend for the Toggl Pipes project. Currently in development.
 ## Creating a new pipe
 Each new service must implement [Service][2] inteface. Currently only services with OAuth 2.0 or OAuth 1.0 "PLAINTEXT" authentication are supported.
 
-## New Pipe example
+## New pipe example
 Lets create a pipe to fetch Github repos to Toggl project. First, add the new integration to `config/integrations.json`
 ```json
 {
@@ -47,14 +47,12 @@ Next register a new [Github application](https://github.com/settings/application
   "ClientSecret": "<<GITHUB APP CLIENT SECRET>>",
   "AuthURL": "https://github.com/login/oauth/authorize",
   "TokenURL": "https://github.com/login/oauth/access_token",
-  "RedirectURL": "https://fubar.toggl.com/app/pipes-oauth/"
+  "RedirectURL": "<<REDIRECT URL>>"
 }
 ```
 
 For accessing the GitHub API we are going to use the [go-github](https://github.com/google/go-github/) client library.
-Install the pacakge with `go get github.com/google/go-github/github`
-
-Now the actual GithubService implementation.
+Install the pacakge with `go get github.com/google/go-github/github`. Now the actual GithubService implementation.
 
 ```go
 package main
