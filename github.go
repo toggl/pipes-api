@@ -15,7 +15,7 @@ type GithubService struct {
 }
 
 func (s *GithubService) Name() string {
-  return "github"
+	return "github"
 }
 
 func (s *GithubService) WorkspaceID() int {
@@ -44,7 +44,7 @@ func (s *GithubService) Accounts() ([]*Account, error) {
 func (s *GithubService) Projects() ([]*Project, error) {
 	repos, _, err := s.client().Repositories.List("", nil)
 	if err != nil {
-	  return nil, err
+		return nil, err
 	}
 	var projects []*Project
 	for _, object := range repos {
