@@ -3,10 +3,15 @@ export GOPATH=$(shell pwd)
 
 default: clean build fmt
 
+inittestdb:
+	- psql -c 'DROP database pipes_test;' -U postgres
+	psql -c 'CREATE database pipes_test;' -U postgres
+	psql pipes_test < db/schema.sql
+
 vet:
 	go vet
 
-test:
+test: inittestdb
 	go test
 
 run: vet fmt 
