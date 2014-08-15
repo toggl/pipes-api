@@ -128,5 +128,8 @@ case "github":
   return Service(&GithubService{workspaceID: workspaceID})
 ```
 
+All this in one [commit](https://github.com/toggl/pipes-api/commit/9307171c4dcad429cfaa3c406adde7b5ff765340).
+We also need to enable the Github integration in [pipes-ui](https://github.com/toggl/pipes-ui/commit/4039a2bc50294d4054d21918f0af627196ff1999) project.
+
 [1]: https://github.com/toggl/pipes-ui
 [2]: https://github.com/toggl/pipes-api/blob/master/service.go
