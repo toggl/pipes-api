@@ -17,8 +17,10 @@ test: inittestdb
 run: vet fmt 
 	go build -o $(APPNAME) && ./$(APPNAME)
 
-lint:
+bin/golint:
 	go get github.com/golang/lint/golint
+
+lint: bin/golint
 	bin/golint *.go
 
 dist_dir:
