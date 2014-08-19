@@ -12,10 +12,11 @@ type (
 	}
 
 	User struct {
-		ID        int    `json:"id,omitempty"`
-		Email     string `json:"email"`
-		Name      string `json:"name"`
-		ForeignID string `json:"foreign_id,omitempty"`
+		ID             int    `json:"id,omitempty"`
+		Email          string `json:"email"`
+		Name           string `json:"name"`
+		ForeignID      string `json:"foreign_id,omitempty"`
+		SendInvitation bool   `json:"send_invitation,omitempty"`
 	}
 
 	Client struct {

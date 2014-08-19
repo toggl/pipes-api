@@ -9,7 +9,8 @@ import (
 )
 
 type Selector struct {
-	IDs []int `json:"ids"`
+	IDs         []int `json:"ids"`
+	SendInvites bool  `json:"send_invites"`
 }
 
 func getIntegrations(req Request) Response {

@@ -162,6 +162,7 @@ func postUsers(p *Pipe) error {
 	for _, userID := range selector.IDs {
 		for _, user := range usersResponse.Users {
 			if user.ForeignID == strconv.Itoa(userID) {
+				user.SendInvitation = selector.SendInvites
 				users = append(users, user)
 			}
 		}
