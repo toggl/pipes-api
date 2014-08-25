@@ -3,13 +3,13 @@ go-teamweek
 
 [Go](http://golang.org) library for accessing the [Teamweek API](https://github.com/Teamweek/teamweek/wiki)
 
-[![Build Status](https://travis-ci.org/tambet/go-teamweek.svg?branch=master)](https://travis-ci.org/tambet/go-teamweek)
-[![Coverage Status](https://coveralls.io/repos/tambet/go-teamweek/badge.png?branch=master)](https://coveralls.io/r/tambet/go-teamweek?branch=master)
+[![Build Status](https://travis-ci.org/toggl/go-teamweek.svg?branch=master)](https://travis-ci.org/toggl/go-teamweek)
+[![Coverage Status](https://coveralls.io/repos/toggl/go-teamweek/badge.png?branch=master)](https://coveralls.io/r/toggl/go-teamweek?branch=master)
 
 ### Usage ###
 
 ```go
-import "github.com/tambet/go-teamweek/teamweek"
+import "github.com/toggl/go-teamweek/teamweek"
 ```
 
 Create a new Teamweek client instance, then use provided methods on the client to

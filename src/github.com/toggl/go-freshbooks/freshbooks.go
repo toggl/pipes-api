@@ -5,9 +5,10 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/tambet/oauthplain"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/toggl/oauthplain"
 )
 
 type (

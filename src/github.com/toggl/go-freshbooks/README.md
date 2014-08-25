@@ -17,7 +17,7 @@ projects, err := api.Projects()
 
 OAuth authentication
 ---------------
-The FreshBooks API also supports OAuth to authorize applications. [oauthplain](https://github.com/tambet/oauthplain) package is used to generate 'Authorization' headers.
+The FreshBooks API also supports OAuth to authorize applications. [oauthplain](https://github.com/toggl/oauthplain) package is used to generate 'Authorization' headers.
 
 ```go
 token := &oauthplain.Token{

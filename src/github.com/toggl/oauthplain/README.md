@@ -8,4 +8,4 @@ Installation
 
 Install oauthplain using the "go get" command:
 
-    go get github.com/tambet/oauthplain
+    go get github.com/toggl/oauthplain

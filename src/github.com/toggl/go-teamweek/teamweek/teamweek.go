@@ -28,18 +28,14 @@ type (
 		Groups      []Group `json:"groups,omitempty"`
 	}
 
-	userFields struct {
-		ID         int64  `json:"id,omitempty"`
-		Email      string `json:"email,omitempty"`
-		Name       string `json:"name,omitempty"`
-		Initials   string `json:"initials,omitempty"`
-		PictureUrl string `json:"picture_url,omitempty"`
-		HasPicture bool   `json:"has_picture,omitempty"`
-		Color      string `json:"color,omitempty"`
-	}
-
 	Profile struct {
-		userFields
+		ID          int64         `json:"id,omitempty"`
+		Email       string        `json:"email,omitempty"`
+		Name        string        `json:"name,omitempty"`
+		Initials    string        `json:"initials,omitempty"`
+		PictureUrl  string        `json:"picture_url,omitempty"`
+		HasPicture  bool          `json:"has_picture,omitempty"`
+		Color       string        `json:"color,omitempty"`
 		Accounts    []Account     `json:"accounts,omitempty"`
 		Invitations []interface{} `json:"invitations,omitempty"`
 		CreatedAt   string        `json:"created_at,omitempty"`
@@ -47,9 +43,15 @@ type (
 	}
 
 	User struct {
-		userFields
-		Weight int64 `json:"weight,omitempty"`
-		Dummy  bool  `json:"dummy,omitempty"`
+		ID         int64  `json:"id,omitempty"`
+		Email      string `json:"email,omitempty"`
+		Name       string `json:"name,omitempty"`
+		Initials   string `json:"initials,omitempty"`
+		PictureUrl string `json:"picture_url,omitempty"`
+		HasPicture bool   `json:"has_picture,omitempty"`
+		Color      string `json:"color,omitempty"`
+		Weight     int64  `json:"weight,omitempty"`
+		Dummy      bool   `json:"dummy,omitempty"`
 	}
 
 	Project struct {
