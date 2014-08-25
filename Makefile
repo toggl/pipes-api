@@ -37,8 +37,11 @@ build:
 	go build
 
 clean:
-	rm -f $(APPNAME)
-	rm -rf dist
-	rm -rf pkg
-	rm -rf out
-	rm -rf bin
+	rm -rf $(APPNAME) dist pkg out bin
+
+bin/errcheck:
+	go get github.com/kisielk/errcheck
+
+errcheck: bin/errcheck
+	bin/errcheck -ignore 'Close|[wW]rite.*|Flush|Seek|[rR]ead.*|Notify|Rollback'
+
