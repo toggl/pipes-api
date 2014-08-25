@@ -1,12 +1,13 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tambet/go-asana/asana"
 	"strconv"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/toggl/go-asana/asana"
 )
 
 type AsanaService struct {

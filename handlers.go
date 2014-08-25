@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/tambet/oauthplain"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/toggl/oauthplain"
 )
 
 type Selector struct {

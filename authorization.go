@@ -1,11 +1,12 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/tambet/oauthplain"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/toggl/oauthplain"
 )
 
 type Authorization struct {

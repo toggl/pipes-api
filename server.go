@@ -1,12 +1,9 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/tambet/oauthplain"
-	"github.com/toggl/bugsnag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +11,10 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/toggl/bugsnag"
+	"github.com/toggl/oauthplain"
 )
 
 var (
