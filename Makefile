@@ -45,3 +45,6 @@ bin/errcheck:
 errcheck: bin/errcheck
 	bin/errcheck -ignore 'Close|[wW]rite.*|Flush|Seek|[rR]ead.*|Notify|Rollback'
 
+get:
+	go get
+
