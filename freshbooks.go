@@ -146,7 +146,7 @@ func (s *FreshbooksService) ExportTimeEntry(t *TimeEntry) (int, error) {
 		Date:        start.Format("2006-01-02"),
 	}
 	if entry.TaskId == 0 {
-		return 0, fmt.Errorf("Task not provided for time entry '%s'", entry.Notes)
+		return 0, fmt.Errorf("task not provided for time entry '%s'", entry.Notes)
 	}
 	return s.Api().SaveTimeEntry(entry)
 }

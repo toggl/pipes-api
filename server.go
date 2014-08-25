@@ -90,7 +90,7 @@ func loadIntegrations() {
 		log.Fatal(err)
 	}
 	ids := make([]string, len(availableIntegrations))
-	for i, _ := range availableIntegrations {
+	for i := range availableIntegrations {
 		ids = append(ids, availableIntegrations[i].ID)
 	}
 	serviceType = regexp.MustCompile(strings.Join(ids, "|"))

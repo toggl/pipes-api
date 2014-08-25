@@ -28,12 +28,12 @@ func workspaceIntegrations(workspaceID int) ([]Integration, error) {
 	}
 
 	var integrations []Integration
-	for j, _ := range availableIntegrations {
+	for j := range availableIntegrations {
 		var integration = *availableIntegrations[j]
 		integration.AuthURL = oAuth2URL(integration.ID)
 		integration.Authorized = authorizations[integration.ID]
 		var pipes []*Pipe
-		for i, _ := range integration.Pipes {
+		for i := range integration.Pipes {
 			var pipe = *integration.Pipes[i]
 			key := pipesKey(integration.ID, pipe.ID)
 

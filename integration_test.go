@@ -19,7 +19,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
 	}
 
-	for i, _ := range integrations {
+	for i := range integrations {
 		integrations[i].Pipes = nil
 	}
 
@@ -35,7 +35,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		t.Fatalf("New integration(s) detected - please add tests!")
 	}
 
-	for i, _ := range integrations {
+	for i := range integrations {
 		if !reflect.DeepEqual(integrations[i], want[i]) {
 			t.Fatalf("workspaceIntegrations returned  ---------->\n%+v, \nwant ---------->\n%+v", integrations[i], want[i])
 		}
@@ -81,7 +81,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		t.Fatalf("New integration(s) detected - please add tests!")
 	}
 
-	for i, _ := range integrations {
+	for i := range integrations {
 		for j, pipe := range integrations[i].Pipes {
 			pipe.Description = ""
 			if !reflect.DeepEqual(pipe, want[i][j]) {
