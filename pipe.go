@@ -4,9 +4,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/toggl/bugsnag"
+	"log"
 	"strings"
 	"time"
+
+	"github.com/toggl/bugsnag"
 )
 
 type Pipe struct {
@@ -132,8 +134,12 @@ func (p *Pipe) NewStatus() error {
 
 func (p *Pipe) Service() Service {
 	service := getService(p.serviceID, p.workspaceID)
-	service.setParams(p.ServiceParams)
-	loadAuth(service)
+	if err := service.setParams(p.ServiceParams); err != nil {
+		log.Panic(err)
+	}
+	if _, err := loadAuth(service); err != nil {
+		log.Panic(err)
+	}
 	return service
 }
 
@@ -152,7 +158,11 @@ func (p *Pipe) loadAuth() error {
 
 func (p *Pipe) run() {
 	var err error
-	defer func() { p.endSync(true, err) }()
+	defer func() {
+		if err2 := p.endSync(true, err); err2 != nil {
+			log.Panic(err2)
+		}
+	}()
 
 	if err = p.NewStatus(); err != nil {
 		return

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -230,14 +231,20 @@ func getServiceAccounts(req Request) Response {
 	}
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {
-		clearImportFor(service, "accounts")
+		if err := clearImportFor(service, "accounts"); err != nil {
+			return internalServerError(err.Error())
+		}
 	}
 	accountsResponse, err := getAccounts(service)
 	if err != nil {
 		return internalServerError("Unable to get accounts from DB")
 	}
 	if accountsResponse == nil {
-		go fetchAccounts(service)
+		go func() {
+			if err := fetchAccounts(service); err != nil {
+				log.Panic(err)
+			}
+		}()
 		return noContent()
 	}
 	return ok(accountsResponse)
@@ -268,7 +275,9 @@ func getServiceUsers(req Request) Response {
 
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {
-		clearImportFor(service, pipeID)
+		if err := clearImportFor(service, pipeID); err != nil {
+			return internalServerError(err.Error())
+		}
 	}
 
 	usersResponse, err := getUsers(service)
@@ -277,7 +286,11 @@ func getServiceUsers(req Request) Response {
 	}
 	if usersResponse == nil {
 		if forceImport == "true" {
-			go pipe.fetchObjects(false)
+			go func() {
+				if err := pipe.fetchObjects(false); err != nil {
+					log.Panic(err)
+				}
+			}()
 		}
 		return noContent()
 	}
