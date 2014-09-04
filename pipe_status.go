@@ -74,7 +74,7 @@ func NewPipeStatus(workspaceID int, serviceID, pipeID string) *PipeStatus {
 func (p *PipeStatus) save() error {
 	if p.Status == "success" {
 		if len(p.ObjectCounts) > 0 {
-			p.Message = fmt.Sprintf("%s successfully imported", strings.Join(p.ObjectCounts, ", "))
+			p.Message = fmt.Sprintf("%s successfully imported/exported", strings.Join(p.ObjectCounts, ", "))
 		} else {
 			p.Message = fmt.Sprintf("No new %s were imported/exported", p.pipeID)
 		}
