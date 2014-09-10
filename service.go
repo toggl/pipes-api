@@ -71,6 +71,10 @@ func getService(serviceID string, workspaceID int) Service {
 		return Service(&BasecampService{workspaceID: workspaceID})
 	case "freshbooks":
 		return Service(&FreshbooksService{workspaceID: workspaceID})
+	case "teamweek":
+		return Service(&TeamweekService{workspaceID: workspaceID})
+	case "asana":
+		return Service(&AsanaService{workspaceID: workspaceID})
 	case "github":
 		return Service(&GithubService{workspaceID: workspaceID})
 	default:
