@@ -3,13 +3,13 @@ go-asana
 
 [Go](http://golang.org) library for accessing the [Asana API](http://developer.asana.com/documentation/)
 
-[![Build Status](https://travis-ci.org/toggl/go-asana.svg?branch=master)](https://travis-ci.org/toggl/go-asana)
-[![Coverage Status](https://coveralls.io/repos/toggl/go-asana/badge.png?branch=master)](https://coveralls.io/r/toggl/go-asana?branch=master)
+[![Build Status](https://travis-ci.org/tambet/go-asana.svg?branch=master)](https://travis-ci.org/tambet/go-asana)
+[![Coverage Status](https://coveralls.io/repos/tambet/go-asana/badge.png?branch=master)](https://coveralls.io/r/tambet/go-asana?branch=master)
 
 ### Usage ###
 
 ```go
-import "github.com/toggl/go-asana/asana"
+import "github.com/tambet/go-asana/asana"
 ```
 
 Create a new Asana client instance, then use provided methods on the client to

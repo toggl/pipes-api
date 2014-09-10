@@ -40,7 +40,7 @@ type (
 		ID         int64       `json:"id,omitempty"`
 		Email      string      `json:"email,omitempty"`
 		Name       string      `json:"name,omitempty"`
-		Photo      string      `json:"photo,omitempty"`
+		Photo      interface{}      `json:"photo,omitempty"`
 		Workspaces []Workspace `json:"workspaces,omitempty"`
 	}
 

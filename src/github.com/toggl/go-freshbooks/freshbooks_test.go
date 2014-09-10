@@ -2,10 +2,9 @@ package freshbooks
 
 import (
 	"encoding/json"
+	"github.com/tambet/oauthplain"
 	"io/ioutil"
 	"testing"
-
-	"github.com/toggl/oauthplain"
 )
 
 type authConfig struct {
