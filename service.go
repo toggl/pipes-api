@@ -74,7 +74,7 @@ func getService(serviceID string, workspaceID int) Service {
 	case "github":
 		return Service(&GithubService{workspaceID: workspaceID})
 	default:
-		return Service(&emptyService{})
+		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
 	}
 }
 
@@ -87,10 +87,3 @@ func (s *emptyService) TodoLists() ([]*Task, error)             { return nil, ni
 func (s *emptyService) Projects() ([]*Project, error)           { return nil, nil }
 func (s *emptyService) Accounts() ([]*Account, error)           { return nil, nil }
 func (s *emptyService) ExportTimeEntry(*TimeEntry) (int, error) { return 0, nil }
-
-func (s *emptyService) Name() string     { return "" }
-func (s *emptyService) WorkspaceID() int { return 0 }
-func (s *emptyService) keyFor(objectType string) string {
-	return fmt.Sprintf("emptyService:%s", objectType)
-}
-func (s *emptyService) setAuthData(b []byte) error { return nil }
