@@ -37,7 +37,7 @@ const (
   `
 	selectAutomaticPipesSQL = `SELECT workspace_id, key, data
 		FROM pipes WHERE
-		data->>'automatic' = 'true' AND key NOT LIKE 'teamweek%' and key NOT LIKE 'asana%'
+		data->>'automatic' = 'true'
   `
 	singlePipesSQL = `SELECT workspace_id, key, data
     FROM pipes WHERE workspace_id = $1
