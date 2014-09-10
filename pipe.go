@@ -160,7 +160,8 @@ func (p *Pipe) run() {
 	var err error
 	defer func() {
 		if err2 := p.endSync(true, err); err2 != nil {
-			log.Panic(err2)
+			bugsnag.Notify(err2)
+			return
 		}
 	}()
 
