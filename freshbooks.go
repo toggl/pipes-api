@@ -3,11 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tambet/oauthplain"
+	"github.com/toggl/go-freshbooks"
 	"strconv"
 	"time"
-
-	"github.com/toggl/go-freshbooks"
-	"github.com/toggl/oauthplain"
 )
 
 type FreshbooksService struct {

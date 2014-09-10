@@ -1,13 +1,12 @@
 package main
 
 import (
+	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/tambet/go-teamweek/teamweek"
 	"strconv"
-
-	"code.google.com/p/goauth2/oauth"
-	"github.com/toggl/go-teamweek/teamweek"
 )
 
 type TeamweekService struct {
