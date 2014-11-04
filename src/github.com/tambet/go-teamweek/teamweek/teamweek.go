@@ -2,13 +2,14 @@ package teamweek
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 )
 
 const (
-	libraryVersion = "0.1"
+	libraryVersion = "0.2"
 	userAgent      = "go-teamweek/" + libraryVersion
 	defaultBaseURL = "https://new.teamweek.com/api/v3/"
 )
@@ -147,6 +148,23 @@ func NewClient(httpClient *http.Client) *Client {
 	return client
 }
 
+func handleResponseStatuses(resp *http.Response) error {
+	if resp.StatusCode >= 500 {
+		return errors.New("Teamweek API experienced an internal error. Please try again later.")
+	}
+	if resp.StatusCode == 400 {
+		return errors.New("Malformed request sent.")
+	}
+	if resp.StatusCode == 401 || resp.StatusCode == 403 {
+		return errors.New("Authorization error. Please check credentials and/or reauthenticate.")
+	}
+	if (resp.StatusCode > 200 && resp.StatusCode < 300) || resp.StatusCode > 403 {
+		return fmt.Errorf("Teamweek API returned an unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 func (c *Client) Request(urlStr string, v interface{}) error {
 	rel, err := url.Parse(urlStr)
 	if err != nil {
@@ -163,6 +181,9 @@ func (c *Client) Request(urlStr string, v interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
+	if err := handleResponseStatuses(resp); err != nil {
+		return err
+	}
 
 	return json.NewDecoder(resp.Body).Decode(v)
 }
