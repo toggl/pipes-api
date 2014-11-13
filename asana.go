@@ -105,7 +105,7 @@ func (s *AsanaService) Projects() ([]*Project, error) {
 		project := Project{
 			ForeignID: strconv.FormatInt(object.ID, 10),
 			Name:      object.Name,
-			Active:    true,
+			Active:    !object.Archived,
 		}
 		projects = append(projects, &project)
 	}
