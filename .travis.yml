@@ -6,10 +6,6 @@ go:
 addons:
   postgresql: "9.3"
 
-install:
-  - go get code.google.com/p/go.tools/cmd/cover
-  - go get github.com/mattn/goveralls
-
 before_script:
   - psql -c 'CREATE database pipes_test;' -U postgres
   - psql pipes_test < db/schema.sql
