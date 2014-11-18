@@ -137,9 +137,9 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 		return tasks, nil
 	}
 	for _, object := range foreignObjects {
-		if object.UpdatedAt.Before(*s.modifiedSince) {
-			continue
-		}
+		//if object.UpdatedAt.Before(*s.modifiedSince) {
+		//	continue
+		//}
 		todoList, err := c.GetTodoList(s.AccountID, object.ProjectId, object.Id)
 		if err != nil {
 			return nil, err
@@ -148,9 +148,9 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 			continue
 		}
 		for _, todo := range todoList.Todos.Remaining {
-			if todo.UpdatedAt.Before(*s.modifiedSince) {
-				continue
-			}
+			//if todo.UpdatedAt.Before(*s.modifiedSince) {
+			// 	continue
+			// }
 			task := Task{
 				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
@@ -160,9 +160,9 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 			tasks = append(tasks, &task)
 		}
 		for _, todo := range todoList.Todos.Completed {
-			if todo.UpdatedAt.Before(*s.modifiedSince) {
-				continue
-			}
+			// if todo.UpdatedAt.Before(*s.modifiedSince) {
+			// 	continue
+			// }
 			task := Task{
 				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
