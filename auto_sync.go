@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/toggl/bugsnag"
+	"github.com/bugsnag/bugsnag-go"
 	"log"
 	"time"
 )

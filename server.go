@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/bugsnag/bugsnag-go"
 	"github.com/tambet/oauthplain"
-	"github.com/toggl/bugsnag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -36,10 +36,12 @@ func main() {
 	flag.Parse()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	bugsnag.Verbose = true
-	bugsnag.APIKey = *bugsnagAPIKey
-	bugsnag.ReleaseStage = *environment
-	bugsnag.NotifyReleaseStages = []string{"staging", "production"}
+	bugsnag.Configure(bugsnag.Configuration{
+		APIKey:              *bugsnagAPIKey,
+		ReleaseStage:        *environment,
+		NotifyReleaseStages: []string{"production", "staging"},
+		// more configuration options
+	})
 
 	db = connectDB(*dbHost, *dbPort, *dbName, *dbUser, *dbPass)
 	defer db.Close()

@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	gouuid "github.com/nu7hatch/gouuid"
-	"github.com/toggl/bugsnag"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -178,7 +178,7 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 			b, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				log.Println(uuidToken, "Error:", err, r)
-				bugsnag.NotifyRequest(err, r)
+				bugsnag.Notify(err, r)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -199,7 +199,12 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		if err, isError := resp.content.(error); isError {
 			log.Println(uuidToken, "Error:", err, r)
 			if resp.status < 400 || resp.status >= 500 {
-				go bugsnag.New(err).WithRequest(r).WithMetaData("request", "uuid", uuidToken).Notify()
+				go bugsnag.Notify(err,
+					bugsnag.MetaData{
+						"request": {
+							"uuid": uuidToken,
+						},
+					})
 			}
 			http.Error(w, err.Error(), resp.status)
 			return
@@ -257,10 +262,6 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	uuidToken := u4.String()
 	context.Set(r, uuidKey, uuidToken)
-
-	defer bugsnag.OnCapturePanic(r, func(event bugsnag.EventDescriber) {
-		event.WithMetaData("request", "uuid", uuidToken)
-	})
 
 	log.Println(uuidToken, "Start", r.Method, r.URL, "for", parseRemoteAddr(r))
 

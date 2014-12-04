@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/toggl/bugsnag"
+	"github.com/bugsnag/bugsnag-go"
 )
 
 type Pipe struct {

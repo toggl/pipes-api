@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/toggl/bugsnag"
+	"github.com/bugsnag/bugsnag-go"
 	"strconv"
 )
 
