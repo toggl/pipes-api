@@ -23,6 +23,7 @@ func init() {
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", withAuth(handleRequest(postPipeSetup))).Methods("POST")
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", withAuth(handleRequest(deletePipeSetup))).Methods("DELETE")
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", withService(withAuth(handleRequest(getServicePipeLog)))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", withService(withAuth(handleRequest(postServicePipeClearConnections)))).Methods("POST")
 
 	v1.HandleFunc("/integrations/{service}/accounts", withAuth(handleRequest(getServiceAccounts))).Methods("GET")
 	v1.HandleFunc("/integrations/{service}/auth_url", withAuth(handleRequest(getAuthURL))).Methods("GET")

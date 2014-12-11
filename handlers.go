@@ -312,6 +312,17 @@ func getServicePipeLog(req Request) Response {
 	return Response{http.StatusOK, pipeStatus.generateLog(), "text/plain"}
 }
 
+func postServicePipeClearConnections(req Request) Response {
+	workspaceID := currentWorkspaceID(req.r)
+	serviceID, pipeID := currentServicePipeID(req.r)
+
+	err := clearPipeConnections(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return internalServerError("Unable to get clear connections")
+	}
+	return noContent()
+}
+
 func postPipeRun(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)

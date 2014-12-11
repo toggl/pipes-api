@@ -63,6 +63,10 @@ const (
     UNION
     SELECT * FROM existing_pipe
   `
+	deletePipeConnectionsSQL = `DELETE FROM connections
+    WHERE workspace_id = $1
+    AND key = $2
+  `
 )
 
 func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
@@ -300,4 +304,12 @@ func loadAutomaticPipes() ([]*Pipe, error) {
 		pipes = append(pipes, &pipe)
 	}
 	return pipes, nil
+}
+
+func clearPipeConnections(workspaceID int, serviceID, pipeID string) error {
+	key := pipesKey(serviceID, pipeID)
+
+	_, err := db.Exec(deletePipeConnectionsSQL, workspaceID, key)
+
+	return err
 }
