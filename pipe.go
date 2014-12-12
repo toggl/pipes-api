@@ -306,10 +306,10 @@ func loadAutomaticPipes() ([]*Pipe, error) {
 	return pipes, nil
 }
 
-func clearPipeConnections(workspaceID int, serviceID, pipeID string) error {
-	key := pipesKey(serviceID, pipeID)
+func (p *Pipe) clearPipeConnections() error {
+	key := p.Service().keyFor(p.ID)
 
-	_, err := db.Exec(deletePipeConnectionsSQL, workspaceID, key)
+	_, err := db.Exec(deletePipeConnectionsSQL, p.workspaceID, key)
 
 	return err
 }

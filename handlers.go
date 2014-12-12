@@ -316,7 +316,15 @@ func postServicePipeClearConnections(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	err := clearPipeConnections(workspaceID, serviceID, pipeID)
+	pipe, err := loadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
+	if pipe == nil {
+		return badRequest("Pipe is not configured")
+	}
+
+	err = pipe.clearPipeConnections()
 	if err != nil {
 		return internalServerError("Unable to get clear connections")
 	}
