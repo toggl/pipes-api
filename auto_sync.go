@@ -9,7 +9,7 @@ import (
 
 var wg sync.WaitGroup
 
-const channelCount = 3
+const channelCount = 5
 
 func runPipes(chs []chan *Pipe) {
 	wg.Add(len(chs))
