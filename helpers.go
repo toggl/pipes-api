@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+const maxPayloadSizeBytes = 10 * 1000 * 1000
+
 func getAccounts(s Service) (*AccountsResponse, error) {
 	var result []byte
 	rows, err := db.Query(`
@@ -267,29 +269,32 @@ func postTodoLists(p *Pipe) error {
 	if tasksResponse == nil {
 		return errors.New("service tasks not found")
 	}
-	tasks := taskRequest{
-		Tasks: tasksResponse.Tasks,
-	}
-	b, err := postPipesAPI(p.authorization.WorkspaceToken, "tasks", tasks)
+	trs, err := adjustRequestSize(tasksResponse.Tasks, 1)
 	if err != nil {
 		return err
 	}
-	var tasksImport TasksImport
-	if err := json.Unmarshal(b, &tasksImport); err != nil {
-		return err
-	}
-	connection, err := loadConnection(s, "todolists")
-	if err != nil {
-		return err
-	}
+	for _, tr := range trs {
+		b, err := postPipesAPI(p.authorization.WorkspaceToken, "tasks", tr)
+		if err != nil {
+			return err
+		}
+		var tasksImport TasksImport
+		if err := json.Unmarshal(b, &tasksImport); err != nil {
+			return err
+		}
+		connection, err := loadConnection(s, "todolists")
+		if err != nil {
+			return err
+		}
 
-	for _, task := range tasksImport.Tasks {
-		connection.Data[task.ForeignID] = task.ID
+		for _, task := range tasksImport.Tasks {
+			connection.Data[task.ForeignID] = task.ID
+		}
+		if err := connection.save(); err != nil {
+			return err
+		}
+		p.PipeStatus.complete("todolists", tasksImport.Notifications, tasksImport.Count())
 	}
-	if err := connection.save(); err != nil {
-		return err
-	}
-	p.PipeStatus.complete("todolists", tasksImport.Notifications, tasksImport.Count())
 	return nil
 }
 
@@ -302,29 +307,32 @@ func postTasks(p *Pipe) error {
 	if tasksResponse == nil {
 		return errors.New("service tasks not found")
 	}
-	tasks := taskRequest{
-		Tasks: tasksResponse.Tasks,
-	}
-	b, err := postPipesAPI(p.authorization.WorkspaceToken, "tasks", tasks)
+	trs, err := adjustRequestSize(tasksResponse.Tasks, 1)
 	if err != nil {
 		return err
 	}
-	var tasksImport TasksImport
-	if err := json.Unmarshal(b, &tasksImport); err != nil {
-		return err
-	}
-	connection, err := loadConnection(s, "tasks")
-	if err != nil {
-		return err
-	}
+	for _, tr := range trs {
+		b, err := postPipesAPI(p.authorization.WorkspaceToken, "tasks", tr)
+		if err != nil {
+			return err
+		}
+		var tasksImport TasksImport
+		if err := json.Unmarshal(b, &tasksImport); err != nil {
+			return err
+		}
+		connection, err := loadConnection(s, "tasks")
+		if err != nil {
+			return err
+		}
 
-	for _, task := range tasksImport.Tasks {
-		connection.Data[task.ForeignID] = task.ID
+		for _, task := range tasksImport.Tasks {
+			connection.Data[task.ForeignID] = task.ID
+		}
+		if err := connection.save(); err != nil {
+			return err
+		}
+		p.PipeStatus.complete(p.ID, tasksImport.Notifications, tasksImport.Count())
 	}
-	if err := connection.save(); err != nil {
-		return err
-	}
-	p.PipeStatus.complete(p.ID, tasksImport.Notifications, tasksImport.Count())
 	return nil
 }
 
@@ -500,4 +508,30 @@ func fetchTasks(p *Pipe) error {
 		}
 	}
 	return nil
+}
+
+func adjustRequestSize(tasks []*Task, split int) ([]*taskRequest, error) {
+	var trs []*taskRequest
+	size := (len(tasks) / split) + 1
+	for i := 0; i < split; i++ {
+		startIndex := i * size
+		endIndex := (i + 1) * size
+		if endIndex > len(tasks)-1 {
+			endIndex = len(tasks) - 1
+		}
+		t := taskRequest{
+			Tasks: tasks[startIndex:endIndex],
+		}
+		trs = append(trs, &t)
+	}
+	for _, tr := range trs {
+		j, err := json.Marshal(tr)
+		if err != nil {
+			return nil, err
+		}
+		if len(j) > maxPayloadSizeBytes {
+			return adjustRequestSize(tasks, split+1)
+		}
+	}
+	return trs, nil
 }
