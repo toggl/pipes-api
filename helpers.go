@@ -512,17 +512,20 @@ func fetchTasks(p *Pipe) error {
 
 func adjustRequestSize(tasks []*Task, split int) ([]*taskRequest, error) {
 	var trs []*taskRequest
-	size := (len(tasks) / split) + 1
+	var size int
+	size = len(tasks) / split
 	for i := 0; i < split; i++ {
 		startIndex := i * size
 		endIndex := (i + 1) * size
-		if endIndex > len(tasks)-1 {
-			endIndex = len(tasks) - 1
+		if i == split-1 {
+			endIndex = len(tasks)
 		}
-		t := taskRequest{
-			Tasks: tasks[startIndex:endIndex],
+		if endIndex > startIndex {
+			t := taskRequest{
+				Tasks: tasks[startIndex:endIndex],
+			}
+			trs = append(trs, &t)
 		}
-		trs = append(trs, &t)
 	}
 	for _, tr := range trs {
 		j, err := json.Marshal(tr)
