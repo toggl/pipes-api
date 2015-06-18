@@ -15,7 +15,7 @@ func generateTasks(nr int) []*Task {
 }
 
 func TestTaskSplitting(t *testing.T) {
-	taskCount := 100007
+	taskCount := 9007
 	for i := 1; i < 5; i++ {
 		ts := generateTasks(taskCount * i)
 		trs, err := adjustRequestSize(ts, 1)

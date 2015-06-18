@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-const maxPayloadSizeBytes = 10 * 1000 * 1000
+const maxPayloadSizeBytes = 800 * 1000
 
 func getAccounts(s Service) (*AccountsResponse, error) {
 	var result []byte
