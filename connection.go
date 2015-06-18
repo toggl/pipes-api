@@ -72,17 +72,13 @@ func loadConnection(s Service, pipeID string) (*Connection, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	connection := Connection{
-		workspaceID: s.WorkspaceID(),
-		Data:        make(map[string]int),
-		key:         s.keyFor(pipeID),
-	}
+	connection := NewConnection(s, pipeID)
 	if rows.Next() {
 		if err := connection.load(rows); err != nil {
 			return nil, err
 		}
 	}
-	return &connection, nil
+	return connection, nil
 }
 
 func loadConnectionRev(s Service, pipeID string) (*ReversedConnection, error) {

@@ -8,6 +8,11 @@ import (
 )
 
 const maxPayloadSizeBytes = 5 * 1000 * 1000
+const usersPipeID = "users"
+const clientsPipeID = "clients"
+const projectsPipeID = "projects"
+const tasksPipeId = "tasks"
+const todoPipesId = "todolists"
 
 func getAccounts(s Service) (*AccountsResponse, error) {
 	var result []byte
@@ -90,7 +95,7 @@ func getObject(s Service, pipeID string) ([]byte, error) {
 }
 
 func getUsers(s Service) (*UsersResponse, error) {
-	b, err := getObject(s, "users")
+	b, err := getObject(s, usersPipeID)
 	if err != nil || b == nil {
 		return nil, err
 	}
@@ -104,7 +109,7 @@ func getUsers(s Service) (*UsersResponse, error) {
 }
 
 func getClients(s Service) (*ClientsResponse, error) {
-	b, err := getObject(s, "clients")
+	b, err := getObject(s, clientsPipeID)
 	if err != nil || b == nil {
 		return nil, err
 	}
@@ -118,7 +123,7 @@ func getClients(s Service) (*ClientsResponse, error) {
 }
 
 func getProjects(s Service) (*ProjectsResponse, error) {
-	b, err := getObject(s, "projects")
+	b, err := getObject(s, projectsPipeID)
 	if err != nil || b == nil {
 		return nil, err
 	}
@@ -170,7 +175,7 @@ func postUsers(p *Pipe) error {
 		}
 	}
 
-	b, err := postPipesAPI(p.authorization.WorkspaceToken, "users", usersRequest{Users: users})
+	b, err := postPipesAPI(p.authorization.WorkspaceToken, usersPipeID, usersRequest{Users: users})
 	if err != nil {
 		return err
 	}
@@ -180,7 +185,10 @@ func postUsers(p *Pipe) error {
 		return err
 	}
 
-	connection := NewConnection(s, "users")
+	var connection *Connection
+	if connection, err = loadConnection(s, usersPipeID); err != nil {
+		return err
+	}
 	for _, user := range usersImport.WorkspaceUsers {
 		connection.Data[user.ForeignID] = user.ID
 	}
@@ -188,7 +196,7 @@ func postUsers(p *Pipe) error {
 		return err
 	}
 
-	p.PipeStatus.complete("users", usersImport.Notifications, usersImport.Count())
+	p.PipeStatus.complete(usersPipeID, usersImport.Notifications, usersImport.Count())
 	return nil
 }
 
@@ -207,7 +215,7 @@ func postClients(p *Pipe) error {
 	if len(clientsResponse.Clients) == 0 {
 		return nil
 	}
-	b, err := postPipesAPI(p.authorization.WorkspaceToken, "clients", clients)
+	b, err := postPipesAPI(p.authorization.WorkspaceToken, clientsPipeID, clients)
 	if err != nil {
 		return err
 	}
@@ -215,15 +223,17 @@ func postClients(p *Pipe) error {
 	if err := json.Unmarshal(b, &clientsImport); err != nil {
 		return err
 	}
-
-	connection := NewConnection(service, "clients")
+	var connection *Connection
+	if connection, err = loadConnection(service, clientsPipeID); err != nil {
+		return err
+	}
 	for _, client := range clientsImport.Clients {
 		connection.Data[client.ForeignID] = client.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
 	}
-	p.PipeStatus.complete("clients", clientsImport.Notifications, clientsImport.Count())
+	p.PipeStatus.complete(clientsPipeID, clientsImport.Notifications, clientsImport.Count())
 	return nil
 }
 
@@ -240,7 +250,7 @@ func postProjects(p *Pipe) error {
 		Projects: projectsResponse.Projects,
 	}
 
-	b, err := postPipesAPI(p.authorization.WorkspaceToken, "projects", projects)
+	b, err := postPipesAPI(p.authorization.WorkspaceToken, projectsPipeID, projects)
 	if err != nil {
 		return err
 	}
@@ -248,21 +258,23 @@ func postProjects(p *Pipe) error {
 	if err := json.Unmarshal(b, &projectsImport); err != nil {
 		return err
 	}
-
-	connection := NewConnection(s, "projects")
+	var connection *Connection
+	if connection, err = loadConnection(s, projectsPipeID); err != nil {
+		return err
+	}
 	for _, project := range projectsImport.Projects {
 		connection.Data[project.ForeignID] = project.ID
 	}
 	if err := connection.save(); err != nil {
 		return err
 	}
-	p.PipeStatus.complete("projects", projectsImport.Notifications, projectsImport.Count())
+	p.PipeStatus.complete(projectsPipeID, projectsImport.Notifications, projectsImport.Count())
 	return nil
 }
 
 func postTodoLists(p *Pipe) error {
 	s := p.Service()
-	tasksResponse, err := getTasks(s, "todolists")
+	tasksResponse, err := getTasks(s, todoPipesId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -273,8 +285,10 @@ func postTodoLists(p *Pipe) error {
 	if err != nil {
 		return err
 	}
+	var notifications []string
+	var count int
 	for _, tr := range trs {
-		b, err := postPipesAPI(p.authorization.WorkspaceToken, "tasks", tr)
+		b, err := postPipesAPI(p.authorization.WorkspaceToken, tasksPipeId, tr)
 		if err != nil {
 			return err
 		}
@@ -282,25 +296,26 @@ func postTodoLists(p *Pipe) error {
 		if err := json.Unmarshal(b, &tasksImport); err != nil {
 			return err
 		}
-		connection, err := loadConnection(s, "todolists")
+		connection, err := loadConnection(s, todoPipesId)
 		if err != nil {
 			return err
 		}
-
 		for _, task := range tasksImport.Tasks {
 			connection.Data[task.ForeignID] = task.ID
 		}
 		if err := connection.save(); err != nil {
 			return err
 		}
-		p.PipeStatus.complete("todolists", tasksImport.Notifications, tasksImport.Count())
+		notifications = append(notifications, tasksImport.Notifications...)
+		count += tasksImport.Count()
 	}
+	p.PipeStatus.complete(todoPipesId, notifications, count)
 	return nil
 }
 
 func postTasks(p *Pipe) error {
 	s := p.Service()
-	tasksResponse, err := getTasks(s, "tasks")
+	tasksResponse, err := getTasks(s, tasksPipeId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -311,8 +326,10 @@ func postTasks(p *Pipe) error {
 	if err != nil {
 		return err
 	}
+	var notifications []string
+	var count int
 	for _, tr := range trs {
-		b, err := postPipesAPI(p.authorization.WorkspaceToken, "tasks", tr)
+		b, err := postPipesAPI(p.authorization.WorkspaceToken, tasksPipeId, tr)
 		if err != nil {
 			return err
 		}
@@ -320,7 +337,7 @@ func postTasks(p *Pipe) error {
 		if err := json.Unmarshal(b, &tasksImport); err != nil {
 			return err
 		}
-		connection, err := loadConnection(s, "tasks")
+		connection, err := loadConnection(s, tasksPipeId)
 		if err != nil {
 			return err
 		}
@@ -331,8 +348,10 @@ func postTasks(p *Pipe) error {
 		if err := connection.save(); err != nil {
 			return err
 		}
-		p.PipeStatus.complete(p.ID, tasksImport.Notifications, tasksImport.Count())
+		notifications = append(notifications, tasksImport.Notifications...)
+		count += tasksImport.Count()
 	}
+	p.PipeStatus.complete(p.ID, notifications, count)
 	return nil
 }
 
@@ -356,7 +375,7 @@ func saveObject(p *Pipe, pipeID string, obj interface{}) error {
 func fetchUsers(p *Pipe) error {
 	users, err := p.Service().Users()
 	response := UsersResponse{Users: users}
-	defer func() { saveObject(p, "users", response) }()
+	defer func() { saveObject(p, usersPipeID, response) }()
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -367,12 +386,12 @@ func fetchUsers(p *Pipe) error {
 func fetchClients(p *Pipe) error {
 	clients, err := p.Service().Clients()
 	response := ClientsResponse{Clients: clients}
-	defer func() { saveObject(p, "clients", response) }()
+	defer func() { saveObject(p, clientsPipeID, response) }()
 	if err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	connections, err := loadConnection(p.Service(), "clients")
+	connections, err := loadConnection(p.Service(), clientsPipeID)
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -385,7 +404,7 @@ func fetchClients(p *Pipe) error {
 
 func fetchProjects(p *Pipe) error {
 	response := ProjectsResponse{}
-	defer func() { saveObject(p, "projects", response) }()
+	defer func() { saveObject(p, projectsPipeID, response) }()
 
 	if err := fetchClients(p); err != nil {
 		response.Error = err.Error()
@@ -406,11 +425,11 @@ func fetchProjects(p *Pipe) error {
 	response.Projects = projects
 
 	var clientConnections, projectConnections *Connection
-	if clientConnections, err = loadConnection(service, "clients"); err != nil {
+	if clientConnections, err = loadConnection(service, clientsPipeID); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if projectConnections, err = loadConnection(service, "projects"); err != nil {
+	if projectConnections, err = loadConnection(service, projectsPipeID); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -425,7 +444,7 @@ func fetchProjects(p *Pipe) error {
 
 func fetchTodoLists(p *Pipe) error {
 	response := TasksResponse{}
-	defer func() { saveObject(p, "todolists", response) }()
+	defer func() { saveObject(p, todoPipesId, response) }()
 
 	if err := fetchProjects(p); err != nil {
 		response.Error = err.Error()
@@ -446,11 +465,11 @@ func fetchTodoLists(p *Pipe) error {
 
 	var projectConnections, taskConnections *Connection
 
-	if projectConnections, err = loadConnection(service, "projects"); err != nil {
+	if projectConnections, err = loadConnection(service, projectsPipeID); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = loadConnection(service, "todolists"); err != nil {
+	if taskConnections, err = loadConnection(service, todoPipesId); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -469,7 +488,7 @@ func fetchTodoLists(p *Pipe) error {
 
 func fetchTasks(p *Pipe) error {
 	response := TasksResponse{}
-	defer func() { saveObject(p, "tasks", response) }()
+	defer func() { saveObject(p, tasksPipeId, response) }()
 
 	if err := fetchProjects(p); err != nil {
 		response.Error = err.Error()
@@ -489,11 +508,11 @@ func fetchTasks(p *Pipe) error {
 	}
 	var projectConnections, taskConnections *Connection
 
-	if projectConnections, err = loadConnection(service, "projects"); err != nil {
+	if projectConnections, err = loadConnection(service, projectsPipeID); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = loadConnection(service, "tasks"); err != nil {
+	if taskConnections, err = loadConnection(service, tasksPipeId); err != nil {
 		response.Error = err.Error()
 		return err
 	}
