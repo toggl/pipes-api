@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-const maxPayloadSizeBytes = 5 * 1000 * 1000
+const maxPayloadSizeBytes = 800 * 1000
 const usersPipeID = "users"
 const clientsPipeID = "clients"
 const projectsPipeID = "projects"
