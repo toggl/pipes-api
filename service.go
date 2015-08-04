@@ -77,6 +77,8 @@ func getService(serviceID string, workspaceID int) Service {
 		return Service(&AsanaService{workspaceID: workspaceID})
 	case "github":
 		return Service(&GithubService{workspaceID: workspaceID})
+	case TestServiceName:
+		return Service(&TestService{workspaceID: workspaceID})
 	default:
 		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
 	}

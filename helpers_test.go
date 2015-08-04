@@ -1,9 +1,54 @@
 package main
 
 import (
+	"code.google.com/p/goauth2/oauth"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 )
+
+const TestServiceName = "test_service"
+const p1Name = "Without surrounding spaces"
+const p2Name = "Trailing space "
+const p3Name = " Leading space"
+const p4Name = " Leading and trailing spaces "
+const p5Name = " "
+
+type TestService struct {
+	emptyService
+	workspaceID int
+	token       oauth.Token
+}
+
+func (s *TestService) Name() string {
+	return TestServiceName
+}
+
+func (s *TestService) WorkspaceID() int {
+	return s.workspaceID
+}
+
+func (s *TestService) keyFor(pipeID string) string {
+	return fmt.Sprintf("test:%s", pipeID)
+}
+
+func (s *TestService) setAuthData(b []byte) error {
+	if err := json.Unmarshal(b, &s.token); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TestService) Projects() ([]*Project, error) {
+	var ps []*Project
+	ps = append(ps, &Project{Name: p1Name})
+	ps = append(ps, &Project{Name: p2Name})
+	ps = append(ps, &Project{Name: p3Name})
+	ps = append(ps, &Project{Name: p4Name})
+	ps = append(ps, &Project{Name: p5Name})
+	return ps, nil
+}
 
 func generateTasks(nr int) []*Task {
 	var ts []*Task
@@ -69,5 +114,38 @@ func TestTaskSplittingSmallDifferent(t *testing.T) {
 		if totalCount != c {
 			t.Errorf("Expected total of %d tasks but got %d\n", c, totalCount)
 		}
+	}
+}
+
+func TestGetProjects(t *testing.T) {
+	db = connectDB(*dbHost, *dbPort, testDB, *dbUser, *dbPass)
+
+	p := NewPipe(1, TestServiceName, "projects")
+
+	fetchProjects(p)
+
+	b, err := getObject(p.Service(), "projects")
+	if err != nil {
+		t.Error(err)
+	}
+	var pr ProjectsResponse
+	err = json.Unmarshal(b, &pr)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(pr.Projects) != 4 {
+		t.Errorf("Expected 4 projects but got %d", len(pr.Projects))
+	}
+	if pr.Projects[0].Name != strings.TrimSpace(p1Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(p1Name), pr.Projects[0].Name)
+	}
+	if pr.Projects[1].Name != strings.TrimSpace(p2Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(p2Name), pr.Projects[1].Name)
+	}
+	if pr.Projects[2].Name != strings.TrimSpace(p3Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(p3Name), pr.Projects[2].Name)
+	}
+	if pr.Projects[3].Name != strings.TrimSpace(p4Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(p4Name), pr.Projects[3].Name)
 	}
 }

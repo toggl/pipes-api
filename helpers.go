@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/bugsnag/bugsnag-go"
 	"strconv"
+	"strings"
 )
 
 const maxPayloadSizeBytes = 800 * 1000
@@ -12,7 +13,7 @@ const usersPipeID = "users"
 const clientsPipeID = "clients"
 const projectsPipeID = "projects"
 const tasksPipeId = "tasks"
-const todoPipesId = "todolists"
+const todoPipeId = "todolists"
 
 func getAccounts(s Service) (*AccountsResponse, error) {
 	var result []byte
@@ -133,6 +134,7 @@ func getProjects(s Service) (*ProjectsResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &projectsResponse, nil
 }
 
@@ -274,7 +276,7 @@ func postProjects(p *Pipe) error {
 
 func postTodoLists(p *Pipe) error {
 	s := p.Service()
-	tasksResponse, err := getTasks(s, todoPipesId)
+	tasksResponse, err := getTasks(s, todoPipeId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -296,7 +298,7 @@ func postTodoLists(p *Pipe) error {
 		if err := json.Unmarshal(b, &tasksImport); err != nil {
 			return err
 		}
-		connection, err := loadConnection(s, todoPipesId)
+		connection, err := loadConnection(s, todoPipeId)
 		if err != nil {
 			return err
 		}
@@ -309,7 +311,7 @@ func postTodoLists(p *Pipe) error {
 		notifications = append(notifications, tasksImport.Notifications...)
 		count += tasksImport.Count()
 	}
-	p.PipeStatus.complete(todoPipesId, notifications, count)
+	p.PipeStatus.complete(todoPipeId, notifications, count)
 	return nil
 }
 
@@ -422,7 +424,8 @@ func fetchProjects(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	response.Projects = projects
+
+	response.Projects = trimSpacesFromName(projects)
 
 	var clientConnections, projectConnections *Connection
 	if clientConnections, err = loadConnection(service, clientsPipeID); err != nil {
@@ -444,7 +447,7 @@ func fetchProjects(p *Pipe) error {
 
 func fetchTodoLists(p *Pipe) error {
 	response := TasksResponse{}
-	defer func() { saveObject(p, todoPipesId, response) }()
+	defer func() { saveObject(p, todoPipeId, response) }()
 
 	if err := fetchProjects(p); err != nil {
 		response.Error = err.Error()
@@ -469,7 +472,7 @@ func fetchTodoLists(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = loadConnection(service, todoPipesId); err != nil {
+	if taskConnections, err = loadConnection(service, todoPipeId); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -556,4 +559,15 @@ func adjustRequestSize(tasks []*Task, split int) ([]*taskRequest, error) {
 		}
 	}
 	return trs, nil
+}
+
+func trimSpacesFromName(ps []*Project) []*Project {
+	var trimmedPs []*Project
+	for _, p := range ps {
+		p.Name = strings.TrimSpace(p.Name)
+		if len(p.Name) > 0 {
+			trimmedPs = append(trimmedPs, p)
+		}
+	}
+	return trimmedPs
 }
