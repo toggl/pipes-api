@@ -76,7 +76,7 @@ BEGIN
   WHERE data->>'automatic' = 'true'
   LOOP
   INSERT INTO queued_pipes (workspace_id, key)
-  VALUES (r.workspace_id, r.key)
+  SELECT r.workspace_id, r.key
   WHERE NOT EXISTS
   (
     SELECT 1 FROM queued_pipes 
