@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"net/http"
-	"time"
 )
 
 type Selector struct {
@@ -345,8 +344,10 @@ func postPipeRun(req Request) Response {
 	if msg := pipe.validatePayload(req.body); msg != "" {
 		return badRequest(msg)
 	}
-	go pipe.run()
-	time.Sleep(500 * time.Millisecond)
+	_, err = db.Exec(queuePipeAsFirstSQL, pipe.workspaceID, pipe.key)
+	if err != nil {
+		return internalServerError(err.Error())
+	}
 	return ok(nil)
 }
 

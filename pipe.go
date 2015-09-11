@@ -35,10 +35,6 @@ const (
 	selectPipesSQL = `SELECT workspace_id, key, data
     FROM pipes WHERE workspace_id = $1
   `
-	selectAutomaticPipesSQL = `SELECT workspace_id, key, data
-		FROM pipes WHERE
-		data->>'automatic' = 'true'
-  `
 	singlePipesSQL = `SELECT workspace_id, key, data
     FROM pipes WHERE workspace_id = $1
     AND key = $2 LIMIT 1
@@ -67,6 +63,19 @@ const (
     WHERE workspace_id = $1
     AND key = $2
   `
+	selectPipesFromQueueSQL = `SELECT workspace_id, key 
+	FROM get_queued_pipes()`
+
+	queueAutomaticPipesSQL = `SELECT queue_automatic_pipes()`
+
+	queuePipeAsFirstSQL = `SELECT queue_pipe_as_first($1, $2)`
+
+	setQueuedPipeSyncedSQL = `UPDATE queued_pipes 
+	SET synced_at = now()
+	WHERE workspace_id = $1
+	AND key = $2
+	AND locked_at IS NOT NULL
+	AND synced_at IS NULL`
 )
 
 func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
@@ -257,6 +266,10 @@ func (p *Pipe) destroy(workspaceID int) error {
 
 func loadPipe(workspaceID int, serviceID, pipeID string) (*Pipe, error) {
 	key := pipesKey(serviceID, pipeID)
+	return loadPipeWithKey(workspaceID, key)
+}
+
+func loadPipeWithKey(workspaceID int, key string) (*Pipe, error) {
 	rows, err := db.Query(singlePipesSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -289,27 +302,43 @@ func loadPipes(workspaceID int) (map[string]*Pipe, error) {
 	return pipes, nil
 }
 
-func loadAutomaticPipes() ([]*Pipe, error) {
-	var pipes []*Pipe
-	rows, err := db.Query(selectAutomaticPipesSQL)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var pipe Pipe
-		if err := pipe.load(rows); err != nil {
-			return nil, err
-		}
-		pipes = append(pipes, &pipe)
-	}
-	return pipes, nil
-}
-
 func (p *Pipe) clearPipeConnections() error {
 	key := p.Service().keyFor(p.ID)
 
 	_, err := db.Exec(deletePipeConnectionsSQL, p.workspaceID, key)
 
+	return err
+}
+
+func getPipesFromQueue() ([]*Pipe, error) {
+	var pipes []*Pipe
+	rows, err := db.Query(selectPipesFromQueueSQL)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var workspaceID int
+		var key string
+		err := rows.Scan(&workspaceID, &key)
+		if err != nil {
+			return nil, err
+		}
+		if workspaceID > 0 && len(key) > 0 {
+			pipe, err := loadPipeWithKey(workspaceID, key)
+			if err != nil {
+				return nil, err
+			}
+			pipes = append(pipes, pipe)
+		}
+	}
+	return pipes, nil
+}
+
+func setQueuedPipeSynced(pipe *Pipe) error {
+	_, err := db.Exec(setQueuedPipeSyncedSQL, pipe.workspaceID, pipe.key)
 	return err
 }

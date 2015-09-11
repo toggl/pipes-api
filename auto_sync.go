@@ -3,59 +3,111 @@ package main
 import (
 	"github.com/bugsnag/bugsnag-go"
 	"log"
+	"math/rand"
+	"strings"
 	"sync"
 	"time"
 )
 
 var wg sync.WaitGroup
 
-const channelCount = 5
+const (
+	workersCount = 5
+	sleepMin     = 300
+	sleepMax     = 900
+)
 
-func runPipes(chs []chan *Pipe) {
-	wg.Add(len(chs))
-	for _, ch := range chs {
-		go func(ch chan *Pipe) {
-			for pipe := range ch {
-				pipe.run()
+func runPipes() {
+	wg.Add(workersCount)
+	for i := 0; i < workersCount; i++ {
+		go pipeWorker()
+	}
+}
+
+func pipeWorker() {
+	for {
+		pipes, err := getPipesFromQueue()
+		if err != nil {
+			bugsnag.Notify(err)
+			break
+		}
+		if pipes == nil {
+			break
+		}
+		for _, pipe := range pipes {
+			pipe.run()
+			err := setQueuedPipeSynced(pipe)
+			if err != nil {
+				bugsnag.Notify(err)
 			}
-			wg.Done()
-		}(ch)
+		}
+	}
+	wg.Done()
+}
+
+func runPipesStub() {
+	wg.Add(workersCount)
+	for i := 0; i < workersCount; i++ {
+		go pipeWorkerStub()
 	}
 }
 
-func getPipes(chs []chan *Pipe) {
-	pipes, err := loadAutomaticPipes()
-	if err != nil {
-		bugsnag.Notify(err)
+func pipeWorkerStub() {
+	ranCount := 0
+	gotCount := 0
+	for {
+		pipes, err := getPipesFromQueue()
+		if err != nil {
+			bugsnag.Notify(err)
+			break
+		}
+		if pipes == nil {
+			break
+		}
+		gotCount += len(pipes)
+		for _, pipe := range pipes {
+			// NO PIPE RUN HERE
+			err := setQueuedPipeSynced(pipe)
+			if err != nil {
+				log.Printf("ERROR: %s\n", err.Error())
+			}
+			ranCount++
+		}
 	}
-	channelSelect := 0
-	for _, p := range pipes {
-		chs[channelSelect%len(chs)] <- p
-		channelSelect++
-	}
-	for _, ch := range chs {
-		close(ch)
-	}
-	wg.Wait()
-}
-
-func makeChannels(n int) []chan *Pipe {
-	chs := make([]chan *Pipe, n)
-	for i := 0; i < len(chs); i++ {
-		chs[i] = make(chan *Pipe)
-	}
-	return chs
+	log.Printf("Got %d pipes, ran %d pipes\n", gotCount, ranCount)
+	wg.Done()
 }
 
 func autoSyncRunner() {
-	// Sleep 1 minute before starting
-	time.Sleep(time.Minute)
 	for {
+		time.Sleep(time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second)
 		log.Println("-- Autosync started")
-		chs := makeChannels(channelCount)
-		runPipes(chs)
-		getPipes(chs)
+		runPipes()
+		wg.Wait()
 		log.Println("-- Autosync finished")
-		time.Sleep(10 * time.Minute)
+	}
+}
+
+func autoSyncRunnerStub() {
+	for {
+		time.Sleep(time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second)
+		log.Println("-- AutosyncStub started")
+		runPipesStub()
+		wg.Wait()
+		log.Println("-- AutosyncStub finished")
+	}
+}
+
+func autoSyncQueuer() {
+	for {
+		time.Sleep(time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second)
+		log.Println("-- Queuer started")
+		_, err := db.Exec(queueAutomaticPipesSQL)
+		if err != nil {
+			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
+				bugsnag.Notify(err)
+			}
+		}
+		log.Println("-- Queuer finished")
 	}
 }

@@ -9,11 +9,13 @@ import (
 	"github.com/tambet/oauthplain"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 )
 
 var (
@@ -74,9 +76,15 @@ func main() {
 		availableAuthorizations[integration.ID] = integration.AuthType
 	}
 
+	rand.Seed(time.Now().Unix())
+
 	if *environment == "production" {
 		go autoSyncRunner()
 	}
+	if *environment == "staging" {
+		go autoSyncRunnerStub()
+	}
+	go autoSyncQueuer()
 
 	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", *environment, *port))
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), http.DefaultServeMux))
