@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/tambet/oauthplain"
@@ -344,9 +345,14 @@ func postPipeRun(req Request) Response {
 	if msg := pipe.validatePayload(req.body); msg != "" {
 		return badRequest(msg)
 	}
-	_, err = db.Exec(queuePipeAsFirstSQL, pipe.workspaceID, pipe.key)
-	if err != nil {
-		return internalServerError(err.Error())
+	if pipe.ID == "users" {
+		go pipe.run()
+		time.Sleep(500 * time.Millisecond)
+	} else {
+		_, err = db.Exec(queuePipeAsFirstSQL, pipe.workspaceID, pipe.key)
+		if err != nil {
+			return internalServerError(err.Error())
+		}
 	}
 	return ok(nil)
 }
