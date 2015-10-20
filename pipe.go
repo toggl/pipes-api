@@ -257,11 +257,25 @@ func (p *Pipe) endSync(saveStatus bool, err error) error {
 }
 
 func (p *Pipe) destroy(workspaceID int) error {
-	if _, err := db.Exec(deletePipeSQL, workspaceID, p.key); err != nil {
+	tx, err := db.Begin()
+	if err != nil {
 		return err
 	}
-	_, err := db.Exec(deletePipeStatusSQL, workspaceID, p.key)
-	return err
+	if _, err = tx.Exec(deletePipeSQL, workspaceID, p.key); err != nil {
+		rollbackErr := tx.Rollback()
+		if err != nil {
+			return rollbackErr
+		}
+		return err
+	}
+	if _, err = tx.Exec(deletePipeStatusSQL, workspaceID, p.key); err != nil {
+		rollbackErr := tx.Rollback()
+		if err != nil {
+			return rollbackErr
+		}
+		return err
+	}
+	return tx.Commit()
 }
 
 func loadPipe(workspaceID int, serviceID, pipeID string) (*Pipe, error) {
