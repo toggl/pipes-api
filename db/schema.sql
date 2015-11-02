@@ -14,6 +14,8 @@ CREATE TABLE imports(
   created_at TIMESTAMP
 );
 
+CREATE INDEX workspace_imports ON imports USING btree (workspace_id, key);
+
 CREATE TABLE pipes(
   workspace_id INTEGER,
   key VARCHAR(50),
