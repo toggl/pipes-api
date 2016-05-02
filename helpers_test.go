@@ -81,7 +81,11 @@ func TestGetProjects(t *testing.T) {
 
 	fetchProjects(p)
 
-	b, err := getObject(p.Service(), "projects")
+	s, err := p.Service()
+	if err != nil {
+		t.Error(err)
+	}
+	b, err := getObject(s, "projects")
 	if err != nil {
 		t.Error(err)
 	}

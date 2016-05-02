@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -63,14 +62,14 @@ const (
     WHERE workspace_id = $1
     AND key = $2
   `
-	selectPipesFromQueueSQL = `SELECT workspace_id, key 
+	selectPipesFromQueueSQL = `SELECT workspace_id, key
 	FROM get_queued_pipes()`
 
 	queueAutomaticPipesSQL = `SELECT queue_automatic_pipes()`
 
 	queuePipeAsFirstSQL = `SELECT queue_pipe_as_first($1, $2)`
 
-	setQueuedPipeSyncedSQL = `UPDATE queued_pipes 
+	setQueuedPipeSyncedSQL = `UPDATE queued_pipes
 	SET synced_at = now()
 	WHERE workspace_id = $1
 	AND key = $2
@@ -145,15 +144,15 @@ func (p *Pipe) NewStatus() error {
 	return p.PipeStatus.save()
 }
 
-func (p *Pipe) Service() Service {
+func (p *Pipe) Service() (Service, error) {
 	service := getService(p.serviceID, p.workspaceID)
 	if err := service.setParams(p.ServiceParams); err != nil {
-		log.Panic(err)
+		return service, err
 	}
 	if _, err := loadAuth(service); err != nil {
-		log.Panic(err)
+		return service, err
 	}
-	return service
+	return service, nil
 }
 
 func (p *Pipe) loadAuth() error {
@@ -317,9 +316,13 @@ func loadPipes(workspaceID int) (map[string]*Pipe, error) {
 }
 
 func (p *Pipe) clearPipeConnections() error {
-	key := p.Service().keyFor(p.ID)
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
+	key := s.keyFor(p.ID)
 
-	_, err := db.Exec(deletePipeConnectionsSQL, p.workspaceID, key)
+	_, err = db.Exec(deletePipeConnectionsSQL, p.workspaceID, key)
 
 	return err
 }

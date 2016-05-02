@@ -6,10 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bugsnag/bugsnag-go"
-	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
-	gouuid "github.com/nu7hatch/gouuid"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,6 +13,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bugsnag/bugsnag-go"
+	"github.com/gorilla/context"
+	"github.com/gorilla/mux"
+	gouuid "github.com/nu7hatch/gouuid"
 )
 
 type (
@@ -223,7 +224,9 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		if resp.contentType == "application/json" {
 			b, err := json.Marshal(resp.content)
 			if err != nil {
-				log.Panic(err)
+				log.Print(err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 			output = b
 		} else if resp.content != nil {
@@ -258,7 +261,9 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	u4, err := gouuid.NewV4()
 	if err != nil {
-		log.Panic(err)
+		log.Print(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	uuidToken := u4.String()
 	context.Set(r, uuidKey, uuidToken)

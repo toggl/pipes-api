@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"log"
+
 	"github.com/gorilla/mux"
 	"github.com/tambet/oauthplain"
-	"log"
 
 	"net/http"
 )
@@ -243,7 +244,7 @@ func getServiceAccounts(req Request) Response {
 	if accountsResponse == nil {
 		go func() {
 			if err := fetchAccounts(service); err != nil {
-				log.Panic(err)
+				log.Print(err.Error())
 			}
 		}()
 		return noContent()
@@ -289,7 +290,7 @@ func getServiceUsers(req Request) Response {
 		if forceImport == "true" {
 			go func() {
 				if err := pipe.fetchObjects(false); err != nil {
-					log.Panic(err)
+					log.Print(err.Error())
 				}
 			}()
 		}

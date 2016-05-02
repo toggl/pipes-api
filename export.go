@@ -10,10 +10,13 @@ func fetchTimeEntries(p *Pipe) error {
 }
 
 func postTimeEntries(p *Pipe) error {
-	service := p.Service()
 	var err error
 	var entriesCon *Connection
 	var usersCon, tasksCon, projectsCon *ReversedConnection
+	service, err := p.Service()
+	if err != nil {
+		return err
+	}
 	if usersCon, err = loadConnectionRev(service, "users"); err != nil {
 		return err
 	}

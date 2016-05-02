@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/bugsnag/bugsnag-go"
 	"strconv"
 	"strings"
+
+	"github.com/bugsnag/bugsnag-go"
 )
 
 const maxPayloadSizeBytes = 800 * 1000
@@ -153,7 +154,10 @@ func getTasks(s Service, objType string) (*TasksResponse, error) {
 }
 
 func postUsers(p *Pipe) error {
-	s := p.Service()
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
 	usersResponse, err := getUsers(s)
 	if err != nil {
 		return errors.New("unable to get users from DB")
@@ -203,7 +207,10 @@ func postUsers(p *Pipe) error {
 }
 
 func postClients(p *Pipe) error {
-	service := p.Service()
+	service, err := p.Service()
+	if err != nil {
+		return err
+	}
 	clientsResponse, err := getClients(service)
 	if err != nil {
 		return errors.New("unable to get clients from DB")
@@ -240,7 +247,10 @@ func postClients(p *Pipe) error {
 }
 
 func postProjects(p *Pipe) error {
-	s := p.Service()
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
 	projectsResponse, err := getProjects(s)
 	if err != nil {
 		return errors.New("unable to get projects from DB")
@@ -275,7 +285,10 @@ func postProjects(p *Pipe) error {
 }
 
 func postTodoLists(p *Pipe) error {
-	s := p.Service()
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
 	tasksResponse, err := getTasks(s, todoPipeId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
@@ -316,7 +329,10 @@ func postTodoLists(p *Pipe) error {
 }
 
 func postTasks(p *Pipe) error {
-	s := p.Service()
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
 	tasksResponse, err := getTasks(s, tasksPipeId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
@@ -363,10 +379,14 @@ func saveObject(p *Pipe, pipeID string, obj interface{}) error {
 		bugsnag.Notify(err)
 		return err
 	}
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
 	_, err = db.Exec(`
 	  INSERT INTO imports(workspace_id, key, data, created_at)
     VALUES($1, $2, $3, NOW())
-	`, p.workspaceID, p.Service().keyFor(pipeID), b)
+	`, p.workspaceID, s.keyFor(pipeID), b)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err
@@ -375,7 +395,11 @@ func saveObject(p *Pipe, pipeID string, obj interface{}) error {
 }
 
 func fetchUsers(p *Pipe) error {
-	users, err := p.Service().Users()
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
+	users, err := s.Users()
 	response := UsersResponse{Users: users}
 	defer func() { saveObject(p, usersPipeID, response) }()
 	if err != nil {
@@ -386,14 +410,18 @@ func fetchUsers(p *Pipe) error {
 }
 
 func fetchClients(p *Pipe) error {
-	clients, err := p.Service().Clients()
+	s, err := p.Service()
+	if err != nil {
+		return err
+	}
+	clients, err := s.Clients()
 	response := ClientsResponse{Clients: clients}
 	defer func() { saveObject(p, clientsPipeID, response) }()
 	if err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	connections, err := loadConnection(p.Service(), clientsPipeID)
+	connections, err := loadConnection(s, clientsPipeID)
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -417,7 +445,10 @@ func fetchProjects(p *Pipe) error {
 		return err
 	}
 
-	service := p.Service()
+	service, err := p.Service()
+	if err != nil {
+		return err
+	}
 	service.setSince(p.lastSync)
 	projects, err := service.Projects()
 	if err != nil {
@@ -458,7 +489,10 @@ func fetchTodoLists(p *Pipe) error {
 		return err
 	}
 
-	service := p.Service()
+	service, err := p.Service()
+	if err != nil {
+		return err
+	}
 	service.setSince(p.lastSync)
 	tasks, err := service.TodoLists()
 	if err != nil {
@@ -502,7 +536,10 @@ func fetchTasks(p *Pipe) error {
 		return err
 	}
 
-	service := p.Service()
+	service, err := p.Service()
+	if err != nil {
+		return err
+	}
 	service.setSince(p.lastSync)
 	tasks, err := service.Tasks()
 	if err != nil {
