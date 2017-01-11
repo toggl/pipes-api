@@ -262,14 +262,14 @@ func (p *Pipe) destroy(workspaceID int) error {
 	}
 	if _, err = tx.Exec(deletePipeSQL, workspaceID, p.key); err != nil {
 		rollbackErr := tx.Rollback()
-		if err != nil {
+		if rollbackErr != nil {
 			return rollbackErr
 		}
 		return err
 	}
 	if _, err = tx.Exec(deletePipeStatusSQL, workspaceID, p.key); err != nil {
 		rollbackErr := tx.Rollback()
-		if err != nil {
+		if rollbackErr != nil {
 			return rollbackErr
 		}
 		return err
