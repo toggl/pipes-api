@@ -262,14 +262,14 @@ func (p *Pipe) destroy(workspaceID int) error {
 	}
 	if _, err = tx.Exec(deletePipeSQL, workspaceID, p.key); err != nil {
 		rollbackErr := tx.Rollback()
-		if err != nil {
+		if rollbackErr != nil {
 			return rollbackErr
 		}
 		return err
 	}
 	if _, err = tx.Exec(deletePipeStatusSQL, workspaceID, p.key); err != nil {
 		rollbackErr := tx.Rollback()
-		if err != nil {
+		if rollbackErr != nil {
 			return rollbackErr
 		}
 		return err
@@ -315,16 +315,42 @@ func loadPipes(workspaceID int) (map[string]*Pipe, error) {
 	return pipes, nil
 }
 
-func (p *Pipe) clearPipeConnections() error {
+func (p *Pipe) clearPipeConnections() (err error) {
 	s, err := p.Service()
 	if err != nil {
-		return err
+		return
 	}
+
+	pipeStatus, err := loadPipeStatus(p.workspaceID, p.serviceID, p.pipeID)
+	if err != nil {
+		return
+	}
+
 	key := s.keyFor(p.ID)
 
-	_, err = db.Exec(deletePipeConnectionsSQL, p.workspaceID, key)
+	tx, err := db.Begin()
+	if err != nil {
+		return
+	}
+	_, err = tx.Exec(deletePipeConnectionsSQL, p.workspaceID, key)
+	if err != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			err = rollbackErr
+		}
 
-	return err
+		return
+	}
+	_, err = tx.Exec(deletePipeStatusSQL, p.workspaceID, pipeStatus.key)
+	if err != nil {
+		rollbackErr := tx.Rollback()
+		if rollbackErr != nil {
+			err = rollbackErr
+		}
+
+	}
+
+	return
 }
 
 func getPipesFromQueue() ([]*Pipe, error) {
