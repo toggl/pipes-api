@@ -82,7 +82,7 @@ func (a *Authorization) refresh() error {
 	if !token.Expired() {
 		return nil
 	}
-	config, res := oAuth2Configs[a.ServiceID+"_"+*environment]
+	config, res := oAuth2Configs[a.ServiceID+"_"+environment]
 	if !res {
 		return errors.New("service OAuth config not found")
 	}
@@ -143,7 +143,7 @@ func loadAuthorizations(workspaceID int) (map[string]bool, error) {
 }
 
 func oAuth2URL(service string) string {
-	config, ok := oAuth2Configs[service+"_"+*environment]
+	config, ok := oAuth2Configs[service+"_"+environment]
 	if !ok {
 		return ""
 	}
@@ -191,7 +191,7 @@ func oAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, e
 	if code == "" {
 		return nil, errors.New("missing code")
 	}
-	config, res := oAuth2Configs[serviceID+"_"+*environment]
+	config, res := oAuth2Configs[serviceID+"_"+environment]
 	if !res {
 		return nil, errors.New("service OAuth config not found")
 	}

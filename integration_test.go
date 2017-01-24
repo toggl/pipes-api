@@ -9,7 +9,7 @@ var testDB = "pipes_test"
 
 func init() {
 	loadIntegrations()
-	db = connectDB(*dbConnString)
+	db = connectDB(dbConnString)
 }
 
 func TestWorkspaceIntegrations(t *testing.T) {

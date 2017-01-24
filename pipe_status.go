@@ -119,7 +119,7 @@ func (p *PipeStatus) complete(objType string, notifications []string, objCount i
 		p.ObjectCounts = append(p.ObjectCounts, fmt.Sprintf("%d %s", objCount, objType))
 	}
 	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log",
-		urls.PipesAPIHost[*environment], p.serviceID, p.pipeID)
+		urls.PipesAPIHost[environment], p.serviceID, p.pipeID)
 }
 
 func (p *PipeStatus) generateLog() string {

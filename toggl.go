@@ -26,7 +26,7 @@ func stringify(values []int) string {
 
 func getTogglTimeEntries(APIToken string, lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
-		urls.TogglAPIHost[*environment], lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
+		urls.TogglAPIHost[environment], lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -57,7 +57,7 @@ func getTogglTimeEntries(APIToken string, lastSync time.Time, userIDs, projectsI
 
 func getTogglWorkspaceID(APIToken string) (int, error) {
 	var workspaceID int
-	url := fmt.Sprintf("%s/api/pipes/workspace", urls.TogglAPIHost[*environment])
+	url := fmt.Sprintf("%s/api/pipes/workspace", urls.TogglAPIHost[environment])
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return workspaceID, err
@@ -89,7 +89,7 @@ func getTogglWorkspaceID(APIToken string) (int, error) {
 
 func postPipesAPI(APIToken, pipeID string, payload interface{}) ([]byte, error) {
 	start := time.Now()
-	url := fmt.Sprintf("%s/api/pipes/%s", urls.TogglAPIHost[*environment], pipeID)
+	url := fmt.Sprintf("%s/api/pipes/%s", urls.TogglAPIHost[environment], pipeID)
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err

@@ -83,7 +83,7 @@ func serviceUnavailable(reasons interface{}) Response {
 }
 
 func (req Request) redirectWithError(err string) Response {
-	return found(urls.ReturnURL[*environment] + "?err=" + url.QueryEscape(err))
+	return found(urls.ReturnURL[environment] + "?err=" + url.QueryEscape(err))
 }
 
 func uuid(r *http.Request) string {

@@ -3,7 +3,6 @@ package main
 import (
 	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/tambet/oauthplain"
@@ -35,36 +34,36 @@ var (
 )
 
 func main() {
-	flag.Parse()
+	InitFlags()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:              *bugsnagAPIKey,
-		ReleaseStage:        *environment,
+		APIKey:              bugsnagAPIKey,
+		ReleaseStage:        environment,
 		NotifyReleaseStages: []string{"production", "staging"},
 		// more configuration options
 	})
 
-	db = connectDB(*dbConnString)
+	db = connectDB(dbConnString)
 	defer db.Close()
 
 	loadIntegrations()
 
-	b, err := ioutil.ReadFile(filepath.Join(*workdir, "config", "urls.json"))
+	b, err := ioutil.ReadFile(filepath.Join(workdir, "config", "urls.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err := json.Unmarshal(b, &urls); err != nil {
 		log.Fatal(err)
 	}
-	b, err = ioutil.ReadFile(filepath.Join(*workdir, "config", "oauth2.json"))
+	b, err = ioutil.ReadFile(filepath.Join(workdir, "config", "oauth2.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err := json.Unmarshal(b, &oAuth2Configs); err != nil {
 		log.Fatal(err)
 	}
-	b, err = ioutil.ReadFile(filepath.Join(*workdir, "config", "oauth1.json"))
+	b, err = ioutil.ReadFile(filepath.Join(workdir, "config", "oauth1.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,20 +77,20 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 
-	if *environment == "production" {
+	if environment == "production" {
 		go autoSyncRunner()
 	}
-	if *environment == "staging" {
+	if environment == "staging" {
 		go autoSyncRunnerStub()
 	}
 	go autoSyncQueuer()
 
-	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", *environment, *port))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), http.DefaultServeMux))
+	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", environment, port))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), http.DefaultServeMux))
 }
 
 func loadIntegrations() {
-	b, err := ioutil.ReadFile(filepath.Join(*workdir, "config", "integrations.json"))
+	b, err := ioutil.ReadFile(filepath.Join(workdir, "config", "integrations.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,7 +107,7 @@ func loadIntegrations() {
 
 func isWhiteListedCorsOrigin(r *http.Request) (string, bool) {
 	origin := r.Header.Get("Origin")
-	if allowedDomains, exist := urls.CorsWhitelist[*environment]; exist {
+	if allowedDomains, exist := urls.CorsWhitelist[environment]; exist {
 		for _, s := range allowedDomains {
 			if s == origin {
 				return origin, true
