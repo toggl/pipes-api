@@ -75,7 +75,7 @@ func TestTaskSplittingSmallDifferent(t *testing.T) {
 }
 
 func TestGetProjects(t *testing.T) {
-	db = connectDB(*dbHost, *dbPort, testDB, *dbUser, *dbPass)
+	db = connectDB(*dbConnString)
 
 	p := NewPipe(1, TestServiceName, "projects")
 

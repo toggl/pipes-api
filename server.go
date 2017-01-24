@@ -45,7 +45,7 @@ func main() {
 		// more configuration options
 	})
 
-	db = connectDB(*dbHost, *dbPort, *dbName, *dbUser, *dbPass)
+	db = connectDB(*dbConnString)
 	defer db.Close()
 
 	loadIntegrations()

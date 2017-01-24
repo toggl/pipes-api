@@ -9,9 +9,5 @@ var (
 	environment   = flag.String("environment", "development", "Environment")
 
 	// Database flags
-	dbUser = flag.String("dbuser", "pipes_user", "DB user")
-	dbPass = flag.String("dbpass", "", "DB password")
-	dbName = flag.String("dbname", "pipes_development", "DB name")
-	dbHost = flag.String("dbhost", "localhost", "DB host")
-	dbPort = flag.Int("dbport", 5432, "DB port")
+	dbConnString = flag.String("db_conn_string", "dbname=pipes_development user=pipes_user host=localhost sslmode=disable port=5432", "DB Connection String")
 )
