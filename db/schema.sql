@@ -45,7 +45,7 @@ CREATE TABLE queued_pipes (
   synced_at timestamp without time zone DEFAULT NULL,
   FOREIGN KEY (workspace_id, key) REFERENCES pipes (workspace_id, key) ON DELETE CASCADE
 );
-  
+
 CREATE UNIQUE INDEX pipes_queue_unique ON queued_pipes (workspace_id, key, coalesce(locked_at, '0001-01-01 00:00:00'::timestamp), coalesce(synced_at,'0001-01-01 00:00:00'::timestamp));
 
 CREATE OR REPLACE FUNCTION get_queued_pipes() RETURNS TABLE(workspace_id INTEGER, key VARCHAR(50)) AS $$
@@ -53,7 +53,7 @@ BEGIN
   RETURN QUERY
   UPDATE
     queued_pipes
-  SET 
+  SET
     locked_at = NOW()
   FROM (
     SELECT queued_pipes.workspace_id, queued_pipes.key
@@ -81,10 +81,10 @@ BEGIN
   SELECT r.workspace_id, r.key
   WHERE NOT EXISTS
   (
-    SELECT 1 FROM queued_pipes 
-    WHERE workspace_id = r.workspace_id 
-    AND key = r.key 
-    AND synced_at IS NULL 
+    SELECT 1 FROM queued_pipes
+    WHERE workspace_id = r.workspace_id
+    AND key = r.key
+    AND synced_at IS NULL
     FOR UPDATE
   );
   END LOOP;
@@ -101,9 +101,9 @@ BEGIN
   (
     UPDATE queued_pipes
     SET priority = new_priority FROM priority_cte
-    WHERE workspace_id = workspace_id_param 
-    AND key = key_param 
-    AND locked_at IS NULL 
+    WHERE workspace_id = workspace_id_param
+    AND key = key_param
+    AND locked_at IS NULL
     AND synced_at IS NULL
     RETURNING workspace_id
   )
@@ -112,10 +112,10 @@ BEGIN
   WHERE NOT EXISTS (SELECT 1 FROM existing_pipe)
   AND NOT EXISTS
   (
-    SELECT 1 FROM queued_pipes 
-    WHERE workspace_id = workspace_id_param 
-    AND key = key_param 
-    AND synced_at IS NULL 
+    SELECT 1 FROM queued_pipes
+    WHERE workspace_id = workspace_id_param
+    AND key = key_param
+    AND synced_at IS NULL
     FOR UPDATE
   );
 END;
@@ -151,3 +151,7 @@ ALTER FUNCTION queue_automatic_pipes() OWNER TO pipes_user;
 ALTER FUNCTION queue_pipe_as_first(workspace_id_param INTEGER, key_param VARCHAR(50)) OWNER TO pipes_user;
 ALTER FUNCTION remove_locked_from_queue(age INTERVAL) OWNER TO pipes_user;
 ALTER FUNCTION remove_synced_from_queue(age INTERVAL) OWNER TO pipes_user;
+
+CREATE ROLE toggl_alerts_user;
+ALTER ROLE toggl_alerts_user WITH NOSUPERUSER INHERIT NOCREATEROLE NOCREATEDB LOGIN NOREPLICATION CONNECTION LIMIT 10 PASSWORD 'md55a60e58de3bb5c79bcd17e441b45fd37' VALID UNTIL 'infinity';
+GRANT SELECT, UPDATE ON TABLE pipes TO toggl_alerts_user;
