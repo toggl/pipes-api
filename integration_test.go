@@ -8,8 +8,9 @@ import (
 var testDB = "pipes_test"
 
 func init() {
+	InitFlags()
 	loadIntegrations()
-	db = connectDB(dbConnString)
+	db = connectDB(testDBConnString)
 }
 
 func TestWorkspaceIntegrations(t *testing.T) {
