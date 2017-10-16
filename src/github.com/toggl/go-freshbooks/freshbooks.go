@@ -239,7 +239,7 @@ func (this *Api) SaveTimeEntry(timeEntry *TimeEntry) (int, error) {
 		}
 		return parsedInto.TimeEntryId, nil
 	}
-	return 0, errors.New(parsedInto.Error)
+	return 0, errors.New(fmt.Sprintf("%s [Error Code: %s]", parsedInto.Error, parsedInto.Code))
 }
 
 func (this *Api) makeRequest(request interface{}) (*[]byte, error) {

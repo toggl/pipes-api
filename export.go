@@ -3,6 +3,8 @@ package main
 import (
 	"strconv"
 	"time"
+
+	"github.com/bugsnag/bugsnag-go"
 )
 
 func fetchTimeEntries(p *Pipe) error {
@@ -51,6 +53,23 @@ func postTimeEntries(p *Pipe) error {
 
 		entryID, err := service.ExportTimeEntry(&entry)
 		if err != nil {
+			bugsnag.Notify(err, bugsnag.MetaData{
+				"Workspace": {
+					"ID": service.WorkspaceID(),
+				},
+				"Entry": {
+					"ID":        entry.ID,
+					"TaskID":    entry.TaskID,
+					"UserID":    entry.UserID,
+					"ProjectID": entry.ProjectID,
+				},
+				"Foreign Entry": {
+					"foreignID":        entry.foreignID,
+					"foreignTaskID":    entry.foreignTaskID,
+					"foreignUserID":    entry.foreignUserID,
+					"foreignProjectID": entry.foreignProjectID,
+				},
+			})
 			p.PipeStatus.addError(err)
 		} else {
 			entriesCon.Data[strconv.Itoa(entry.ID)] = entryID
