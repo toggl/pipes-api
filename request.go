@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -236,16 +234,6 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		// Log output, except for GET results, which tend to be spammy.
 		if r.Method != "GET" {
 			log.Println(uuidToken, "Output", resp.contentType, string(output))
-		}
-
-		// Gzip output
-		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			w.Header().Set("Content-Encoding", "gzip")
-			buffer := bytes.NewBuffer(nil)
-			gzipWriter := gzip.NewWriter(buffer)
-			gzipWriter.Write(output)
-			gzipWriter.Close() // flush it real good
-			output = buffer.Bytes()
 		}
 
 		// Write output
