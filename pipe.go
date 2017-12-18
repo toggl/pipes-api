@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/bugsnag/bugsnag-go"
 )
 
 type Pipe struct {
@@ -171,22 +169,23 @@ func (p *Pipe) loadAuth() error {
 func (p *Pipe) run() {
 	var err error
 	defer func() {
-		if err2 := p.endSync(true, err); err2 != nil {
-			bugsnag.Notify(err2)
-			return
-		}
+		p.endSync(true, err)
 	}()
 
 	if err = p.NewStatus(); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 	if err = p.loadAuth(); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 	if err = p.fetchObjects(false); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 	if err = p.postObjects(false); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 }
@@ -248,7 +247,7 @@ func (p *Pipe) endSync(saveStatus bool, err error) error {
 	}
 	if saveStatus {
 		if err := p.PipeStatus.save(); err != nil {
-			bugsnag.Notify(err)
+			BugsnagNotifyPipe(p, err)
 			return err
 		}
 	}

@@ -38,7 +38,7 @@ func pipeWorker() {
 			pipe.run()
 			err := setQueuedPipeSynced(pipe)
 			if err != nil {
-				bugsnag.Notify(err)
+				BugsnagNotifyPipe(pipe, err)
 			}
 		}
 	}
