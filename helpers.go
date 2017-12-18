@@ -613,13 +613,12 @@ func trimSpacesFromName(ps []*Project) []*Project {
 func BugsnagNotifyPipe(pipe *Pipe, err error) {
 	bugsnag.Notify(err, bugsnag.MetaData{
 		"pipe": {
-			"ID": pipe.ID,
-			"Name": pipe.Name,
+			"ID":            pipe.ID,
+			"Name":          pipe.Name,
 			"ServiceParams": pipe.ServiceParams,
 
 			"workspaceID": pipe.workspaceID,
-			"serviceID": pipe.serviceID,
-			"pipeID": pipe.pipeID,
+			"serviceID":   pipe.serviceID,
 		},
 	})
 	return

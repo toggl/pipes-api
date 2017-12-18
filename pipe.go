@@ -22,7 +22,6 @@ type Pipe struct {
 	authorization *Authorization
 	workspaceID   int
 	serviceID     string
-	pipeID        string
 	key           string
 	payload       []byte
 	lastSync      *time.Time
@@ -320,7 +319,7 @@ func (p *Pipe) clearPipeConnections() (err error) {
 		return
 	}
 
-	pipeStatus, err := loadPipeStatus(p.workspaceID, p.serviceID, p.pipeID)
+	pipeStatus, err := loadPipeStatus(p.workspaceID, p.serviceID, p.ID)
 	if err != nil {
 		return
 	}
