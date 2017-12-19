@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/bugsnag/bugsnag-go"
 )
 
 type Pipe struct {
@@ -24,7 +22,6 @@ type Pipe struct {
 	authorization *Authorization
 	workspaceID   int
 	serviceID     string
-	pipeID        string
 	key           string
 	payload       []byte
 	lastSync      *time.Time
@@ -171,22 +168,23 @@ func (p *Pipe) loadAuth() error {
 func (p *Pipe) run() {
 	var err error
 	defer func() {
-		if err2 := p.endSync(true, err); err2 != nil {
-			bugsnag.Notify(err2)
-			return
-		}
+		p.endSync(true, err)
 	}()
 
 	if err = p.NewStatus(); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 	if err = p.loadAuth(); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 	if err = p.fetchObjects(false); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 	if err = p.postObjects(false); err != nil {
+		BugsnagNotifyPipe(p, err)
 		return
 	}
 }
@@ -248,7 +246,7 @@ func (p *Pipe) endSync(saveStatus bool, err error) error {
 	}
 	if saveStatus {
 		if err := p.PipeStatus.save(); err != nil {
-			bugsnag.Notify(err)
+			BugsnagNotifyPipe(p, err)
 			return err
 		}
 	}
@@ -321,7 +319,7 @@ func (p *Pipe) clearPipeConnections() (err error) {
 		return
 	}
 
-	pipeStatus, err := loadPipeStatus(p.workspaceID, p.serviceID, p.pipeID)
+	pipeStatus, err := loadPipeStatus(p.workspaceID, p.serviceID, p.ID)
 	if err != nil {
 		return
 	}

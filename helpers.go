@@ -608,3 +608,18 @@ func trimSpacesFromName(ps []*Project) []*Project {
 	}
 	return trimmedPs
 }
+
+// BugsnagNotifyPipe notifies bugsnag with metadata for the given pipe
+func BugsnagNotifyPipe(pipe *Pipe, err error) {
+	bugsnag.Notify(err, bugsnag.MetaData{
+		"pipe": {
+			"ID":            pipe.ID,
+			"Name":          pipe.Name,
+			"ServiceParams": pipe.ServiceParams,
+
+			"workspaceID": pipe.workspaceID,
+			"serviceID":   pipe.serviceID,
+		},
+	})
+	return
+}
