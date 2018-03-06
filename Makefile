@@ -1,5 +1,6 @@
 APPNAME=pipes-api
 export GOPATH=$(shell pwd)
+GOVERSION=$(shell go version | cut -d' ' -f3)
 
 default: clean build fmt
 
@@ -14,7 +15,7 @@ vet:
 test: inittestdb
 	go test
 
-run: vet fmt 
+run: vet fmt
 	go build -o $(APPNAME) && ./$(APPNAME)
 
 bin/golint:
@@ -23,10 +24,13 @@ bin/golint:
 lint: bin/golint
 	bin/golint *.go
 
+check_go_version:
+	@if [ ! "${GOVERSION}" = "go1.9.3" ]; then echo '\nError: invalid go version, check Makefile'; exit 1; fi
+
 dist_dir:
 	if [ ! -d "dist" ]; then mkdir -p dist; fi
 
-dist: clean dist_dir
+dist: clean dist_dir check_go_version
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/$(APPNAME)
 	cp -r config dist/
 
@@ -47,4 +51,3 @@ errcheck: bin/errcheck
 
 get:
 	go get
-
