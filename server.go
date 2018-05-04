@@ -86,8 +86,6 @@ func main() {
 	}
 	go autoSyncQueuer()
 
-	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", environment, port))
-
 	listenAddress := fmt.Sprintf(":%d", port)
 	log.Printf(
 		"pipes (PID: %d) is starting on %s\n=> Ctrl-C to shutdown server\n",
