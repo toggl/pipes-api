@@ -10,6 +10,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -86,7 +87,13 @@ func main() {
 	go autoSyncQueuer()
 
 	log.Println(fmt.Sprintf("=> Starting in %s on http://0.0.0.0:%d", environment, port))
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), http.DefaultServeMux))
+
+	listenAddress := fmt.Sprintf(":%d", port)
+	log.Printf(
+		"pipes (PID: %d) is starting on %s\n=> Ctrl-C to shutdown server\n",
+		os.Getpid(),
+		listenAddress)
+	log.Fatal(http.ListenAndServe(listenAddress, http.DefaultServeMux))
 }
 
 func loadIntegrations() {
