@@ -25,7 +25,7 @@ lint: bin/golint
 	bin/golint *.go
 
 check_go_version:
-	@if [ ! "${GOVERSION}" = "go1.9.3" ]; then echo '\nError: invalid go version, check Makefile'; exit 1; fi
+	@if [ ! "${GOVERSION}" = "go1.9.4" ]; then echo '\nError: invalid go version, check Makefile'; exit 1; fi
 
 dist_dir:
 	if [ ! -d "dist" ]; then mkdir -p dist; fi
