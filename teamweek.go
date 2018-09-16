@@ -1,12 +1,13 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tambet/go-teamweek/teamweek"
 	"strconv"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/fdelbos/go-teamweek/teamweek"
 )
 
 type TeamweekService struct {
@@ -59,12 +60,12 @@ func (s *TeamweekService) client() *teamweek.Client {
 
 // Map Teamweek accounts to local accounts
 func (s *TeamweekService) Accounts() ([]*Account, error) {
-	foreignObjects, err := s.client().ListAccounts()
+	foreignObject, err := s.client.GetUserProfile()
 	if err != nil {
 		return nil, err
 	}
 	var accounts []*Account
-	for _, object := range foreignObjects {
+	for _, object := range foreignObject.Workspaces {
 		account := Account{
 			ID:   int(object.ID),
 			Name: object.Name,
@@ -76,7 +77,7 @@ func (s *TeamweekService) Accounts() ([]*Account, error) {
 
 // Map Teamweek people to local users
 func (s *TeamweekService) Users() ([]*User, error) {
-	foreignObjects, err := s.client().ListAccountUsers(int64(s.AccountID))
+	foreignObjects, err := s.client().ListWorkspaceMembers(int64(s.AccountID))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (s *TeamweekService) Users() ([]*User, error) {
 
 // Map Teamweek projects to projects
 func (s *TeamweekService) Projects() ([]*Project, error) {
-	foreignObjects, err := s.client().ListAccountProjects(int64(s.AccountID))
+	foreignObjects, err := s.client().ListWorkspaceProjects(int64(s.AccountID))
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +116,7 @@ func (s *TeamweekService) Projects() ([]*Project, error) {
 
 // Map Teamweek tasks to tasks
 func (s *TeamweekService) Tasks() ([]*Task, error) {
-	foreignObjects, err := s.client().ListAccountTasks(int64(s.AccountID))
+	foreignObjects, err := s.client().ListWorkspaceTasks(int64(s.AccountID))
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func (s *TeamweekService) Tasks() ([]*Task, error) {
 			ForeignID:        strconv.FormatInt(object.ID, 10),
 			Name:             object.Name,
 			Active:           !object.Done,
-			foreignProjectID: int(object.Project.ID),
+			foreignProjectID: int(object.ProjectID),
 		}
 		tasks = append(tasks, &task)
 	}
