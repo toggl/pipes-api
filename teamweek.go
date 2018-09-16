@@ -60,7 +60,7 @@ func (s *TeamweekService) client() *teamweek.Client {
 
 // Map Teamweek accounts to local accounts
 func (s *TeamweekService) Accounts() ([]*Account, error) {
-	foreignObject, err := s.client.GetUserProfile()
+	foreignObject, err := s.client().GetUserProfile()
 	if err != nil {
 		return nil, err
 	}
