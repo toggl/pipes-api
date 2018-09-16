@@ -55,10 +55,10 @@ get:
 DEPENDENCY ?= ""
 get-dep:
 	@if [ "$(DEPENDENCY)" != "" ]; then \
-		rm -fr vendor/src/$(DEPENDENCY); \
-		export GOPATH=`pwd`/vendor; \
+		rm -fr src/$(DEPENDENCY); \
+		export GOPATH=`pwd`; \
 		go get $(DEPENDENCY); \
-		rm -fr vendor/src/$(DEPENDENCY)/.git*; \
+		rm -fr src/$(DEPENDENCY)/.git*; \
 	else \
 		echo "usage: DEPENDENCY=github.com/login/pkg make get-dep"; \
 		exit 1; \
