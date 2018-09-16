@@ -51,3 +51,15 @@ errcheck: bin/errcheck
 
 get:
 	go get
+
+DEPENDENCY ?= ""
+get-dep:
+	@if [ "$(DEPENDENCY)" != "" ]; then \
+		rm -fr vendor/src/$(DEPENDENCY); \
+		export GOPATH=`pwd`/vendor; \
+		go get $(DEPENDENCY); \
+		rm -fr vendor/src/$(DEPENDENCY)/.git*; \
+	else \
+		echo "usage: DEPENDENCY=github.com/login/pkg make get-dep"; \
+		exit 1; \
+	fi
