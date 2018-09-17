@@ -1,6 +1,7 @@
 APPNAME=pipes-api
 export GOPATH=$(shell pwd)
 GOVERSION=$(shell go version | cut -d' ' -f3)
+REQUIRED_GOVERSION = $(shell cat .go-version | tr -d '\n')
 
 default: clean build fmt
 
@@ -25,7 +26,7 @@ lint: bin/golint
 	bin/golint *.go
 
 check_go_version:
-	@if [ ! "${GOVERSION}" = "go1.10.4" ]; then echo '\nError: invalid go version, check Makefile'; exit 1; fi
+	@if [ ! "${GOVERSION}" = "go${REQUIRED_GOVERSION}" ]; then echo '\nError: invalid go version, check Makefile'; exit 1; fi
 
 dist_dir:
 	if [ ! -d "dist" ]; then mkdir -p dist; fi
