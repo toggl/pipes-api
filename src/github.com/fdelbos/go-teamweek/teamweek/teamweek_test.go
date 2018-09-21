@@ -50,12 +50,10 @@ func TestUserProfile(t *testing.T) {
 				"role": "admin",
 				"name": "Choucroute",
 				"id": 42,
-				"custom_colors": [],
 				"created_at": "2018-09-14T07:51:26.463362",
 				"active": true
 			}],
 			"updated_at": "2018-09-14T07:55:47.397289",
-			"project_ids": [],
 			"picture_url": null,
 			"name": "Fred",
 			"manager": true,
@@ -64,8 +62,7 @@ func TestUserProfile(t *testing.T) {
 			"id": 123456,
 			"has_picture": false,
 			"email": "frederic@toggl.com",
-			"created_at": "2018-09-14T07:50:22.036305",
-			"color_id": 22}`
+			"created_at": "2018-09-14T07:50:22.036305"}`
 		fmt.Fprint(w, js)
 	})
 
@@ -78,7 +75,6 @@ func TestUserProfile(t *testing.T) {
 		ID:       123456,
 		Name:     "Fred",
 		Email:    "frederic@toggl.com",
-		ColorID:  22,
 		Initials: "fr",
 		Workspaces: []Workspace{
 			{
@@ -91,6 +87,7 @@ func TestUserProfile(t *testing.T) {
 		CreatedAt: "2018-09-14T07:50:22.036305",
 		UpdatedAt: "2018-09-14T07:55:47.397289",
 	}
+
 	if !reflect.DeepEqual(profile, want) {
 		t.Errorf("UserProfile returned %+v, want %+v", profile, want)
 	}

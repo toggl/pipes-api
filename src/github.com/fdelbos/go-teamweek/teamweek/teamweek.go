@@ -19,13 +19,11 @@ type (
 		ID         int64       `json:"id,omitempty"`
 		Name       string      `json:"name,omitempty"`
 		Email      string      `json:"email,omitempty"`
-		Color      string      `json:"color,omitempty"`
-		ColorID    int64       `json:"color_id,omitempty"`
 		Initials   string      `json:"initials,omitempty"`
 		PictureUrl string      `json:"picture_url,omitempty"`
 		HasPicture bool        `json:"has_picture,omitempty"`
 		Workspaces []Workspace `json:"workspaces,omitempty"`
-		ProjectIDs []int64     `json:"project_ids,omitempty`
+		ProjectIDs []int64     `json:"project_ids,omitempty"`
 		CreatedAt  string      `json:"created_at,omitempty"`
 		UpdatedAt  string      `json:"updated_at,omitempty"`
 	}
@@ -33,8 +31,6 @@ type (
 	Member struct {
 		Role              string `json:"role,omitempty"`
 		Active            bool   `json:"active,omitempty"`
-		Color             string `json:"color,omitempty"`
-		ColorID           int64  `json:"color_id,omitempty"`
 		HoursPerWorkDay   string `json:"hours_per_work_day,omitempty"`
 		MinutesPerWorkDay string `json:"minutes_per_work_day,omitempty"`
 		Dummy             bool   `json:"dummy,omitempty"`
@@ -58,15 +54,13 @@ type (
 		EndDate          string   `json:"end_date,omitempty"`
 		StartTime        string   `json:"start_time,omitempty"`
 		EndTime          string   `json:"end_time,omitempty"`
-		Color            string   `json:"color,omitempty"`
-		ColorID          int64    `json:"color_id,omitempty"`
 		EstimatedMinutes int64    `json:"estimated_minutes,omitempty"`
 		Done             bool     `json:"done,omitempty"`
 		Pined            bool     `json:"pinned,omitempty"`
 		UserID           int64    `json:"user_id,omitempty"`
 		FolderID         int64    `json:"folder_id,omitempty"`
 		Position         int64    `json:"position,omitempty"`
-		Weight           int64    `json:"weight,omitempty"`
+		Weight           float64  `json:"weight,omitempty"`
 		ProjectID        int64    `json:"project_id,omitempty"`
 		Project          *Project `json:"project,omitempty"`
 		CreatedAt        string   `json:"created_at,omitempty"`
@@ -76,8 +70,6 @@ type (
 	Milestone struct {
 		ID        int64  `json:"id,omitempty"`
 		Name      string `json:"name,omitempty"`
-		Color     string `json:"color,omitempty"`
-		ColorID   int64  `json:"color_id,omitempty"`
 		Date      string `json:"date,omitempty"`
 		Done      bool   `json:"done,omitempty"`
 		Holiday   bool   `json:"holiday,omitempty"`
@@ -89,8 +81,6 @@ type (
 	Project struct {
 		ID        int64  `json:"id,omitempty"`
 		Name      string `json:"name,omitempty"`
-		Color     string `json:"color,omitempty"`
-		ColorID   string `json:"color_id,omitempty"`
 		CreatedAt string `json:"created_at,omitempty"`
 		UpdatedAt string `json:"updated_at,omitempty"`
 	}
