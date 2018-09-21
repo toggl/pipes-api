@@ -36,7 +36,7 @@ t := &oauth.Transport{
 client := teamweek.NewClient(t.Client())
 
 // Get authenticated user's profile information
-profile, err := client.Profile()
+profile, err := client.GetUserProfile()
 ```
 
 See the [goauth2 docs][] for complete instructions on using that library.

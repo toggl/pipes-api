@@ -32,18 +32,6 @@ func (c *Client) get(url string, dest interface{}) error {
 	return c.request(url, http.MethodGet, dest, nil)
 }
 
-func (c *Client) post(url string, dest, body interface{}) error {
-	return c.request(url, http.MethodPost, dest, body)
-}
-
-func (c *Client) put(url string, dest, body interface{}) error {
-	return c.request(url, http.MethodPut, dest, body)
-}
-
-func (c *Client) remove(url string) error {
-	return c.request(url, http.MethodDelete, nil, nil)
-}
-
 func (c *Client) request(urlStr, method string, dest, body interface{}) error {
 	rel, err := url.Parse(urlStr)
 	if err != nil {
