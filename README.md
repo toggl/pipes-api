@@ -6,7 +6,7 @@ Backend for the Toggl Pipes project. Currently in development.
 
 ## Requirements
 
-* Go 1.9.7 - [http://golang.org/](http://golang.org/)
+* Go 1.11.2 - [http://golang.org/](http://golang.org/)
 * PostgreSQL 9.3 - [http://www.postgresql.org/](http://www.postgresql.org/)
 
 ## Getting Started
