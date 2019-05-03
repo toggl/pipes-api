@@ -4,7 +4,7 @@
 		"name": "Basecamp",
 		"auth_type": "oauth2",
 		"image": "/images/logo-basecamp.png",
-		"link": "http://support.toggl.com/basecamp",
+		"link": "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp",
 		"pipes": [
 			{
 				"id": "users",
@@ -41,7 +41,7 @@
 		"name": "Freshbooks",
 		"auth_type": "oauth1",
 		"image": "/images/logo-freshbooks.png",
-		"link": "http://support.toggl.com/freshbooks",
+		"link": "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic",
 		"pipes": [
 			{
 				"id": "users",
@@ -78,7 +78,7 @@
 		"name": "Teamweek",
 		"auth_type": "oauth2",
 		"image": "/images/logo-teamweek.png",
-		"link": "http://support.toggl.com/teamweek",
+		"link": "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-teamweek",
 		"pipes": [
 			{
 				"id": "users",
@@ -108,7 +108,7 @@
 		"name": "Asana",
 		"auth_type": "oauth2",
 		"image": "/images/logo-asana.png",
-		"link": "http://support.toggl.com/asana",
+		"link": "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-asana",
 		"pipes": [
 			{
 				"id": "users",
@@ -138,7 +138,7 @@
 		"name": "Github",
 		"auth_type": "oauth2",
 		"image": "/images/logo-github.png",
-		"link": "https://github.com/toggl/pipes-api",
+		"link": "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-github",
 		"pipes": [
 			{
 				"id": "projects",
