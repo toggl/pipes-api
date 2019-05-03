@@ -25,11 +25,11 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 
 	want := []Integration{
-		{ID: "basecamp", Name: "Basecamp", Link: "http://support.toggl.com/basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
-		{ID: "freshbooks", Name: "Freshbooks", Link: "http://support.toggl.com/freshbooks", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
-		{ID: "teamweek", Name: "Teamweek", Link: "http://support.toggl.com/teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
-		{ID: "asana", Name: "Asana", Link: "http://support.toggl.com/asana", Image: "/images/logo-asana.png", AuthType: "oauth2"},
-		{ID: "github", Name: "Github", Link: "https://github.com/toggl/pipes-api", Image: "/images/logo-github.png", AuthType: "oauth2"},
+		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
+		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
+		{ID: "teamweek", Name: "Teamweek", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
+		{ID: "asana", Name: "Asana", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-asana", Image: "/images/logo-asana.png", AuthType: "oauth2"},
+		{ID: "github", Name: "Github", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-github", Image: "/images/logo-github.png", AuthType: "oauth2"},
 	}
 
 	if len(integrations) != len(want) {
