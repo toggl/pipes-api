@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -204,6 +205,11 @@ func (p *Pipe) loadLastSync() {
 	}
 }
 
+var (
+	// ErrJSONParsing hides json marshalling errors from users
+	ErrJSONParsing = errors.New("Failed to parse response from service, please contact support")
+)
+
 func (p *Pipe) fetchObjects(saveStatus bool) (err error) {
 	switch p.ID {
 	case "users":
@@ -241,7 +247,14 @@ func (p *Pipe) postObjects(saveStatus bool) (err error) {
 }
 
 func (p *Pipe) endSync(saveStatus bool, err error) error {
+	// If it is Json marshalling error
+	// Notify bugsnag with error
+	// Supress error for user
+
 	if err != nil && saveStatus {
+		if _, ok := err.(*json.UnmarshalTypeError); ok {
+			err = ErrJSONParsing
+		}
 		p.PipeStatus.addError(err)
 	}
 	if saveStatus {

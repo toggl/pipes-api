@@ -1,9 +1,11 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"fmt"
+	"reflect"
+
+	"code.google.com/p/goauth2/oauth"
 )
 
 const TestServiceName = "test_service"
@@ -46,4 +48,23 @@ func (s *TestService) Projects() ([]*Project, error) {
 	ps = append(ps, &Project{Name: p4Name})
 	ps = append(ps, &Project{Name: p5Name})
 	return ps, nil
+}
+
+const TestFailServiceName = "test_fail_service"
+
+type TestFailService struct {
+	TestService
+}
+
+func (s *TestFailService) Name() string {
+	return TestFailServiceName
+}
+
+func (s *TestFailService) Projects() ([]*Project, error) {
+	return nil, &json.UnmarshalTypeError{
+		Value:  "asd",
+		Type:   reflect.TypeOf(1),
+		Struct: "Project",
+		Field:  "id",
+	}
 }
