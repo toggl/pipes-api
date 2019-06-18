@@ -18,3 +18,18 @@ func TestNewClient(t *testing.T) {
 		t.Errorf("NewPipe key = %v, want %v", p.key, expectedKey)
 	}
 }
+
+func TestFailPipeResult(t *testing.T) {
+	p := NewPipe(workspaceID, TestFailServiceName, projectsPipeID)
+
+	if err := p.save(); err != nil {
+		t.Errorf("Unexpected error %v", err)
+		t.FailNow()
+	}
+
+	p.run()
+
+	if p.PipeStatus.Message != ErrJSONParsing.Error() {
+		t.Errorf("FailPipe expected to get wrapper error %s, but get %s", ErrJSONParsing.Error(), p.PipeStatus.Message)
+	}
+}
