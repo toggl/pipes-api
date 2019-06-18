@@ -32,7 +32,7 @@ type (
 		Role              string `json:"role,omitempty"`
 		Active            bool   `json:"active,omitempty"`
 		HoursPerWorkDay   string `json:"hours_per_work_day,omitempty"`
-		MinutesPerWorkDay string `json:"minutes_per_work_day,omitempty"`
+		MinutesPerWorkDay int    `json:"minutes_per_work_day,omitempty"`
 		Dummy             bool   `json:"dummy,omitempty"`
 		PictureUrl        string `json:"picture_url,omitempty"`
 		HasPicture        bool   `json:"has_picture,omitempty"`
