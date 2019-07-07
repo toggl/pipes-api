@@ -247,23 +247,23 @@ func (p *Pipe) postObjects(saveStatus bool) (err error) {
 }
 
 func (p *Pipe) endSync(saveStatus bool, err error) error {
-	// If it is Json marshalling error
-	// Notify bugsnag with error
-	// Supress error for user
+	if !saveStatus {
+		return err
+	}
 
-	if err != nil && saveStatus {
+	if err != nil {
+		// If it is JSON marshalling error suppress it for status
 		if _, ok := err.(*json.UnmarshalTypeError); ok {
 			err = ErrJSONParsing
 		}
 		p.PipeStatus.addError(err)
 	}
-	if saveStatus {
-		if err := p.PipeStatus.save(); err != nil {
-			BugsnagNotifyPipe(p, err)
-			return err
-		}
+	if err = p.PipeStatus.save(); err != nil {
+		BugsnagNotifyPipe(p, err)
+		return err
 	}
-	return err
+
+	return nil
 }
 
 func (p *Pipe) destroy(workspaceID int) error {
