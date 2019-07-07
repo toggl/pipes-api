@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"reflect"
 	"testing"
 )
 
@@ -19,17 +21,27 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestFailPipeResult(t *testing.T) {
-	p := NewPipe(workspaceID, TestFailServiceName, projectsPipeID)
+func TestPipeEndSyncJSONParsingFail(t *testing.T) {
+	p := NewPipe(workspaceID, TestServiceName, projectsPipeID)
 
-	if err := p.save(); err != nil {
-		t.Errorf("Unexpected error %v", err)
-		t.FailNow()
+	jsonUnmarshalError := &json.UnmarshalTypeError{
+		Value:  "asd",
+		Type:   reflect.TypeOf(1),
+		Struct: "Project",
+		Field:  "id",
+	}
+	if err := p.NewStatus(); err != nil {
+		t.Fatalf("Unexpected error %v", err)
 	}
 
-	p.run()
+	if err := p.endSync(true, jsonUnmarshalError); err != nil {
+		t.Fatalf("Unexpected error %v", err)
+	}
 
 	if p.PipeStatus.Message != ErrJSONParsing.Error() {
-		t.Errorf("FailPipe expected to get wrapper error %s, but get %s", ErrJSONParsing.Error(), p.PipeStatus.Message)
+		t.Fatalf(
+			"FailPipe expected to get wrapper error %s, but get %s",
+			ErrJSONParsing.Error(), p.PipeStatus.Message,
+		)
 	}
 }
