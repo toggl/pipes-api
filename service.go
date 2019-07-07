@@ -79,8 +79,6 @@ func getService(serviceID string, workspaceID int) Service {
 		return Service(&GithubService{workspaceID: workspaceID})
 	case TestServiceName:
 		return Service(&TestService{workspaceID: workspaceID})
-	case TestFailServiceName:
-		return Service(&TestFailService{TestService{workspaceID: workspaceID}})
 	default:
 		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
 	}
