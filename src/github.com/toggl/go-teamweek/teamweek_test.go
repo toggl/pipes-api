@@ -99,8 +99,8 @@ func TestWorkspaceMembers(t *testing.T) {
 
 	mux.HandleFunc("/1/members", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `[
-			{"id":1,"email":"test1@teamweek.com"},
-			{"id":2,"email":"test2@teamweek.com"}
+			{"id":1,"email":"test1@teamweek.com", "minutes_per_work_day": 0},
+			{"id":2,"email":"test2@teamweek.com", "minutes_per_work_day": 120}
 		]`)
 	})
 
@@ -110,8 +110,8 @@ func TestWorkspaceMembers(t *testing.T) {
 	}
 
 	want := []Member{
-		{ID: 1, Email: "test1@teamweek.com"},
-		{ID: 2, Email: "test2@teamweek.com"},
+		{ID: 1, Email: "test1@teamweek.com", MinutesPerWorkDay: 0},
+		{ID: 2, Email: "test2@teamweek.com", MinutesPerWorkDay: 120},
 	}
 
 	if !reflect.DeepEqual(users, want) {

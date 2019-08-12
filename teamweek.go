@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"code.google.com/p/goauth2/oauth"
-	"github.com/toggl/go-teamweek/teamweek"
+	"github.com/toggl/go-teamweek"
 )
 
 type TeamweekService struct {
