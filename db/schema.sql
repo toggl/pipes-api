@@ -14,7 +14,9 @@ CREATE TABLE imports(
   created_at TIMESTAMP
 );
 
-CREATE INDEX workspace_imports ON imports USING btree (workspace_id, key);
+-- CREATE INDEX workspace_imports ON imports USING btree (workspace_id, key);
+DROP INDEX CONCURRENTLY IF EXISTS workspace_imports;
+CREATE INDEX CONCURRENTLY workspace_imports_at ON imports USING btree (workspace_id, key, created_at);
 
 CREATE TABLE pipes(
   workspace_id INTEGER,
