@@ -633,3 +633,14 @@ func numberStrToInt(s string) int {
 	}
 	return res
 }
+
+func numberStrToInt64(s string) int64 {
+	if s == "" {
+		return 0
+	}
+	res, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return res
+}

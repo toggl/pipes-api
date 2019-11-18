@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/range-labs/go-asana/asana"
@@ -64,9 +63,8 @@ func (s *AsanaService) Accounts() ([]*Account, error) {
 	}
 	var accounts []*Account
 	for _, object := range foreignObjects {
-		objectID, _ := strconv.ParseInt(object.GID, 10, 64)
 		account := Account{
-			ID:   objectID,
+			ID:   numberStrToInt64(object.GID),
 			Name: object.Name,
 		}
 		accounts = append(accounts, &account)
@@ -122,9 +120,7 @@ func (s *AsanaService) Tasks() ([]*Task, error) {
 
 	var tasks []*Task
 	for _, project := range foreignProjects {
-		projectID, _ := strconv.ParseInt(project.GID, 10, 64)
-
-		opt.Project = projectID
+		opt.Project = numberStrToInt64(project.GID)
 		foreignObjects, err := s.client().ListTasks(context.Background(), opt)
 		if err != nil {
 			return nil, err
