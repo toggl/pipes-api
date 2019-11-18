@@ -67,7 +67,7 @@ func (s *TeamweekService) Accounts() ([]*Account, error) {
 	var accounts []*Account
 	for _, object := range foreignObject.Workspaces {
 		account := Account{
-			ID:   int(object.ID),
+			ID:   object.ID,
 			Name: object.Name,
 		}
 		accounts = append(accounts, &account)
@@ -129,7 +129,7 @@ func (s *TeamweekService) Tasks() ([]*Task, error) {
 			ForeignID:        strconv.FormatInt(object.ID, 10),
 			Name:             object.Name,
 			Active:           !object.Done,
-			foreignProjectID: int(object.ProjectID),
+			foreignProjectID: strconv.FormatInt(object.ProjectID, 10),
 		}
 		tasks = append(tasks, &task)
 	}

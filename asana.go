@@ -1,12 +1,14 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tambet/go-asana/asana"
 	"strconv"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/range-labs/go-asana/asana"
 )
 
 type AsanaService struct {
@@ -17,7 +19,7 @@ type AsanaService struct {
 }
 
 type AsanaParams struct {
-	AccountID int `json:"account_id"`
+	AccountID int64 `json:"account_id"`
 }
 
 func (s *AsanaService) Name() string {
@@ -46,10 +48,7 @@ func (s *AsanaService) setParams(b []byte) error {
 }
 
 func (s *AsanaService) setAuthData(b []byte) error {
-	if err := json.Unmarshal(b, &s.token); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal(b, &s.token)
 }
 
 func (s *AsanaService) client() *asana.Client {
@@ -59,14 +58,15 @@ func (s *AsanaService) client() *asana.Client {
 
 // Map Asana accounts to local accounts
 func (s *AsanaService) Accounts() ([]*Account, error) {
-	foreignObjects, err := s.client().ListWorkspaces()
+	foreignObjects, err := s.client().ListWorkspaces(context.Background())
 	if err != nil {
 		return nil, err
 	}
 	var accounts []*Account
 	for _, object := range foreignObjects {
+		objectID, _ := strconv.ParseInt(object.GID, 10, 64)
 		account := Account{
-			ID:   int(object.ID),
+			ID:   objectID,
 			Name: object.Name,
 		}
 		accounts = append(accounts, &account)
@@ -76,15 +76,15 @@ func (s *AsanaService) Accounts() ([]*Account, error) {
 
 // Map Asana users to users
 func (s *AsanaService) Users() ([]*User, error) {
-	opt := &asana.Filter{Workspace: int64(s.AccountID)}
-	foreignObjects, err := s.client().ListUsers(opt)
+	opt := &asana.Filter{Workspace: s.AccountID}
+	foreignObjects, err := s.client().ListUsers(context.Background(), opt)
 	if err != nil {
 		return nil, err
 	}
 	var users []*User
 	for _, object := range foreignObjects {
 		user := User{
-			ForeignID: strconv.FormatInt(object.ID, 10),
+			ForeignID: object.GID,
 			Name:      object.Name,
 			Email:     object.Email,
 		}
@@ -95,15 +95,15 @@ func (s *AsanaService) Users() ([]*User, error) {
 
 // Map Asana projects to projects
 func (s *AsanaService) Projects() ([]*Project, error) {
-	opt := &asana.Filter{Workspace: int64(s.AccountID)}
-	foreignObjects, err := s.client().ListProjects(opt)
+	opt := &asana.Filter{Workspace: s.AccountID}
+	foreignObjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
 		return nil, err
 	}
 	var projects []*Project
 	for _, object := range foreignObjects {
 		project := Project{
-			ForeignID: strconv.FormatInt(object.ID, 10),
+			ForeignID: object.GID,
 			Name:      object.Name,
 			Active:    !object.Archived,
 		}
@@ -114,25 +114,27 @@ func (s *AsanaService) Projects() ([]*Project, error) {
 
 // Map Asana tasks to tasks
 func (s *AsanaService) Tasks() ([]*Task, error) {
-	opt := &asana.Filter{Workspace: int64(s.AccountID)}
-	foreignProjects, err := s.client().ListProjects(opt)
+	opt := &asana.Filter{Workspace: s.AccountID}
+	foreignProjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
 		return nil, err
 	}
 
 	var tasks []*Task
 	for _, project := range foreignProjects {
-		opt.Project = project.ID
-		foreignObjects, err := s.client().ListTasks(opt)
+		projectID, _ := strconv.ParseInt(project.GID, 10, 64)
+
+		opt.Project = projectID
+		foreignObjects, err := s.client().ListTasks(context.Background(), opt)
 		if err != nil {
 			return nil, err
 		}
 		for _, object := range foreignObjects {
 			task := Task{
-				ForeignID:        strconv.FormatInt(object.ID, 10),
+				ForeignID:        object.GID,
 				Name:             object.Name,
 				Active:           !object.Completed,
-				foreignProjectID: int(project.ID),
+				foreignProjectID: project.GID,
 			}
 			tasks = append(tasks, &task)
 		}

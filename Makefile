@@ -14,7 +14,7 @@ vet:
 	go vet
 
 test: inittestdb
-	go test
+	go test -v
 
 run: vet fmt
 	go build -o $(APPNAME) && ./$(APPNAME)

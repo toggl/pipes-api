@@ -46,10 +46,10 @@ func postTimeEntries(p *Pipe) error {
 	}
 
 	for _, entry := range timeEntries {
-		entry.foreignID = entriesCon.Data[strconv.Itoa(entry.ID)]
-		entry.foreignTaskID = tasksCon.getInt(entry.TaskID)
-		entry.foreignUserID = usersCon.getInt(entry.UserID)
-		entry.foreignProjectID = projectsCon.getInt(entry.ProjectID)
+		entry.foreignID = strconv.Itoa(entriesCon.Data[strconv.Itoa(entry.ID)])
+		entry.foreignTaskID = strconv.Itoa(tasksCon.getInt(entry.TaskID))
+		entry.foreignUserID = strconv.Itoa(usersCon.getInt(entry.UserID))
+		entry.foreignProjectID = strconv.Itoa(projectsCon.getInt(entry.ProjectID))
 
 		entryID, err := service.ExportTimeEntry(&entry)
 		if err != nil {

@@ -1,10 +1,13 @@
 go-asana
 ========
 
-[Go](http://golang.org) library for accessing the [Asana API](http://developer.asana.com/documentation/)
-
 [![Build Status](https://travis-ci.org/tambet/go-asana.svg?branch=master)](https://travis-ci.org/tambet/go-asana)
+[![GoDoc](https://godoc.org/github.com/tambet/go-asana/asana?status.svg)](https://godoc.org/github.com/tambet/go-asana/asana)
 [![Coverage Status](https://coveralls.io/repos/tambet/go-asana/badge.png?branch=master)](https://coveralls.io/r/tambet/go-asana?branch=master)
+
+[Go](https://golang.org) library for accessing the [Asana API](https://asana.com/developers/documentation/getting-started/overview).
+
+**Note:** go-asana is currently in development, so its API may have slightly breaking changes if we find better ways of doing things.
 
 ### Usage ###
 
@@ -41,5 +44,5 @@ projects, err := client.ListProjects(opt)
 
 See the [goauth2 docs][] for complete instructions on using that library.
 
-[goauth2]: https://code.google.com/p/goauth2/
-[goauth2 docs]: http://godoc.org/code.google.com/p/goauth2/oauth
+[goauth2]: https://github.com/golang/oauth2
+[goauth2 docs]: https://godoc.org/golang.org/x/oauth2
