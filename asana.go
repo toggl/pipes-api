@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"code.google.com/p/goauth2/oauth"
+	"github.com/bugsnag/bugsnag-go"
 	"github.com/range-labs/go-asana/asana"
 )
 
@@ -59,6 +60,12 @@ func (s *AsanaService) client() *asana.Client {
 func (s *AsanaService) Accounts() ([]*Account, error) {
 	foreignObjects, err := s.client().ListWorkspaces(context.Background())
 	if err != nil {
+		bugsnag.Notify(err, bugsnag.MetaData{
+			"asana_service": {
+				"method":        "Accounts()",
+				"remote_method": "ListWorkspaces()",
+			},
+		})
 		return nil, err
 	}
 	var accounts []*Account
@@ -77,6 +84,13 @@ func (s *AsanaService) Users() ([]*User, error) {
 	opt := &asana.Filter{Workspace: s.AccountID}
 	foreignObjects, err := s.client().ListUsers(context.Background(), opt)
 	if err != nil {
+		bugsnag.Notify(err, bugsnag.MetaData{
+			"asana_service": {
+				"method":           "Users()",
+				"remote_method":    "ListUsers()",
+				"filter_workspace": s.AccountID,
+			},
+		})
 		return nil, err
 	}
 	var users []*User
@@ -96,6 +110,13 @@ func (s *AsanaService) Projects() ([]*Project, error) {
 	opt := &asana.Filter{Workspace: s.AccountID}
 	foreignObjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
+		bugsnag.Notify(err, bugsnag.MetaData{
+			"asana_service": {
+				"method":           "Projects()",
+				"remote_method":    "ListProjects()",
+				"filter_workspace": s.AccountID,
+			},
+		})
 		return nil, err
 	}
 	var projects []*Project
@@ -115,14 +136,31 @@ func (s *AsanaService) Tasks() ([]*Task, error) {
 	opt := &asana.Filter{Workspace: s.AccountID}
 	foreignProjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
+		bugsnag.Notify(err, bugsnag.MetaData{
+			"asana_service": {
+				"method":           "Tasks()",
+				"remote_method":    "ListProjects()",
+				"filter_workspace": s.AccountID,
+			},
+		})
 		return nil, err
 	}
 
 	var tasks []*Task
 	for _, project := range foreignProjects {
-		opt.Project = numberStrToInt64(project.GID)
+		// list task only accept project filter
+		opt := &asana.Filter{
+			Project: numberStrToInt64(project.GID),
+		}
 		foreignObjects, err := s.client().ListTasks(context.Background(), opt)
 		if err != nil {
+			bugsnag.Notify(err, bugsnag.MetaData{
+				"asana_service": {
+					"method":         "Tasks()",
+					"remote_method":  "ListTasks()",
+					"filter_project": project.GID,
+				},
+			})
 			return nil, err
 		}
 		for _, object := range foreignObjects {
