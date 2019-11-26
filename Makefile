@@ -16,6 +16,10 @@ vet:
 test: inittestdb
 	go test -v
 
+test-integration: inittestdb
+	if [[ ! -f config/asana_test_account.sh ]]; then echo 'please setup pipes-api-conf'; fi
+	source config/asana_test_account.sh && go test -v -tags=integration
+
 run: vet fmt
 	go build -o $(APPNAME) && ./$(APPNAME)
 
