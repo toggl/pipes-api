@@ -1,13 +1,14 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/toggl/go-basecamp"
 	"strconv"
 	"time"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/toggl/go-basecamp"
 )
 
 type BasecampService struct {
@@ -47,10 +48,7 @@ func (s *BasecampService) setParams(b []byte) error {
 }
 
 func (s *BasecampService) setAuthData(b []byte) error {
-	if err := json.Unmarshal(b, &s.token); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal(b, &s.token)
 }
 
 func (s *BasecampService) setSince(since *time.Time) {
@@ -73,7 +71,7 @@ func (s *BasecampService) Accounts() ([]*Account, error) {
 	var accounts []*Account
 	for _, object := range foreignObjects {
 		account := Account{
-			ID:   object.Id,
+			ID:   int64(object.Id),
 			Name: object.Name,
 		}
 		accounts = append(accounts, &account)
@@ -155,7 +153,7 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
 				Active:           true,
-				foreignProjectID: object.ProjectId,
+				foreignProjectID: strconv.Itoa(object.ProjectId),
 			}
 			tasks = append(tasks, &task)
 		}
@@ -167,7 +165,7 @@ func (s *BasecampService) Tasks() ([]*Task, error) {
 				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
 				Active:           false,
-				foreignProjectID: object.ProjectId,
+				foreignProjectID: strconv.Itoa(object.ProjectId),
 			}
 			tasks = append(tasks, &task)
 		}
@@ -190,7 +188,7 @@ func (s *BasecampService) TodoLists() ([]*Task, error) {
 			ForeignID:        strconv.Itoa(object.Id),
 			Name:             object.Name,
 			Active:           !object.Completed,
-			foreignProjectID: object.ProjectId,
+			foreignProjectID: strconv.Itoa(object.ProjectId),
 		}
 		tasks = append(tasks, &task)
 	}

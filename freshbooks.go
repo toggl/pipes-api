@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/tambet/oauthplain"
-	"github.com/toggl/go-freshbooks"
 	"strconv"
 	"time"
+
+	"github.com/tambet/oauthplain"
+	"github.com/toggl/go-freshbooks"
 )
 
 type FreshbooksService struct {
@@ -93,7 +94,7 @@ func (s *FreshbooksService) Projects() ([]*Project, error) {
 			Billable:        true,
 			Name:            object.Name,
 			ForeignID:       strconv.Itoa(object.ProjectId),
-			foreignClientID: convertInt(object.ClientId),
+			foreignClientID: object.ClientId,
 		}
 		projects = append(projects, &project)
 	}
@@ -123,7 +124,7 @@ func (s *FreshbooksService) Tasks() ([]*Task, error) {
 				Active:           true,
 				Name:             task.Name,
 				ForeignID:        fmt.Sprintf("%d-%d", task.TaskId, project.ProjectId),
-				foreignProjectID: project.ProjectId,
+				foreignProjectID: strconv.Itoa(project.ProjectId),
 			})
 		}
 	}
@@ -136,10 +137,10 @@ func (s *FreshbooksService) ExportTimeEntry(t *TimeEntry) (int, error) {
 		return 0, err
 	}
 	entry := &freshbooks.TimeEntry{
-		TimeEntryId: t.foreignID,
-		ProjectId:   t.foreignProjectID,
-		TaskId:      t.foreignTaskID,
-		UserId:      t.foreignUserID,
+		TimeEntryId: numberStrToInt(t.foreignID),
+		ProjectId:   numberStrToInt(t.foreignProjectID),
+		TaskId:      numberStrToInt(t.foreignTaskID),
+		UserId:      numberStrToInt(t.foreignUserID),
 		Hours:       float64(t.DurationInSeconds) / 3600,
 		Notes:       t.Description,
 		Date:        start.Format("2006-01-02"),
@@ -148,15 +149,4 @@ func (s *FreshbooksService) ExportTimeEntry(t *TimeEntry) (int, error) {
 		return 0, fmt.Errorf("task not provided for time entry '%s'", entry.Notes)
 	}
 	return s.Api().SaveTimeEntry(entry)
-}
-
-func convertInt(s string) int {
-	if s == "" {
-		return 0
-	}
-	res, err := strconv.Atoi(s)
-	if err != nil {
-		return 0
-	}
-	return res
 }

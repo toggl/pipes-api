@@ -1,13 +1,15 @@
 package main
 
 type (
+	// Workspace represents toggl workspace
 	Workspace struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	}
 
+	// Account represents account from third party integration
 	Account struct {
-		ID   int    `json:"id"`
+		ID   int64  `json:"id"`
 		Name string `json:"name"`
 	}
 
@@ -15,8 +17,8 @@ type (
 		ID             int    `json:"id,omitempty"`
 		Email          string `json:"email"`
 		Name           string `json:"name"`
-		ForeignID      string `json:"foreign_id,omitempty"`
 		SendInvitation bool   `json:"send_invitation,omitempty"`
+		ForeignID      string `json:"foreign_id,omitempty"`
 	}
 
 	Client struct {
@@ -33,16 +35,17 @@ type (
 		ClientID int    `json:"cid,omitempty"`
 
 		ForeignID       string `json:"foreign_id,omitempty"`
-		foreignClientID int
+		foreignClientID string
 	}
 
 	Task struct {
-		ID               int    `json:"id,omitempty"`
-		Name             string `json:"name"`
-		Active           bool   `json:"active"`
+		ID        int    `json:"id,omitempty"`
+		Name      string `json:"name"`
+		Active    bool   `json:"active"`
+		ProjectID int    `json:"pid"`
+
 		ForeignID        string `json:"foreign_id,omitempty"`
-		ProjectID        int    `json:"pid"`
-		foreignProjectID int
+		foreignProjectID string
 	}
 
 	TimeEntry struct {
@@ -55,10 +58,11 @@ type (
 		Stop              string `json:"stop,omitempty"`
 		DurationInSeconds int    `json:"duration"`
 		Description       string `json:"description,omitempty"`
-		foreignID         int
-		foreignTaskID     int
-		foreignUserID     int
-		foreignProjectID  int
+
+		foreignID        string
+		foreignTaskID    string
+		foreignUserID    string
+		foreignProjectID string
 	}
 
 	AccountsResponse struct {

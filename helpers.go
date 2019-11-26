@@ -470,7 +470,7 @@ func fetchProjects(p *Pipe) error {
 
 	for _, project := range response.Projects {
 		project.ID = projectConnections.Data[project.ForeignID]
-		project.ClientID = clientConnections.Data[strconv.Itoa(project.foreignClientID)]
+		project.ClientID = clientConnections.Data[project.foreignClientID]
 	}
 
 	return nil
@@ -516,7 +516,7 @@ func fetchTodoLists(p *Pipe) error {
 		id := taskConnections.Data[task.ForeignID]
 		if (id > 0) || task.Active {
 			task.ID = id
-			task.ProjectID = projectConnections.Data[strconv.Itoa(task.foreignProjectID)]
+			task.ProjectID = projectConnections.Data[task.foreignProjectID]
 			response.Tasks = append(response.Tasks, task)
 		}
 	}
@@ -562,7 +562,7 @@ func fetchTasks(p *Pipe) error {
 		id := taskConnections.Data[task.ForeignID]
 		if (id > 0) || task.Active {
 			task.ID = id
-			task.ProjectID = projectConnections.Data[strconv.Itoa(task.foreignProjectID)]
+			task.ProjectID = projectConnections.Data[task.foreignProjectID]
 			response.Tasks = append(response.Tasks, task)
 		}
 	}
@@ -615,11 +615,32 @@ func BugsnagNotifyPipe(pipe *Pipe, err error) {
 		"pipe": {
 			"ID":            pipe.ID,
 			"Name":          pipe.Name,
-			"ServiceParams": pipe.ServiceParams,
-
-			"workspaceID": pipe.workspaceID,
-			"serviceID":   pipe.serviceID,
+			"ServiceParams": string(pipe.ServiceParams),
+			"workspaceID":   pipe.workspaceID,
+			"serviceID":     pipe.serviceID,
 		},
 	})
 	return
+}
+
+func numberStrToInt(s string) int {
+	if s == "" {
+		return 0
+	}
+	res, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return res
+}
+
+func numberStrToInt64(s string) int64 {
+	if s == "" {
+		return 0
+	}
+	res, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return res
 }
