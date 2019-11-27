@@ -16,7 +16,7 @@ func createAsanaService() Service {
 	}
 	s.token = token
 	s.AsanaParams = &AsanaParams{
-		AccountID: numberStrToInt64("ASANA_ACCOUNT_ID"),
+		AccountID: numberStrToInt64(os.Getenv("ASANA_ACCOUNT_ID")),
 	}
 	return s
 }

@@ -11,6 +11,8 @@ import (
 	"github.com/range-labs/go-asana/asana"
 )
 
+const asanaPerPageLimit = 20
+
 type AsanaService struct {
 	emptyService
 	workspaceID int
@@ -83,7 +85,10 @@ func (s *AsanaService) Accounts() ([]*Account, error) {
 
 // Map Asana users to users
 func (s *AsanaService) Users() ([]*User, error) {
-	opt := &asana.Filter{Workspace: s.AccountID}
+	opt := &asana.Filter{
+		Workspace: s.AccountID,
+		Limit:     asanaPerPageLimit,
+	}
 	foreignObjects, err := s.client().ListUsers(context.Background(), opt)
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -111,7 +116,10 @@ func (s *AsanaService) Users() ([]*User, error) {
 
 // Map Asana projects to projects
 func (s *AsanaService) Projects() ([]*Project, error) {
-	opt := &asana.Filter{Workspace: s.AccountID}
+	opt := &asana.Filter{
+		Workspace: s.AccountID,
+		Limit:     asanaPerPageLimit,
+	}
 	foreignObjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -139,7 +147,10 @@ func (s *AsanaService) Projects() ([]*Project, error) {
 
 // Map Asana tasks to tasks
 func (s *AsanaService) Tasks() ([]*Task, error) {
-	opt := &asana.Filter{Workspace: s.AccountID}
+	opt := &asana.Filter{
+		Workspace: s.AccountID,
+		Limit:     asanaPerPageLimit,
+	}
 	foreignProjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -159,6 +170,7 @@ func (s *AsanaService) Tasks() ([]*Task, error) {
 		// list task only accept project filter
 		opt := &asana.Filter{
 			Project: numberStrToInt64(project.GID),
+			Limit:   asanaPerPageLimit,
 		}
 		foreignObjects, err := s.client().ListTasks(context.Background(), opt)
 		if err != nil {
