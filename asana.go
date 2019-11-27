@@ -62,8 +62,10 @@ func (s *AsanaService) Accounts() ([]*Account, error) {
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
 			"asana_service": {
-				"method":        "Accounts()",
-				"remote_method": "ListWorkspaces()",
+				"method":           "Accounts()",
+				"remote_method":    "ListWorkspaces()",
+				"asana_account_id": s.AccountID,
+				"workspace_id":     s.WorkspaceID(),
 			},
 		})
 		return nil, err
@@ -89,6 +91,8 @@ func (s *AsanaService) Users() ([]*User, error) {
 				"method":           "Users()",
 				"remote_method":    "ListUsers()",
 				"filter_workspace": s.AccountID,
+				"asana_account_id": s.AccountID,
+				"workspace_id":     s.WorkspaceID(),
 			},
 		})
 		return nil, err
@@ -115,6 +119,8 @@ func (s *AsanaService) Projects() ([]*Project, error) {
 				"method":           "Projects()",
 				"remote_method":    "ListProjects()",
 				"filter_workspace": s.AccountID,
+				"asana_account_id": s.AccountID,
+				"workspace_id":     s.WorkspaceID(),
 			},
 		})
 		return nil, err
@@ -141,6 +147,8 @@ func (s *AsanaService) Tasks() ([]*Task, error) {
 				"method":           "Tasks()",
 				"remote_method":    "ListProjects()",
 				"filter_workspace": s.AccountID,
+				"asana_account_id": s.AccountID,
+				"workspace_id":     s.WorkspaceID(),
 			},
 		})
 		return nil, err
@@ -156,9 +164,11 @@ func (s *AsanaService) Tasks() ([]*Task, error) {
 		if err != nil {
 			bugsnag.Notify(err, bugsnag.MetaData{
 				"asana_service": {
-					"method":         "Tasks()",
-					"remote_method":  "ListTasks()",
-					"filter_project": project.GID,
+					"method":           "Tasks()",
+					"remote_method":    "ListTasks()",
+					"filter_project":   project.GID,
+					"asana_account_id": s.AccountID,
+					"workspace_id":     s.WorkspaceID(),
 				},
 			})
 			return nil, err
