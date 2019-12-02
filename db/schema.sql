@@ -53,19 +53,23 @@ CREATE UNIQUE INDEX pipes_queue_unique ON queued_pipes (workspace_id, key, coale
 CREATE OR REPLACE FUNCTION get_queued_pipes() RETURNS TABLE(workspace_id INTEGER, key VARCHAR(50)) AS $$
 BEGIN
   RETURN QUERY
-  UPDATE
-    queued_pipes
-  SET
-    locked_at = NOW()
-  FROM (
+  WITH available_queue AS (
     SELECT queued_pipes.workspace_id, queued_pipes.key
     FROM queued_pipes
     WHERE locked_at IS NULL
     AND synced_at IS NULL
     ORDER BY priority desc, created_at asc
     FOR UPDATE
+  )
+  UPDATE
+    queued_pipes
+  SET
+    locked_at = NOW()
+  FROM (
+    SELECT DISTINCT ON (available_queue.workspace_id) available_queue.workspace_id, available_queue.key
+    FROM available_queue
     LIMIT 10
-    ) as pipe
+  ) as pipe
   WHERE pipe.workspace_id = queued_pipes.workspace_id AND pipe.key = queued_pipes.key AND synced_at IS NULL
   RETURNING pipe.workspace_id, pipe.key;
 END;

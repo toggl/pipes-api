@@ -2,15 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"time"
-
 	"log"
+	"net/http"
+	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/tambet/oauthplain"
-
-	"net/http"
 )
+
+// mutex to prevent multiple of postPipeRun on same workspace run at same time
+var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
+var postPipeRunLock sync.Mutex
 
 type Selector struct {
 	IDs         []int `json:"ids"`
@@ -334,6 +337,16 @@ func postServicePipeClearConnections(req Request) Response {
 
 func postPipeRun(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
+
+	// make sure no race condition on fetching workspace lock
+	postPipeRunLock.Lock()
+	workspaceLock, exists := postPipeRunWorkspaceLock[workspaceID]
+	if !exists {
+		workspaceLock = &sync.Mutex{}
+		postPipeRunWorkspaceLock[workspaceID] = workspaceLock
+	}
+	postPipeRunLock.Unlock()
+
 	serviceID, pipeID := currentServicePipeID(req.r)
 
 	pipe, err := loadPipe(workspaceID, serviceID, pipeID)
@@ -347,7 +360,11 @@ func postPipeRun(req Request) Response {
 		return badRequest(msg)
 	}
 	if pipe.ID == "users" {
-		go pipe.run()
+		go func() {
+			workspaceLock.Lock()
+			pipe.run()
+			workspaceLock.Unlock()
+		}()
 		time.Sleep(500 * time.Millisecond)
 	} else {
 		_, err = db.Exec(queuePipeAsFirstSQL, pipe.workspaceID, pipe.key)
