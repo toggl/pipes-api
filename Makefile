@@ -3,6 +3,9 @@ export GOPATH=$(shell pwd)
 GOVERSION=$(shell go version | cut -d' ' -f3)
 REQUIRED_GOVERSION = $(shell cat .go-version | tr -d '\n')
 
+BUGSNAG_API_KEY := '0dd013f86222a229cc6116df663900c8'
+BUGSNAG_DEPLOY_NOTIFY_URL := 'https://notify.bugsnag.com/deploy'
+
 default: clean build fmt
 
 inittestdb:
@@ -64,3 +67,20 @@ get-dep:
 		echo "usage: DEPENDENCY=github.com/login/pkg make get-dep"; \
 		exit 1; \
 	fi
+
+vendor: dist
+	cd dist && tar czf pipes-api.tgz pipes-api config
+
+send-vendor-staging: vendor
+	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/staging.tgz
+
+send-vendor-production: vendor
+	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/production.tgz
+
+staging: send-vendor-staging
+	crap staging; \
+		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=staging" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+
+production: send-vendor-production
+	crap production; \
+		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=production" $(BUGSNAG_DEPLOY_NOTIFY_URL)
