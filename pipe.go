@@ -375,7 +375,6 @@ func getPipesFromQueue() ([]*Pipe, error) {
 	}
 	defer rows.Close()
 
-	retrievedWorkspaces := map[int]bool{}
 	for rows.Next() {
 		var workspaceID int
 		var key string
@@ -383,12 +382,6 @@ func getPipesFromQueue() ([]*Pipe, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		// skip workspace if it is already retrieved
-		if _, exists := retrievedWorkspaces[workspaceID]; exists {
-			continue
-		}
-		retrievedWorkspaces[workspaceID] = true
 
 		if workspaceID > 0 && len(key) > 0 {
 			pipe, err := loadPipeWithKey(workspaceID, key)

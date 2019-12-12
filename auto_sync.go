@@ -1,48 +1,56 @@
 package main
 
 import (
-	"github.com/bugsnag/bugsnag-go"
 	"log"
 	"math/rand"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/bugsnag/bugsnag-go"
 )
 
 var wg sync.WaitGroup
 
 const (
-	workersCount = 5
-	sleepMin     = 300
-	sleepMax     = 900
+	workersCount = 15
+	sleepMin     = 60
+	sleepMax     = 300
 )
 
 func runPipes() {
 	wg.Add(workersCount)
 	for i := 0; i < workersCount; i++ {
-		go pipeWorker()
+		go pipeWorker(i)
 	}
 }
 
-func pipeWorker() {
+func pipeWorker(id int) {
+	defer func() {
+		log.Printf("[Workder %d] died\n", id)
+		wg.Done()
+	}()
 	for {
 		pipes, err := getPipesFromQueue()
 		if err != nil {
 			bugsnag.Notify(err)
-			break
+			continue
 		}
 		if pipes == nil {
-			break
+			continue
 		}
+		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
+			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.workspaceID, pipe.key)
 			pipe.run()
+
 			err := setQueuedPipeSynced(pipe)
 			if err != nil {
 				BugsnagNotifyPipe(pipe, err)
 			}
+			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.workspaceID, pipe.key, (err != nil))
 		}
 	}
-	wg.Done()
 }
 
 func runPipesStub() {
@@ -55,14 +63,18 @@ func runPipesStub() {
 func pipeWorkerStub() {
 	ranCount := 0
 	gotCount := 0
+	defer func() {
+		log.Printf("Got %d pipes, ran %d pipes\n", gotCount, ranCount)
+		wg.Done()
+	}()
 	for {
 		pipes, err := getPipesFromQueue()
 		if err != nil {
 			bugsnag.Notify(err)
-			break
+			continue
 		}
 		if pipes == nil {
-			break
+			continue
 		}
 		gotCount += len(pipes)
 		for _, pipe := range pipes {
@@ -74,13 +86,13 @@ func pipeWorkerStub() {
 			ranCount++
 		}
 	}
-	log.Printf("Got %d pipes, ran %d pipes\n", gotCount, ranCount)
-	wg.Done()
 }
 
 func autoSyncRunner() {
 	for {
-		time.Sleep(time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second)
+		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
+		log.Println("-- Autosync sleeping for ", duration)
+		time.Sleep(duration)
 		log.Println("-- Autosync started")
 		runPipes()
 		wg.Wait()
@@ -90,7 +102,9 @@ func autoSyncRunner() {
 
 func autoSyncRunnerStub() {
 	for {
-		time.Sleep(time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second)
+		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
+		log.Println("-- AutosyncStub sleeping for ", duration)
+		time.Sleep(duration)
 		log.Println("-- AutosyncStub started")
 		runPipesStub()
 		wg.Wait()
@@ -100,7 +114,12 @@ func autoSyncRunnerStub() {
 
 func autoSyncQueuer() {
 	for {
-		time.Sleep(time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second)
+		// this basically schedule background job for each integration with auto sync enabled
+		// making sleep longer to not trigger auto sync too fast
+		// between 600s until 3000s
+		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second * 10
+		log.Println("-- Queuer sleeping for ", duration)
+		time.Sleep(duration)
 		log.Println("-- Queuer started")
 		_, err := db.Exec(queueAutomaticPipesSQL)
 		if err != nil {

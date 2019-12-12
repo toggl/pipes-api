@@ -37,6 +37,9 @@ func TestAsanaAccounts(t *testing.T) {
 	if len(accounts) != 1 {
 		t.Error("should get 1 account returned")
 	}
+	if accounts[0].ID != numberStrToInt64(os.Getenv("ASANA_ACCOUNT_ID")) {
+		t.Error("got wrong account id")
+	}
 }
 
 func TestAsanaUsers(t *testing.T) {
