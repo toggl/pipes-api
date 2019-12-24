@@ -138,6 +138,7 @@ We also need to enable the Github integration in [pipes-ui](https://github.com/t
 to run pipes test: `make test`
 
 to run integrations tests:
+	- get a token: https://app.asana.com/0/developer-console
 	- create a file: `./config/asana_test_account.sh`
 	- add your personal token: `export ASANA_PERSONAL_TOKEN=my_token...`
 	- run `make test-integration`
