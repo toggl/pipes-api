@@ -133,3 +133,11 @@ We also need to enable the Github integration in [pipes-ui](https://github.com/t
 
 [1]: https://github.com/toggl/pipes-ui
 [2]: https://github.com/toggl/pipes-api/blob/master/service.go
+
+## Tests
+to run pipes test: `make test`
+
+to run integrations tests:
+	- create a file: `./config/asana_test_account.sh`
+	- add your personal token: `export ASANA_PERSONAL_TOKEN=my_token...`
+	- run `make test-integration`
