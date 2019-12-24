@@ -69,6 +69,7 @@ func TestAsanaTask(t *testing.T) {
 	}
 
 	if len(tasks) <= 20 {
-		t.Error("should get more than 20 tasks, please create at least 20 tasks to test pagination")
+		t.Error(`should get more than 20 tasks, \
+please create at least 20 tasks and assign them to a project to test pagination`)
 	}
 }
