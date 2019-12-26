@@ -117,8 +117,8 @@ func (s *AsanaService) Users() ([]*User, error) {
 // Map Asana projects to projects
 func (s *AsanaService) Projects() ([]*Project, error) {
 	opt := &asana.Filter{
-		WorkspaceGID: fmt.Sprintf("%d", s.AccountID),
-		Limit:        asanaPerPageLimit,
+		Workspace: s.AccountID,
+		Limit:     asanaPerPageLimit,
 	}
 	foreignObjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
