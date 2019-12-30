@@ -87,7 +87,7 @@ func (s *AsanaService) Accounts() ([]*Account, error) {
 func (s *AsanaService) Users() ([]*User, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
-		// TODO: set a limit
+		Limit:     asanaPerPageLimit,
 	}
 	foreignObjects, err := s.client().ListUsers(context.Background(), opt)
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *AsanaService) Users() ([]*User, error) {
 func (s *AsanaService) Projects() ([]*Project, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
-		// TODO: set a limit
+		Limit:     asanaPerPageLimit,
 	}
 	foreignObjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *AsanaService) Projects() ([]*Project, error) {
 func (s *AsanaService) Tasks() ([]*Task, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
-		// TODO: set a limit
+		Limit:     asanaPerPageLimit,
 	}
 	foreignProjects, err := s.client().ListProjects(context.Background(), opt)
 	if err != nil {
@@ -170,7 +170,7 @@ func (s *AsanaService) Tasks() ([]*Task, error) {
 		// list task only accept project filter
 		opt := &asana.Filter{
 			Project: numberStrToInt64(project.GID),
-			// TODO: set a limit
+			Limit:   asanaPerPageLimit,
 		}
 		foreignObjects, err := s.client().ListTasks(context.Background(), opt)
 		if err != nil {
