@@ -3,11 +3,16 @@
 package main
 
 import (
+	"log"
 	"os"
 	"testing"
 
 	"code.google.com/p/goauth2/oauth"
 )
+
+func resetAsanaLimit() {
+	asanaPerPageLimit = 100
+}
 
 func createAsanaService() Service {
 	s := &AsanaService{}
@@ -48,6 +53,9 @@ func TestAsanaUsers(t *testing.T) {
 }
 
 func TestAsanaProjects(t *testing.T) {
+	defer resetAsanaLimit()
+	asanaPerPageLimit = 10
+
 	s := createAsanaService()
 
 	projects, err := s.Projects()
@@ -55,12 +63,16 @@ func TestAsanaProjects(t *testing.T) {
 		t.Error("error calling projects(), err:", err)
 	}
 
-	if len(projects) <= 20 {
-		t.Error("should get more than 20 project, please create at least 20 project to test pagination")
+	if len(projects) <= 10 {
+		t.Error("should get more than 10 project, please create at least 10 project to test pagination")
 	}
+	log.Print(len(projects))
 }
 
 func TestAsanaTask(t *testing.T) {
+	defer resetAsanaLimit()
+	asanaPerPageLimit = 10
+
 	s := createAsanaService()
 
 	tasks, err := s.Tasks()
@@ -68,8 +80,8 @@ func TestAsanaTask(t *testing.T) {
 		t.Error("error calling tasks(), err: ", err)
 	}
 
-	if len(tasks) <= 20 {
-		t.Error(`should get more than 20 tasks, \
+	if len(tasks) <= 10 {
+		t.Error(`should get more than 10 tasks, \
 please create at least 20 tasks and assign them to a project to test pagination`)
 	}
 }

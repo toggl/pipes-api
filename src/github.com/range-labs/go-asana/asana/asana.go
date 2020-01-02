@@ -137,7 +137,7 @@ type (
 	}
 
 	Filter struct {
-		Archived       bool     `url:"archived,omitempty"`
+		Archived       bool     `url:"archived"`
 		Assignee       int64    `url:"assignee,omitempty"`
 		AssigneeGID    int64    `url:"assignee,omitempty"`
 		Project        int64    `url:"project,omitempty"`
@@ -225,9 +225,23 @@ func (c *Client) ListWorkspaces(ctx context.Context) ([]Workspace, error) {
 }
 
 func (c *Client) ListUsers(ctx context.Context, opt *Filter) ([]User, error) {
-	users := new([]User)
-	err := c.Request(ctx, "users", opt, users)
-	return *users, err
+	users := []User{}
+	for {
+		page := []User{}
+		next, err := c.request(ctx, "GET", "users", nil, nil, opt, &page)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, page...)
+		if next == nil {
+			break
+		} else {
+			newOpt := *opt
+			opt = &newOpt
+			opt.Offset = next.Offset
+		}
+	}
+	return users, nil
 }
 
 func (c *Client) ListProjects(ctx context.Context, opt *Filter) ([]Project, error) {

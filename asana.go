@@ -11,7 +11,7 @@ import (
 	"github.com/range-labs/go-asana/asana"
 )
 
-const asanaPerPageLimit = 20
+var asanaPerPageLimit uint32 = 100
 
 type AsanaService struct {
 	emptyService
