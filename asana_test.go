@@ -3,7 +3,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"testing"
 
@@ -67,9 +66,8 @@ func TestAsanaProjects(t *testing.T) {
 	}
 
 	if len(projects) <= 10 {
-		t.Error("should get more than 10 project, please create at least 10 project to test pagination")
+		t.Error("should get more than 10 project, please create at least 11 project to test pagination")
 	}
-	log.Print(len(projects))
 }
 
 func TestAsanaTask(t *testing.T) {
@@ -84,7 +82,6 @@ func TestAsanaTask(t *testing.T) {
 	}
 
 	if len(tasks) <= 10 {
-		t.Error(`should get more than 10 tasks, \
-please create at least 20 tasks and assign them to a project to test pagination`)
+		t.Error("should get more than 10 tasks, please create at least 11 tasks and assign them to a project to test pagination")
 	}
 }
