@@ -48,7 +48,7 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 
 func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	db = connectDB(testDBConnString)
-	createPipeFn := func(workspaceID int, serviceID, pipeID string) *Pipe {
+	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *Pipe {
 		pipe := NewPipe(workspaceID, serviceID, pipeID)
 		pipe.Automatic = true
 		pipe.Configured = true
@@ -58,34 +58,38 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 			return nil
 		}
 		_, err = db.Exec(`
-			insert into pipes(workspace_id, key, data)
-			values($1, $2, $3)
-		`, pipe.workspaceID, pipe.key, data)
+			with created as (
+				insert into pipes(workspace_id, key, data)
+				values ($1, $2, $3)
+				returning *
+			)
+			insert into queued_pipes(workspace_id, key, priority)
+			select created.workspace_id, created.key, $4 from created
+		`, pipe.workspaceID, pipe.key, data, priority)
 		if err != nil {
 			t.Error(err)
 		}
 		return pipe
 	}
 
-	createPipeFn(1, "asana", "users")
-	createPipeFn(2, "asana", "projects")
-	createPipeFn(1, "asana", "projects")
+	createAndEnqueuePipeFn(1, "asana", "users", 0)
+	createAndEnqueuePipeFn(2, "asana", "projects", 10)
+	createAndEnqueuePipeFn(1, "asana", "projects", 0)
+	createAndEnqueuePipeFn(3, "asana", "projects", 100)
 
-	// schedule them to be processed automatically
-	_, err := db.Exec(queueAutomaticPipesSQL)
-	if err != nil {
-		t.Error(err)
-	}
-
-	// first fetch should return 2 pipes (non duplicate workspace)
+	// first fetch should return 3 pipes and unique per workspace
 	pipes, err := getPipesFromQueue()
 	if err != nil {
 		t.Error(err)
 	}
-	if len(pipes) != 2 {
-		t.Error("should only return 2 pipes")
+	if len(pipes) != 3 {
+		t.Error("should return 3 pipes")
+	}
+	if pipes[0].workspaceID != 3 {
+		t.Error("first returned pipe should be pipe for workspace 3 because it has highest priority")
 	}
 
+	// make sure returned pipes are unique per workspace
 	retrievedWorkspace := map[int]bool{}
 	for _, pipe := range pipes {
 		_, exists := retrievedWorkspace[pipe.workspaceID]
@@ -107,6 +111,9 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	}
 	if len(pipes) != 1 {
 		t.Error("should only return 1 pipe")
+	}
+	if pipes[0].workspaceID != 1 {
+		t.Error("should be workspace 1")
 	}
 	if _, exists := retrievedWorkspace[pipes[0].workspaceID]; !exists {
 		t.Error("should return pipe with workspace from retrievedWorkspace")
