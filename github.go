@@ -1,11 +1,13 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
+	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-github/github"
 	"strconv"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/google/go-github/github"
 )
 
 type GithubService struct {
@@ -42,7 +44,7 @@ func (s *GithubService) Accounts() ([]*Account, error) {
 
 // Map Github repos to projects
 func (s *GithubService) Projects() ([]*Project, error) {
-	repos, _, err := s.client().Repositories.List("", nil)
+	repos, _, err := s.client().Repositories.List(context.Background(), "", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +53,7 @@ func (s *GithubService) Projects() ([]*Project, error) {
 		project := Project{
 			Active:    true,
 			Name:      *object.Name,
-			ForeignID: strconv.Itoa(*object.ID),
+			ForeignID: strconv.FormatInt(*object.ID, 10),
 		}
 		projects = append(projects, &project)
 	}

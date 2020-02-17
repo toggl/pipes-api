@@ -3,11 +3,11 @@ BUGSNAG_API_KEY := '0dd013f86222a229cc6116df663900c8'
 BUGSNAG_DEPLOY_NOTIFY_URL := 'https://notify.bugsnag.com/deploy'
 
 test: inittestdb
-	go test -v
+	go test -v -race -cover
 
 test-integration: inittestdb
-	if [[ ! -f config/asana_test_account.sh ]]; then echo 'please setup pipes-api-conf'; fi
-	source config/asana_test_account.sh && go test -v -race -tags=integration
+	source config/asana_test_account.sh; source config/github_test_account.sh; \
+		go test -v -race -cover -tags=integration
 
 inittestdb:
 	psql -c 'DROP database pipes_test;' -U postgres

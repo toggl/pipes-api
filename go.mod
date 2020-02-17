@@ -2,14 +2,12 @@ module github.com/toggl/pipes-api
 
 replace (
 	code.google.com/p/goauth2/oauth => ./vendor/code.google.com/goauth2/oauth
-	github.com/google/go-github => ./vendor/github.com/google/go-github
 	github.com/toggl/go-basecamp => ./vendor/github.com/toggl/go-basecamp
 )
 
 // replaced packages
 require (
 	code.google.com/p/goauth2/oauth v0.0.0
-	github.com/google/go-github v0.0.0
 	github.com/toggl/go-basecamp v0.0.0
 )
 
@@ -19,6 +17,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.3
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.7.4
