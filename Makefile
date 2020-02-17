@@ -6,8 +6,7 @@ test: inittestdb
 	go test -v -race -cover
 
 test-integration: inittestdb
-	source config/asana_test_account.sh; source config/github_test_account.sh; \
-		go test -v -race -cover -tags=integration
+	source config/test_accounts.sh && go test -v -race -cover -tags=integration
 
 inittestdb:
 	psql -c 'DROP database pipes_test;' -U postgres
