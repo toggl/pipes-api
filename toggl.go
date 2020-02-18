@@ -12,6 +12,22 @@ import (
 	"time"
 )
 
+var togglAPIPingClient = &http.Client{
+	Timeout: 3 * time.Second,
+}
+
+func pingTogglAPI() error {
+	url := fmt.Sprintf("%s/api/v9/status", urls.TogglAPIHost[environment])
+	resp, err := togglAPIPingClient.Get(url)
+	if err != nil {
+		return fmt.Errorf("error checking toggl api: %s", err.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("toggl api is not healthy, got status code: %d", resp.StatusCode)
+	}
+	return nil
+}
+
 type workspaceResponse struct {
 	Workspace *Workspace `json:"data"`
 }
