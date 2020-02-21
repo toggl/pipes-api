@@ -376,13 +376,20 @@ func postPipeRun(req Request) Response {
 }
 
 func getStatus(req Request) Response {
+	resp := &struct {
+		Reasons []string `json:"reasons"`
+	}{}
+
 	if dbIsDown() {
-		resp := &struct {
-			Reasons []string `json:"reasons"`
-		}{
-			[]string{"Database is down"},
-		}
+		resp.Reasons = append(resp.Reasons, "Database is down")
+	}
+
+	if err := pingTogglAPI(); err != nil {
+		resp.Reasons = append(resp.Reasons, err.Error())
+	}
+
+	if len(resp.Reasons) > 0 {
 		return serviceUnavailable(resp)
 	}
-	return ok("OK")
+	return ok(map[string]string{"status": "OK"})
 }
