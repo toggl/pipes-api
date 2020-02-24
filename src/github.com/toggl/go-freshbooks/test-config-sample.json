@@ -1,8 +1,0 @@
-{
-  "AccountName":"<<ACCOUNT NAME>>",
-  "AuthToken":"<<AUTHENTICATION TOKEN>>",
-  "ConsumerKey":"<<CONSUMER KEY>>",
-  "ConsumerSecret":"<<CONSUMER SECRET>>",
-  "OAuthToken":"<<OAUTH TOKEN>>",
-  "OAuthTokenSecret":"<<OAUTH TOKEN SECRET>>"
-}

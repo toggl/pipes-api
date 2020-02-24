@@ -1,5 +1,3 @@
-pipes-api
 dist/*
 bin
-pkg
 config

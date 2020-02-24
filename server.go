@@ -1,11 +1,8 @@
 package main
 
 import (
-	"code.google.com/p/goauth2/oauth"
 	"encoding/json"
 	"fmt"
-	"github.com/bugsnag/bugsnag-go"
-	"github.com/tambet/oauthplain"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -16,6 +13,10 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"code.google.com/p/goauth2/oauth"
+	"github.com/bugsnag/bugsnag-go"
+	"github.com/tambet/oauthplain"
 )
 
 var (
