@@ -6,6 +6,7 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/cfg"
 	"github.com/toggl/pipes-api/pkg/storage"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 var testDB = "pipes_test"
@@ -18,9 +19,9 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		Environment: flags.Environment,
 	}
 
-	store := &storage.Storage{
-		ConnString: flags.TestDBConnString,
-	}
+	store := &storage.Storage{ConnString: flags.TestDBConnString}
+	store.Connect()
+	defer store.Close()
 
 	authService := &AuthorizationService{
 		Storage:                 store,
@@ -29,13 +30,25 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		OAuth2Configs:           cfg.OAuth2Configs, // TODO: Remove global state
 	}
 
-	integrationSvc := IntegrationService{
+	togglService := &toggl.Service{
+		URL: cfg.Urls.TogglAPIHost[flags.Environment], // TODO: Remove Global state
+	}
+
+	connService := &ConnectionService{
+		Storage: store,
+	}
+
+	pipeService := &PipeService{
+		Storage:               store,
 		AuthorizationService:  authService,
-		AvailableIntegrations: cfg.AvailableIntegrations, // TODO: Remove global state
+		TogglService:          togglService,
+		ConnectionService:     connService,
+		PipesApiHost:          cfg.Urls.PipesAPIHost[flags.Environment], // TODO: Remove Global state
+		AvailableIntegrations: cfg.AvailableIntegrations,                // TODO: Remove Global state
 		OAuthService:          oauthService,
 	}
 
-	integrations, err := integrationSvc.WorkspaceIntegrations(workspaceID)
+	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
 	if err != nil {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
@@ -45,7 +58,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		integrations[i].Pipes = nil
 	}
 
-	want := []Integration{
+	want := []cfg.Integration{
 		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
 		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
 		{ID: "teamweek", Name: "Toggl Plan", Link: "https://support.toggl.com/articles/2212490-integration-with-toggl-plan-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
@@ -73,9 +86,9 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		Environment: flags.Environment,
 	}
 
-	store := &storage.Storage{
-		ConnString: flags.TestDBConnString,
-	}
+	store := &storage.Storage{ConnString: flags.TestDBConnString}
+	store.Connect()
+	defer store.Close()
 
 	authService := &AuthorizationService{
 		Storage:                 store,
@@ -84,19 +97,31 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		OAuth2Configs:           cfg.OAuth2Configs, // TODO: Remove global state
 	}
 
-	integrationSvc := IntegrationService{
+	togglService := &toggl.Service{
+		URL: cfg.Urls.TogglAPIHost[flags.Environment], // TODO: Remove Global state
+	}
+
+	connService := &ConnectionService{
+		Storage: store,
+	}
+
+	pipeService := &PipeService{
+		Storage:               store,
 		AuthorizationService:  authService,
-		AvailableIntegrations: cfg.AvailableIntegrations, // TODO: Remove global state
+		TogglService:          togglService,
+		ConnectionService:     connService,
+		PipesApiHost:          cfg.Urls.PipesAPIHost[flags.Environment], // TODO: Remove Global state
+		AvailableIntegrations: cfg.AvailableIntegrations,                // TODO: Remove Global state
 		OAuthService:          oauthService,
 	}
 
-	integrations, err := integrationSvc.WorkspaceIntegrations(workspaceID)
+	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
 	if err != nil {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
 	}
 
-	want := [][]*Pipe{
+	want := [][]*cfg.Pipe{
 		{ // Basecamp
 			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
 			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},

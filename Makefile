@@ -5,7 +5,7 @@ REVISION:=$(shell git rev-parse HEAD)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
 
 test: inittestdb
-	go test -v -race -cover
+	go test -v -race -cover ./pkg/...
 
 test-integration: inittestdb
 	source config/test_accounts.sh && go test -v -race -cover -tags=integration

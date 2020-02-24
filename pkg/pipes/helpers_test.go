@@ -9,12 +9,13 @@ import (
 	"github.com/toggl/pipes-api/pkg/cfg"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
 	"github.com/toggl/pipes-api/pkg/storage"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-func generateTasks(nr int) []*Task {
-	var ts []*Task
+func generateTasks(nr int) []*toggl.Task {
+	var ts []*toggl.Task
 	for i := 0; i < nr; i++ {
-		t := Task{ID: i, Name: `Name`, Active: (i%2 == 0), ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
+		t := toggl.Task{ID: i, Name: `Name`, Active: (i%2 == 0), ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
 		ts = append(ts, &t)
 	}
 	return ts
@@ -79,26 +80,55 @@ func TestTaskSplittingSmallDifferent(t *testing.T) {
 }
 
 func TestGetProjects(t *testing.T) {
-	config := cfg.Flags{}
-	cfg.ParseFlags(&config)
+	flags := cfg.Flags{}
+	cfg.ParseFlags(&flags)
 
-	db := storage.Storage{ConnString: config.TestDBConnString}
-	db.Connect()
-	defer db.Close()
+	oauthService := &cfg.OAuthService{
+		Environment: flags.Environment,
+	}
 
-	p := NewPipe(1, mock.ServiceName, "projects")
+	store := &storage.Storage{ConnString: flags.TestDBConnString}
+	store.Connect()
+	defer store.Close()
 
-	fetchProjects(p)
+	authService := &AuthorizationService{
+		Storage:                 store,
+		AvailableAuthorizations: cfg.AvailableAuthorizations, // TODO: Remove global state
+		Environment:             flags.Environment,
+		OAuth2Configs:           cfg.OAuth2Configs, // TODO: Remove global state
+	}
 
-	s, err := p.Service()
+	togglService := &toggl.Service{
+		URL: cfg.Urls.TogglAPIHost[flags.Environment], // TODO: Remove Global state
+	}
+
+	connService := &ConnectionService{
+		Storage: store,
+	}
+
+	pipeService := &PipeService{
+		Storage:               store,
+		AuthorizationService:  authService,
+		TogglService:          togglService,
+		ConnectionService:     connService,
+		PipesApiHost:          cfg.Urls.PipesAPIHost[flags.Environment], // TODO: Remove Global state
+		AvailableIntegrations: cfg.AvailableIntegrations,                // TODO: Remove Global state
+		OAuthService:          oauthService,
+	}
+
+	p := cfg.NewPipe(1, mock.ServiceName, "projects")
+
+	pipeService.fetchProjects(p)
+
+	s, err := pipeService.ServiceFor(p)
 	if err != nil {
 		t.Error(err)
 	}
-	b, err := getObject(s, "projects")
+	b, err := pipeService.getObject(s, "projects")
 	if err != nil {
 		t.Error(err)
 	}
-	var pr ProjectsResponse
+	var pr toggl.ProjectsResponse
 	err = json.Unmarshal(b, &pr)
 	if err != nil {
 		t.Error(err)
