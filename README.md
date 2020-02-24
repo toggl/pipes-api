@@ -75,15 +75,15 @@ func (s *GithubService) Name() string {
   return "github"
 }
 
-func (s *GithubService) WorkspaceID() int {
+func (s *GithubService) GetWorkspaceID() int {
 	return s.workspaceID
 }
 
-func (s *GithubService) keyFor(objectType string) string {
+func (s *GithubService) KeyFor(objectType string) string {
 	return fmt.Sprintf("github:%s", objectType)
 }
 
-func (s *GithubService) setAuthData(b []byte) error {
+func (s *GithubService) SetAuthData(b []byte) error {
 	if err := json.Unmarshal(b, &s.token); err != nil {
 		return err
 	}
