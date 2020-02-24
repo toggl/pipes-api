@@ -1,13 +1,18 @@
 # Pipes API
 
-Backend for the Toggl Pipes project. Currently in development.
+Backend for the Toggl Pipes project.
+
+Basically this is just job scheduler with REST-API. 
+It schedules job to do synchronization to a third party service.
+Pipes-api will fetch data then send them to pipes endpoints in "Toggl API".
 
 [![Build Status](https://travis-ci.org/toggl/pipes-api.svg?branch=master)](https://travis-ci.org/toggl/pipes-api)
 
 ## Requirements
 
-* Go 1.11.2 - [http://golang.org/](http://golang.org/)
-* PostgreSQL 9.3 - [http://www.postgresql.org/](http://www.postgresql.org/)
+* goenv - [github.com/syndbg/goenv](https://github.com/syndbg/goenv)
+* Go 1.11.8 - [http://golang.org/](http://golang.org/)
+* PostgreSQL 9.6 - [http://www.postgresql.org/](http://www.postgresql.org/)
 
 ## Getting Started
 * Clone the repo `git@github.com:toggl/pipes-api.git`
