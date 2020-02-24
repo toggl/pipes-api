@@ -1,6 +1,8 @@
 APPNAME=pipes-api
-BUGSNAG_API_KEY := '0dd013f86222a229cc6116df663900c8'
-BUGSNAG_DEPLOY_NOTIFY_URL := 'https://notify.bugsnag.com/deploy'
+BUGSNAG_API_KEY:=0dd013f86222a229cc6116df663900c8
+BUGSNAG_DEPLOY_NOTIFY_URL:=https://notify.bugsnag.com/deploy
+REVISION:=$(shell git rev-parse HEAD)
+REPOSITORY:=git@github.com:toggl/pipes-api.git
 
 test: inittestdb
 	go test -v -race -cover
@@ -39,8 +41,8 @@ send-vendor-production: vendor
 
 staging: send-vendor-staging
 	crap staging; \
-		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=staging" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=staging&revision=$(REVISION)&repository=$(REPOSITORY)" $(BUGSNAG_DEPLOY_NOTIFY_URL)
 
 production: send-vendor-production
 	crap production; \
-		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=production" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=production&revision=$(REVISION)&repository=$(REPOSITORY)" $(BUGSNAG_DEPLOY_NOTIFY_URL)
