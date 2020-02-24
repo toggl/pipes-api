@@ -10,8 +10,6 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	gouuid "github.com/nu7hatch/gouuid"
-
-	"github.com/toggl/pipes-api/pkg/cfg"
 )
 
 type Router struct {
@@ -98,9 +96,9 @@ func (router *Router) isWhiteListedCorsOrigin(r *http.Request) (string, bool) {
 	return "", false
 }
 
-func Start(flags *cfg.Flags, routes *Router) {
+func Start(port int, routes *Router) {
 	http.Handle("/", routes)
-	listenAddress := fmt.Sprintf(":%d", flags.Port)
+	listenAddress := fmt.Sprintf(":%d", port)
 	log.Printf("pipes (PID: %d) is starting on %s\n=> Ctrl-C to shutdown server\n", os.Getpid(), listenAddress)
 	log.Fatal(http.ListenAndServe(listenAddress, http.DefaultServeMux))
 }

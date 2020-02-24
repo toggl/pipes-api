@@ -5,35 +5,11 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"os"
 	"path/filepath"
 
 	"code.google.com/p/goauth2/oauth"
-	"github.com/namsral/flag"
 	"github.com/tambet/oauthplain"
 )
-
-type Flags struct {
-	Port             int
-	WorkDir          string
-	BugsnagAPIKey    string
-	Environment      string
-	DbConnString     string
-	TestDBConnString string
-}
-
-func ParseFlags(flags *Flags) {
-	fs := flag.NewFlagSetWithEnvPrefix(os.Args[0], "PIPES_API", flag.ExitOnError)
-
-	fs.IntVar(&flags.Port, "port", 8100, "port")
-	fs.StringVar(&flags.WorkDir, "workdir", ".", "Workdir of server")
-	fs.StringVar(&flags.BugsnagAPIKey, "bugsnag_key", "", "Bugsnag API Key")
-	fs.StringVar(&flags.Environment, "environment", "development", "Environment")
-	fs.StringVar(&flags.DbConnString, "db_conn_string", "dbname=pipes_development user=pipes_user host=localhost sslmode=disable port=5432", "DB Connection String")
-	fs.StringVar(&flags.TestDBConnString, "test_db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "test DB Connection String")
-
-	fs.Parse(os.Args[1:])
-}
 
 type Service struct {
 	environment string
@@ -51,12 +27,12 @@ type Service struct {
 	availableAuthorizations map[string]string
 }
 
-func NewService(flags Flags) *Service {
-	svc := &Service{environment: flags.Environment}
-	svc.loadUrls(flags.WorkDir)
-	svc.loadIntegrations(flags.WorkDir)
-	svc.loadOauth2Configs(flags.WorkDir)
-	svc.loadOauth1Configs(flags.WorkDir)
+func NewService(env, workDir string) *Service {
+	svc := &Service{environment: env}
+	svc.loadUrls(workDir)
+	svc.loadIntegrations(workDir)
+	svc.loadOauth2Configs(workDir)
+	svc.loadOauth1Configs(workDir)
 	svc.fillAuthorizations(svc.availableIntegrations)
 	return svc
 }

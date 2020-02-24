@@ -9,13 +9,11 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-var testDB = "pipes_test"
-
 func TestWorkspaceIntegrations(t *testing.T) {
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags)
+	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
 
 	store := &storage.Storage{ConnString: flags.TestDBConnString}
 	store.Connect()
@@ -61,7 +59,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags)
+	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
 
 	store := &storage.Storage{ConnString: flags.TestDBConnString}
 	store.Connect()

@@ -9,7 +9,6 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/cfg"
 	"github.com/toggl/pipes-api/pkg/pipes"
 )
 
@@ -21,22 +20,23 @@ const (
 	sleepMax     = 300
 )
 
-type SyncService struct {
+type Service struct {
+	Environment string
 	PipeService *pipes.PipeService
 }
 
-func (ss *SyncService) Start(flags *cfg.Flags) {
-	if flags.Environment == "production" {
+func (ss *Service) Start() {
+	if ss.Environment == "production" {
 		go ss.startRunner()
 	}
-	if flags.Environment == "staging" {
+	if ss.Environment == "staging" {
 		go ss.startStubRunner()
 	}
 	go ss.startQueue()
 }
 
 // run background workers
-func (ss *SyncService) runPipes() {
+func (ss *Service) runPipes() {
 	wg.Add(workersCount)
 	for i := 0; i < workersCount; i++ {
 		go ss.pipeWorker(i)
@@ -44,7 +44,7 @@ func (ss *SyncService) runPipes() {
 }
 
 // background worker function
-func (ss *SyncService) pipeWorker(id int) {
+func (ss *Service) pipeWorker(id int) {
 	defer func() {
 		log.Printf("[Workder %d] died\n", id)
 		wg.Done()
@@ -81,7 +81,7 @@ func (ss *SyncService) pipeWorker(id int) {
 }
 
 // run dummy background workers
-func (ss *SyncService) runPipesStub() {
+func (ss *Service) runPipesStub() {
 	wg.Add(workersCount)
 	for i := 0; i < workersCount; i++ {
 		go ss.pipeWorkerStub()
@@ -89,7 +89,7 @@ func (ss *SyncService) runPipesStub() {
 }
 
 // dummy background worker function
-func (ss *SyncService) pipeWorkerStub() {
+func (ss *Service) pipeWorkerStub() {
 	ranCount := 0
 	gotCount := 0
 	defer func() {
@@ -117,7 +117,7 @@ func (ss *SyncService) pipeWorkerStub() {
 	}
 }
 
-func (ss *SyncService) startRunner() {
+func (ss *Service) startRunner() {
 	for {
 		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
 		log.Println("-- Autosync sleeping for ", duration)
@@ -131,7 +131,7 @@ func (ss *SyncService) startRunner() {
 	}
 }
 
-func (ss *SyncService) startStubRunner() {
+func (ss *Service) startStubRunner() {
 	for {
 		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
 		log.Println("-- AutosyncStub sleeping for ", duration)
@@ -146,7 +146,7 @@ func (ss *SyncService) startStubRunner() {
 }
 
 // schedule background job for each integration with auto sync enabled
-func (ss *SyncService) startQueue() {
+func (ss *Service) startQueue() {
 	for {
 		// making sleep longer to not trigger auto sync too fast
 		// between 600s until 3000s

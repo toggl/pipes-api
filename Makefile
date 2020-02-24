@@ -25,10 +25,10 @@ dist:
 	rm -rf dist
 	mkdir -p dist
 	cp -r config dist/
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/$(APPNAME)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/$(APPNAME) ./cmd/pipes-api
 
 build:
-	go build
+	go build ./cmd/pipes-api
 
 vendor: dist
 	cd dist && tar czf pipes-api.tgz pipes-api config

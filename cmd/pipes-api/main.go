@@ -21,7 +21,6 @@ func main() {
 
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
-	cfgService := cfg.NewService(flags)
 
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:              flags.BugsnagAPIKey,
@@ -34,25 +33,25 @@ func main() {
 	store.Connect()
 	defer store.Close()
 
+	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
+
 	togglService := &toggl.Service{
 		URL: cfgService.GetTogglAPIHost(),
 	}
 
 	pipeService := pipes.NewPipeService(cfgService, store, togglService)
 
-	sync := &autosync.SyncService{
-		PipeService: pipeService,
-	}
-	sync.Start(&flags)
-
-	c := &server.Controller{
+	sync := &autosync.Service{
+		Environment: flags.Environment,
 		PipeService: pipeService,
 	}
 
-	middleware := &server.Middleware{
-		PipeService: pipeService,
-	}
+	sync.Start()
 
 	router := server.NewRouter(cfgService.GetCorsWhitelist())
-	server.Start(&flags, router.AttachHandlers(c, middleware))
+	router.AttachHandlers(
+		&server.Controller{PipeService: pipeService},
+		&server.Middleware{PipeService: pipeService},
+	)
+	server.Start(flags.Port, router)
 }

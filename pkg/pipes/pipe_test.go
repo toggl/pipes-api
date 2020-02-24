@@ -30,7 +30,7 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags)
+	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
 
 	store := &storage.Storage{ConnString: flags.TestDBConnString}
 	store.Connect()
@@ -70,7 +70,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags)
+	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
 
 	store := &storage.Storage{ConnString: flags.TestDBConnString}
 	store.Connect()
