@@ -54,7 +54,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.api.GetWorkspaceID(authData.Username)
+		workspaceID, err = mw.api.WithAuthToken(authData.Username).GetWorkspaceID()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

@@ -19,12 +19,11 @@ type PipeConfig struct {
 	PipeStatus      *PipeStatusConfig `json:"pipe_status,omitempty"`
 	ServiceParams   []byte            `json:"service_params,omitempty"`
 
-	Authorization *AuthorizationConfig
-	WorkspaceID   int        `json:"-"`
-	ServiceID     string     `json:"-"`
-	Key           string     `json:"-"`
-	Payload       []byte     `json:"-"`
-	LastSync      *time.Time `json:"-"`
+	WorkspaceID int        `json:"-"`
+	ServiceID   string     `json:"-"`
+	Key         string     `json:"-"`
+	Payload     []byte     `json:"-"`
+	LastSync    *time.Time `json:"-"`
 }
 
 func NewPipe(workspaceID int, serviceID, pipeID string) *PipeConfig {

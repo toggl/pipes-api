@@ -100,7 +100,7 @@ func TestGetProjects(t *testing.T) {
 
 	pipeService.fetchProjects(p)
 
-	s, err := pipeService.ServiceFor(p)
+	s, err := pipeService.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		t.Error(err)
 	}

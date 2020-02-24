@@ -179,30 +179,6 @@ func (ps *PipesStorage) Load(rows *sql.Rows, p *environment.PipeConfig) error {
 	return nil
 }
 
-func (ps *PipesStorage) ServiceFor(p *environment.PipeConfig) (integrations.Integration, error) {
-	service := environment.Create(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return service, err
-	}
-	if _, err := ps.AuthorizationStorage.LoadAuth(service); err != nil {
-		return service, err
-	}
-	return service, nil
-}
-
-func (ps *PipesStorage) loadAuthFor(p *environment.PipeConfig) error {
-	service := environment.Create(p.ServiceID, p.WorkspaceID)
-	auth, err := ps.AuthorizationStorage.LoadAuth(service)
-	if err != nil {
-		return err
-	}
-	if err = ps.AuthorizationStorage.Refresh(auth); err != nil {
-		return err
-	}
-	p.Authorization = auth
-	return nil
-}
-
 func (ps *PipesStorage) NewStatus(p *environment.PipeConfig) error {
 	ps.loadLastSync(p)
 	p.PipeStatus = environment.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, ps.env.GetPipesAPIHost())
@@ -220,10 +196,14 @@ func (ps *PipesStorage) Run(p *environment.PipeConfig) {
 		p.BugsnagNotifyPipe(err)
 		return
 	}
-	if err = ps.loadAuthFor(p); err != nil {
+
+	auth, err := ps.AuthorizationStorage.LoadAuthFor(p)
+	if err != nil {
 		p.BugsnagNotifyPipe(err)
 		return
 	}
+	ps.api.WithAuthToken(auth.WorkspaceToken)
+
 	if err = ps.FetchObjects(p, false); err != nil {
 		p.BugsnagNotifyPipe(err)
 		return
@@ -280,7 +260,7 @@ func (ps *PipesStorage) postObjects(p *environment.PipeConfig, saveStatus bool) 
 		err = ps.postTasks(p)
 	case "timeentries":
 		var service integrations.Integration
-		service, err = ps.ServiceFor(p)
+		service, err = ps.AuthorizationStorage.IntegrationFor(p)
 		if err != nil {
 			break
 		}
@@ -314,7 +294,7 @@ func (ps *PipesStorage) Destroy(p *environment.PipeConfig, workspaceID int) erro
 }
 
 func (ps *PipesStorage) ClearPipeConnections(p *environment.PipeConfig) (err error) {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return
 	}
@@ -509,7 +489,7 @@ func (ps *PipesStorage) postTimeEntries(p *environment.PipeConfig, service integ
 		p.LastSync = &currentTime
 	}
 
-	timeEntries, err := ps.api.GetTimeEntries(p.Authorization.WorkspaceToken, *p.LastSync, usersCon.GetKeys(), projectsCon.GetKeys())
+	timeEntries, err := ps.api.GetTimeEntries(*p.LastSync, usersCon.GetKeys(), projectsCon.GetKeys())
 	if err != nil {
 		return err
 	}
@@ -648,7 +628,7 @@ func (ps *PipesStorage) getObject(s integrations.Integration, pipeID string) ([]
 }
 
 func (ps *PipesStorage) postUsers(p *environment.PipeConfig) error {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -675,7 +655,7 @@ func (ps *PipesStorage) postUsers(p *environment.PipeConfig) error {
 		}
 	}
 
-	b, err := ps.api.PostUsers(p.Authorization.WorkspaceToken, usersPipeID, toggl.UsersRequest{Users: users})
+	b, err := ps.api.PostUsers(usersPipeID, toggl.UsersRequest{Users: users})
 	if err != nil {
 		return err
 	}
@@ -701,7 +681,7 @@ func (ps *PipesStorage) postUsers(p *environment.PipeConfig) error {
 }
 
 func (ps *PipesStorage) postClients(p *environment.PipeConfig) error {
-	service, err := ps.ServiceFor(p)
+	service, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -718,7 +698,7 @@ func (ps *PipesStorage) postClients(p *environment.PipeConfig) error {
 	if len(clientsResponse.Clients) == 0 {
 		return nil
 	}
-	b, err := ps.api.PostClients(p.Authorization.WorkspaceToken, clientsPipeID, clients)
+	b, err := ps.api.PostClients(clientsPipeID, clients)
 	if err != nil {
 		return err
 	}
@@ -741,7 +721,7 @@ func (ps *PipesStorage) postClients(p *environment.PipeConfig) error {
 }
 
 func (ps *PipesStorage) postProjects(p *environment.PipeConfig) error {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -756,7 +736,7 @@ func (ps *PipesStorage) postProjects(p *environment.PipeConfig) error {
 		Projects: projectsResponse.Projects,
 	}
 
-	b, err := ps.api.PostProjects(p.Authorization.WorkspaceToken, projectsPipeID, projects)
+	b, err := ps.api.PostProjects(projectsPipeID, projects)
 	if err != nil {
 		return err
 	}
@@ -779,7 +759,7 @@ func (ps *PipesStorage) postProjects(p *environment.PipeConfig) error {
 }
 
 func (ps *PipesStorage) postTodoLists(p *environment.PipeConfig) error {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -797,7 +777,7 @@ func (ps *PipesStorage) postTodoLists(p *environment.PipeConfig) error {
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		b, err := ps.api.PostTodoLists(p.Authorization.WorkspaceToken, tasksPipeId, tr)
+		b, err := ps.api.PostTodoLists(tasksPipeId, tr)
 		if err != nil {
 			return err
 		}
@@ -823,7 +803,7 @@ func (ps *PipesStorage) postTodoLists(p *environment.PipeConfig) error {
 }
 
 func (ps *PipesStorage) postTasks(p *environment.PipeConfig) error {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -841,7 +821,7 @@ func (ps *PipesStorage) postTasks(p *environment.PipeConfig) error {
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		b, err := ps.api.PostTasks(p.Authorization.WorkspaceToken, tasksPipeId, tr)
+		b, err := ps.api.PostTasks(tasksPipeId, tr)
 		if err != nil {
 			return err
 		}
@@ -873,7 +853,7 @@ func (ps *PipesStorage) saveObject(p *environment.PipeConfig, pipeID string, obj
 		bugsnag.Notify(err)
 		return err
 	}
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -889,7 +869,7 @@ func (ps *PipesStorage) saveObject(p *environment.PipeConfig, pipeID string, obj
 }
 
 func (ps *PipesStorage) fetchUsers(p *environment.PipeConfig) error {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -904,7 +884,7 @@ func (ps *PipesStorage) fetchUsers(p *environment.PipeConfig) error {
 }
 
 func (ps *PipesStorage) fetchClients(p *environment.PipeConfig) error {
-	s, err := ps.ServiceFor(p)
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -939,7 +919,7 @@ func (ps *PipesStorage) fetchProjects(p *environment.PipeConfig) error {
 		return err
 	}
 
-	service, err := ps.ServiceFor(p)
+	service, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -983,7 +963,7 @@ func (ps *PipesStorage) fetchTodoLists(p *environment.PipeConfig) error {
 		return err
 	}
 
-	service, err := ps.ServiceFor(p)
+	service, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}
@@ -1030,7 +1010,7 @@ func (ps *PipesStorage) fetchTasks(p *environment.PipeConfig) error {
 		return err
 	}
 
-	service, err := ps.ServiceFor(p)
+	service, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
 		return err
 	}

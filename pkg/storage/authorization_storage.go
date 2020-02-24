@@ -104,6 +104,29 @@ func (as *AuthorizationStorage) LoadAuthorizations(workspaceID int) (map[string]
 	return authorizations, nil
 }
 
+func (as *AuthorizationStorage) LoadAuthFor(p *environment.PipeConfig) (*environment.AuthorizationConfig, error) {
+	service := environment.Create(p.ServiceID, p.WorkspaceID)
+	auth, err := as.LoadAuth(service)
+	if err != nil {
+		return auth, err
+	}
+	if err = as.Refresh(auth); err != nil {
+		return auth, err
+	}
+	return auth, nil
+}
+
+func (as *AuthorizationStorage) IntegrationFor(p *environment.PipeConfig) (integrations.Integration, error) {
+	service := environment.Create(p.ServiceID, p.WorkspaceID)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return service, err
+	}
+	if _, err := as.LoadAuth(service); err != nil {
+		return service, err
+	}
+	return service, nil
+}
+
 const (
 	selectAuthorizationSQL = `SELECT
 		workspace_id, service, workspace_token, data
