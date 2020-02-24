@@ -2,29 +2,26 @@ package server
 
 import (
 	"net/http"
-	"regexp"
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/pipes"
 )
 
 type Middleware struct {
-	TogglService         *toggl.Service
-	AvailablePipeType    *regexp.Regexp
-	AvailableServiceType *regexp.Regexp
+	PipeService *pipes.PipeService
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := mux.Vars(r)["service"]
-		if !mw.AvailableServiceType.MatchString(serviceID) {
+		if !mw.PipeService.AvailableServiceType.MatchString(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := mux.Vars(r)["pipe"]
-		if !mw.AvailablePipeType.MatchString(pipeID) {
+		if !mw.PipeService.AvailablePipeType.MatchString(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}
@@ -47,7 +44,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.TogglService.GetWorkspaceID(authData.Username)
+		workspaceID, err = mw.PipeService.TogglService.GetWorkspaceID(authData.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

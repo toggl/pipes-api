@@ -13,10 +13,8 @@ import (
 )
 
 type AuthorizationService struct {
-	Storage                 *storage.Storage
-	AvailableAuthorizations map[string]string
-	Environment             string
-	OAuth2Configs           map[string]*oauth.Config
+	Storage       *storage.Storage
+	ConfigService *cfg.Service
 }
 
 func (as *AuthorizationService) Save(a *cfg.Authorization) error {
@@ -42,7 +40,7 @@ func (as *AuthorizationService) Destroy(s integrations.Service) error {
 }
 
 func (as *AuthorizationService) Refresh(a *cfg.Authorization) error {
-	if as.AvailableAuthorizations[a.ServiceID] != "oauth2" { // TODO: Remove global state.
+	if as.ConfigService.GetAvailableAuthorizations(a.ServiceID) != "oauth2" { // TODO: Remove global state.
 		return nil
 	}
 	var token oauth.Token
@@ -52,7 +50,7 @@ func (as *AuthorizationService) Refresh(a *cfg.Authorization) error {
 	if !token.Expired() {
 		return nil
 	}
-	config, res := as.OAuth2Configs[a.ServiceID+"_"+as.Environment]
+	config, res := as.ConfigService.GetOAuth2Configs(a.ServiceID)
 	if !res {
 		return errors.New("service OAuth config not found")
 	}

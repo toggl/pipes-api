@@ -21,10 +21,7 @@ func main() {
 
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
-	cfg.LoadIntegrations(&flags)
-	cfg.LoadUrls(&flags)
-	cfg.LoadOauth2Configs(&flags)
-	cfg.LoadOauth1Configs(&flags)
+	cfgService := cfg.NewService(flags)
 
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:              flags.BugsnagAPIKey,
@@ -37,55 +34,25 @@ func main() {
 	store.Connect()
 	defer store.Close()
 
-	oAuthService := &cfg.OAuthService{
-		Environment: flags.Environment,
-	}
-
 	togglService := &toggl.Service{
-		URL: cfg.Urls.TogglAPIHost[flags.Environment], // TODO: Remove Global state
+		URL: cfgService.GetTogglAPIHost(),
 	}
 
-	authService := &pipes.AuthorizationService{
-		Storage:                 store,
-		AvailableAuthorizations: cfg.AvailableAuthorizations, // TODO: Remove Global state
-		Environment:             flags.Environment,
-		OAuth2Configs:           cfg.OAuth2Configs, // TODO: Remove Global state
-	}
-
-	connService := &pipes.ConnectionService{
-		Storage: store,
-	}
-
-	pipeService := &pipes.PipeService{
-		Storage:               store,
-		AuthorizationService:  authService,
-		TogglService:          togglService,
-		ConnectionService:     connService,
-		PipesApiHost:          cfg.Urls.PipesAPIHost[flags.Environment], // TODO: Remove Global state
-		AvailableIntegrations: cfg.AvailableIntegrations,                // TODO: Remove Global state
-		OAuthService:          oAuthService,
-	}
-
-	c := &server.Controller{
-		Storage:              store,
-		AuthorizationService: authService,
-		ConnectionService:    connService,
-		OAuthService:         oAuthService,
-		PipeService:          pipeService,
-		AvailablePipeType:    cfg.PipeType,
-		AvailableServiceType: cfg.ServiceType,
-	}
+	pipeService := pipes.NewPipeService(cfgService, store, togglService)
 
 	sync := &autosync.SyncService{
 		PipeService: pipeService,
 	}
 	sync.Start(&flags)
 
-	middleware := &server.Middleware{
-		TogglService:         togglService,
-		AvailablePipeType:    cfg.PipeType,
-		AvailableServiceType: cfg.ServiceType,
+	c := &server.Controller{
+		PipeService: pipeService,
 	}
-	router := server.NewRouter(cfg.Urls.CorsWhitelist[flags.Environment]) // TODO: Remove Global state
+
+	middleware := &server.Middleware{
+		PipeService: pipeService,
+	}
+
+	router := server.NewRouter(cfgService.GetCorsWhitelist())
 	server.Start(&flags, router.AttachHandlers(c, middleware))
 }

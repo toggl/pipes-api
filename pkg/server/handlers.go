@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"regexp"
 	"sync"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/cfg"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/pipes"
-	"github.com/toggl/pipes-api/pkg/storage"
 )
 
 // mutex to prevent multiple of postPipeRun on same workspace run at same time
@@ -22,14 +20,9 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Controller struct {
-	Storage              *storage.Storage
 	AuthorizationService *pipes.AuthorizationService
 	ConnectionService    *pipes.ConnectionService
-	OAuthService         *cfg.OAuthService
 	PipeService          *pipes.PipeService
-
-	AvailablePipeType    *regexp.Regexp
-	AvailableServiceType *regexp.Regexp
 }
 
 func (c *Controller) GetIntegrations(req Request) Response {
@@ -44,11 +37,11 @@ func (c *Controller) GetIntegrations(req Request) Response {
 func (c *Controller) GetIntegrationPipe(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	pipeID := mux.Vars(req.r)["pipe"]
-	if !c.AvailablePipeType.MatchString(pipeID) {
+	if !c.PipeService.AvailablePipeType.MatchString(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
 
@@ -71,11 +64,11 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 func (c *Controller) PostPipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	pipeID := mux.Vars(req.r)["pipe"]
-	if !c.AvailablePipeType.MatchString(pipeID) {
+	if !c.PipeService.AvailablePipeType.MatchString(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
 
@@ -94,11 +87,11 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 func (c *Controller) PutPipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	pipeID := mux.Vars(req.r)["pipe"]
-	if !c.AvailablePipeType.MatchString(pipeID) {
+	if !c.PipeService.AvailablePipeType.MatchString(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
 	if len(req.body) == 0 {
@@ -123,11 +116,11 @@ func (c *Controller) PutPipeSetup(req Request) Response {
 func (c *Controller) DeletePipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	pipeID := mux.Vars(req.r)["pipe"]
-	if !c.AvailablePipeType.MatchString(pipeID) {
+	if !c.PipeService.AvailablePipeType.MatchString(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
 	pipe, err := c.PipeService.LoadPipe(workspaceID, serviceID, pipeID)
@@ -148,7 +141,7 @@ func (c *Controller) GetAuthURL(req Request) Response {
 	accountName := req.r.FormValue("account_name")
 	callbackURL := req.r.FormValue("callback_url")
 
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	if accountName == "" {
@@ -157,7 +150,7 @@ func (c *Controller) GetAuthURL(req Request) Response {
 	if callbackURL == "" {
 		return badRequest("Missing or invalid callback_url")
 	}
-	config, found := c.OAuthService.GetOAuth1Configs(serviceID)
+	config, found := c.PipeService.ConfigService.GetOAuth1Configs(serviceID)
 	if !found {
 		return badRequest("Service OAuth config not found")
 	}
@@ -178,7 +171,7 @@ func (c *Controller) GetAuthURL(req Request) Response {
 func (c *Controller) PostAuthorization(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	if len(req.body) == 0 {
@@ -194,11 +187,11 @@ func (c *Controller) PostAuthorization(req Request) Response {
 	authorization := cfg.NewAuthorization(workspaceID, serviceID)
 	authorization.WorkspaceToken = currentWorkspaceToken(req.r)
 
-	switch c.OAuthService.GetAvailableAuthorizations(serviceID) {
+	switch c.PipeService.ConfigService.GetAvailableAuthorizations(serviceID) {
 	case "oauth1":
-		authorization.Data, err = c.OAuthService.OAuth1Exchange(serviceID, payload)
+		authorization.Data, err = c.PipeService.ConfigService.OAuth1Exchange(serviceID, payload)
 	case "oauth2":
-		authorization.Data, err = c.OAuthService.OAuth2Exchange(serviceID, payload)
+		authorization.Data, err = c.PipeService.ConfigService.OAuth2Exchange(serviceID, payload)
 	}
 	if err != nil {
 		return internalServerError(err.Error())
@@ -213,7 +206,7 @@ func (c *Controller) PostAuthorization(req Request) Response {
 func (c *Controller) DeleteAuthorization(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.GetService(serviceID, workspaceID)
@@ -233,7 +226,7 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 func (c *Controller) GetServiceAccounts(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.GetService(serviceID, workspaceID)
@@ -269,7 +262,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 
 	serviceID := mux.Vars(req.r)["service"]
-	if !c.AvailableServiceType.MatchString(serviceID) {
+	if !c.PipeService.AvailableServiceType.MatchString(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.GetService(serviceID, workspaceID)
@@ -385,7 +378,7 @@ func (c *Controller) PostPipeRun(req Request) Response {
 }
 
 func (c *Controller) GetStatus(req Request) Response {
-	if c.Storage.IsDown() {
+	if c.PipeService.Storage.IsDown() {
 		resp := &struct {
 			Reasons []string `json:"reasons"`
 		}{

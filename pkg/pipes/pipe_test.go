@@ -30,38 +30,17 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
 
-	oauthService := &cfg.OAuthService{
-		Environment: flags.Environment,
-	}
+	cfgService := cfg.NewService(flags)
 
 	store := &storage.Storage{ConnString: flags.TestDBConnString}
 	store.Connect()
 	defer store.Close()
 
-	authService := &AuthorizationService{
-		Storage:                 store,
-		AvailableAuthorizations: cfg.AvailableAuthorizations, // TODO: Remove global state
-		Environment:             flags.Environment,
-		OAuth2Configs:           cfg.OAuth2Configs, // TODO: Remove global state
-	}
-
 	togglService := &toggl.Service{
-		URL: cfg.Urls.TogglAPIHost[flags.Environment], // TODO: Remove Global state
+		URL: cfgService.GetTogglAPIHost(),
 	}
 
-	connService := &ConnectionService{
-		Storage: store,
-	}
-
-	pipeService := &PipeService{
-		Storage:               store,
-		AuthorizationService:  authService,
-		TogglService:          togglService,
-		ConnectionService:     connService,
-		PipesApiHost:          cfg.Urls.PipesAPIHost[flags.Environment], // TODO: Remove Global state
-		AvailableIntegrations: cfg.AvailableIntegrations,                // TODO: Remove Global state
-		OAuthService:          oauthService,
-	}
+	pipeService := NewPipeService(cfgService, store, togglService)
 
 	p := cfg.NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
 
@@ -91,38 +70,17 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	flags := cfg.Flags{}
 	cfg.ParseFlags(&flags)
 
+	cfgService := cfg.NewService(flags)
+
 	store := &storage.Storage{ConnString: flags.TestDBConnString}
 	store.Connect()
 	defer store.Close()
 
-	oauthService := &cfg.OAuthService{
-		Environment: flags.Environment,
-	}
-
-	authService := &AuthorizationService{
-		Storage:                 store,
-		AvailableAuthorizations: cfg.AvailableAuthorizations, // TODO: Remove global state
-		Environment:             flags.Environment,
-		OAuth2Configs:           cfg.OAuth2Configs, // TODO: Remove global state
-	}
-
 	togglService := &toggl.Service{
-		URL: cfg.Urls.TogglAPIHost[flags.Environment], // TODO: Remove Global state
+		URL: cfgService.GetTogglAPIHost(),
 	}
 
-	connService := &ConnectionService{
-		Storage: store,
-	}
-
-	pipeService := &PipeService{
-		Storage:               store,
-		AuthorizationService:  authService,
-		TogglService:          togglService,
-		ConnectionService:     connService,
-		PipesApiHost:          cfg.Urls.PipesAPIHost[flags.Environment], // TODO: Remove Global state
-		AvailableIntegrations: cfg.AvailableIntegrations,                // TODO: Remove Global state
-		OAuthService:          oauthService,
-	}
+	pipeService := NewPipeService(cfgService, store, togglService)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *cfg.Pipe {
 		pipe := cfg.NewPipe(workspaceID, serviceID, pipeID)

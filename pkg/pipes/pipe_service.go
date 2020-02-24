@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -18,13 +19,45 @@ import (
 )
 
 type PipeService struct {
-	Storage               *storage.Storage
-	AuthorizationService  *AuthorizationService
-	PipesApiHost          string
-	OAuthService          *cfg.OAuthService
-	AvailableIntegrations []*cfg.Integration
-	TogglService          *toggl.Service
-	ConnectionService     *ConnectionService
+	Storage              *storage.Storage
+	ConfigService        *cfg.Service
+	AuthorizationService *AuthorizationService
+	TogglService         *toggl.Service
+	ConnectionService    *ConnectionService
+	AvailablePipeType    *regexp.Regexp
+	AvailableServiceType *regexp.Regexp
+}
+
+func NewPipeService(cfgSvc *cfg.Service, storeSvc *storage.Storage, togglSvc *toggl.Service) *PipeService {
+	svc := &PipeService{
+		AuthorizationService: &AuthorizationService{
+			Storage:       storeSvc,
+			ConfigService: cfgSvc,
+		},
+		ConnectionService: &ConnectionService{
+			Storage: storeSvc,
+		},
+		TogglService:  togglSvc,
+		Storage:       storeSvc,
+		ConfigService: cfgSvc,
+	}
+
+	svc.fillAvailablePipeTypes()
+	svc.fillAvailableServices(cfgSvc.GetIntegrations())
+
+	return svc
+}
+
+func (ps *PipeService) fillAvailablePipeTypes() {
+	ps.AvailablePipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
+}
+
+func (ps *PipeService) fillAvailableServices(integrations []*cfg.Integration) {
+	ids := make([]string, len(integrations))
+	for i := range integrations {
+		ids = append(ids, integrations[i].ID)
+	}
+	ps.AvailableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
 }
 
 func (ps *PipeService) LoadPipe(workspaceID int, serviceID, pipeID string) (*cfg.Pipe, error) {
@@ -156,7 +189,7 @@ func (ps *PipeService) loadAuthFor(p *cfg.Pipe) error {
 
 func (ps *PipeService) NewStatus(p *cfg.Pipe) error {
 	ps.loadLastSync(p)
-	p.PipeStatus = cfg.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, ps.PipesApiHost)
+	p.PipeStatus = cfg.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, ps.ConfigService.GetPipesAPIHost())
 	return ps.savePipeStatus(p.PipeStatus)
 }
 
@@ -410,10 +443,10 @@ func (ps *PipeService) WorkspaceIntegrations(workspaceID int) ([]cfg.Integration
 		return nil, err
 	}
 
-	var integrations []cfg.Integration
-	for j := range ps.AvailableIntegrations {
-		var integration = *ps.AvailableIntegrations[j]
-		integration.AuthURL = ps.OAuthService.OAuth2URL(integration.ID)
+	var igr []cfg.Integration
+	for _, current := range ps.ConfigService.GetIntegrations() {
+		var integration = current
+		integration.AuthURL = ps.ConfigService.OAuth2URL(integration.ID)
 		integration.Authorized = authorizations[integration.ID]
 		var pipes []*cfg.Pipe
 		for i := range integration.Pipes {
@@ -429,9 +462,9 @@ func (ps *PipeService) WorkspaceIntegrations(workspaceID int) ([]cfg.Integration
 			pipes = append(pipes, &pipe)
 		}
 		integration.Pipes = pipes
-		integrations = append(integrations, integration)
+		igr = append(igr, *integration)
 	}
-	return integrations, nil
+	return igr, nil
 }
 
 func (ps *PipeService) fetchTimeEntries(p *cfg.Pipe) error {
