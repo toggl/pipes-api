@@ -1,13 +1,14 @@
-package pipes
+package storage
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 	"reflect"
 	"testing"
 
-	"github.com/toggl/pipes-api/pkg/cfg"
+	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
-	"github.com/toggl/pipes-api/pkg/storage"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -19,7 +20,7 @@ var (
 
 func TestNewClient(t *testing.T) {
 	expectedKey := "basecamp:users"
-	p := cfg.NewPipe(workspaceID, serviceID, pipeID)
+	p := environment.NewPipe(workspaceID, serviceID, pipeID)
 
 	if p.Key != expectedKey {
 		t.Errorf("NewPipe Key = %v, want %v", p.Key, expectedKey)
@@ -27,22 +28,22 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestPipeEndSyncJSONParsingFail(t *testing.T) {
-	flags := cfg.Flags{}
-	cfg.ParseFlags(&flags)
+	flags := environment.Flags{}
+	environment.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
+	cfgService := environment.New(flags.Environment, flags.WorkDir)
 
-	store := &storage.Storage{ConnString: flags.TestDBConnString}
-	store.Connect()
-	defer store.Close()
-
-	togglService := &toggl.Service{
-		URL: cfgService.GetTogglAPIHost(),
+	db, err := sql.Open("postgres", flags.TestDBConnString)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer db.Close()
 
-	pipeService := NewPipeService(cfgService, store, togglService)
+	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
 
-	p := cfg.NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
+	pipeService := NewPipesStorage(cfgService, api, db)
+
+	p := environment.NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
 
 	jsonUnmarshalError := &json.UnmarshalTypeError{
 		Value:  "asd",
@@ -58,32 +59,32 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 		t.Fatalf("Unexpected error %v", err)
 	}
 
-	if p.PipeStatus.Message != cfg.ErrJSONParsing.Error() {
+	if p.PipeStatus.Message != environment.ErrJSONParsing.Error() {
 		t.Fatalf(
 			"FailPipe expected to get wrapper error %s, but get %s",
-			cfg.ErrJSONParsing.Error(), p.PipeStatus.Message,
+			environment.ErrJSONParsing.Error(), p.PipeStatus.Message,
 		)
 	}
 }
 
 func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
-	flags := cfg.Flags{}
-	cfg.ParseFlags(&flags)
+	flags := environment.Flags{}
+	environment.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
+	cfgService := environment.New(flags.Environment, flags.WorkDir)
 
-	store := &storage.Storage{ConnString: flags.TestDBConnString}
-	store.Connect()
-	defer store.Close()
-
-	togglService := &toggl.Service{
-		URL: cfgService.GetTogglAPIHost(),
+	db, err := sql.Open("postgres", flags.TestDBConnString)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer db.Close()
 
-	pipeService := NewPipeService(cfgService, store, togglService)
+	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
 
-	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *cfg.Pipe {
-		pipe := cfg.NewPipe(workspaceID, serviceID, pipeID)
+	pipeService := NewPipesStorage(cfgService, api, db)
+
+	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *environment.PipeConfig {
+		pipe := environment.NewPipe(workspaceID, serviceID, pipeID)
 		pipe.Automatic = true
 		pipe.Configured = true
 		data, err := json.Marshal(pipe)
@@ -91,7 +92,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 			t.Error(err)
 			return nil
 		}
-		_, err = store.Exec(`
+		_, err = db.Exec(`
 			with created as (
 				insert into pipes(workspace_id, Key, data)
 				values ($1, $2, $3)

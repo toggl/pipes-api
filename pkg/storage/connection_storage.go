@@ -1,30 +1,29 @@
-package pipes
+package storage
 
 import (
 	"database/sql"
 	"encoding/json"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/storage"
 )
 
-type ConnectionService struct {
-	Storage *storage.Storage
+type ConnectionStorage struct {
+	db *sql.DB
 }
 
-func (cs *ConnectionService) Save(c *Connection) error {
+func (cs *ConnectionStorage) Save(c *Connection) error {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
-	_, err = cs.Storage.Exec(insertConnectionSQL, c.workspaceID, c.key, b)
+	_, err = cs.db.Exec(insertConnectionSQL, c.workspaceID, c.key, b)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (cs *ConnectionService) Load(rows *sql.Rows, c *Connection) error {
+func (cs *ConnectionStorage) Load(rows *sql.Rows, c *Connection) error {
 	var b []byte
 	if err := rows.Scan(&c.key, &b); err != nil {
 		return err
@@ -36,8 +35,8 @@ func (cs *ConnectionService) Load(rows *sql.Rows, c *Connection) error {
 	return nil
 }
 
-func (cs *ConnectionService) LoadConnection(s integrations.Service, pipeID string) (*Connection, error) {
-	rows, err := cs.Storage.Query(selectConnectionSQL, s.GetWorkspaceID(), s.KeyFor(pipeID))
+func (cs *ConnectionStorage) LoadConnection(s integrations.Integration, pipeID string) (*Connection, error) {
+	rows, err := cs.db.Query(selectConnectionSQL, s.GetWorkspaceID(), s.KeyFor(pipeID))
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +50,7 @@ func (cs *ConnectionService) LoadConnection(s integrations.Service, pipeID strin
 	return connection, nil
 }
 
-func (cs *ConnectionService) LoadConnectionRev(s integrations.Service, pipeID string) (*ReversedConnection, error) {
+func (cs *ConnectionStorage) LoadConnectionRev(s integrations.Integration, pipeID string) (*ReversedConnection, error) {
 	connection, err := cs.LoadConnection(s, pipeID)
 	if err != nil {
 		return nil, err

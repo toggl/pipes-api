@@ -10,8 +10,11 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
+
+const ServiceName = "github"
 
 type Service struct {
 	WorkspaceID int
@@ -19,7 +22,7 @@ type Service struct {
 }
 
 func (s *Service) Name() string {
-	return "github"
+	return ServiceName
 }
 
 func (s *Service) GetWorkspaceID() int {
@@ -92,3 +95,5 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
 }
+
+var _ integrations.Integration = (*Service)(nil)

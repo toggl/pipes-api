@@ -1,4 +1,4 @@
-package cfg
+package environment
 
 import (
 	"errors"
@@ -6,22 +6,20 @@ import (
 	"time"
 
 	"github.com/bugsnag/bugsnag-go"
-
-	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
-type Pipe struct {
-	ID              string      `json:"id"`
-	Name            string      `json:"name"`
-	Description     string      `json:"description,omitempty"`
-	Automatic       bool        `json:"automatic,omitempty"`
-	AutomaticOption bool        `json:"automatic_option"`
-	Configured      bool        `json:"configured"`
-	Premium         bool        `json:"premium"`
-	PipeStatus      *PipeStatus `json:"pipe_status,omitempty"`
-	ServiceParams   []byte      `json:"service_params,omitempty"`
+type PipeConfig struct {
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description,omitempty"`
+	Automatic       bool              `json:"automatic,omitempty"`
+	AutomaticOption bool              `json:"automatic_option"`
+	Configured      bool              `json:"configured"`
+	Premium         bool              `json:"premium"`
+	PipeStatus      *PipeStatusConfig `json:"pipe_status,omitempty"`
+	ServiceParams   []byte            `json:"service_params,omitempty"`
 
-	Authorization *Authorization
+	Authorization *AuthorizationConfig
 	WorkspaceID   int        `json:"-"`
 	ServiceID     string     `json:"-"`
 	Key           string     `json:"-"`
@@ -29,8 +27,8 @@ type Pipe struct {
 	LastSync      *time.Time `json:"-"`
 }
 
-func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
-	return &Pipe{
+func NewPipe(workspaceID int, serviceID, pipeID string) *PipeConfig {
+	return &PipeConfig{
 		ID:          pipeID,
 		Key:         PipesKey(serviceID, pipeID),
 		ServiceID:   serviceID,
@@ -38,8 +36,8 @@ func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
 	}
 }
 
-func (p *Pipe) ValidateServiceConfig(payload []byte) string {
-	service := integrations.GetService(p.ServiceID, p.WorkspaceID)
+func (p *PipeConfig) ValidateServiceConfig(payload []byte) string {
+	service := Create(p.ServiceID, p.WorkspaceID)
 	err := service.SetParams(payload)
 	if err != nil {
 		return err.Error()
@@ -48,7 +46,7 @@ func (p *Pipe) ValidateServiceConfig(payload []byte) string {
 	return ""
 }
 
-func (p *Pipe) ValidatePayload(payload []byte) string {
+func (p *PipeConfig) ValidatePayload(payload []byte) string {
 	if p.ID == "users" && len(payload) == 0 {
 		return "Missing request payload"
 	}
@@ -57,7 +55,7 @@ func (p *Pipe) ValidatePayload(payload []byte) string {
 }
 
 // BugsnagNotifyPipe notifies bugsnag with metadata for the given pipe
-func (p *Pipe) BugsnagNotifyPipe(err error) {
+func (p *PipeConfig) BugsnagNotifyPipe(err error) {
 	bugsnag.Notify(err, bugsnag.MetaData{
 		"pipe": {
 			"ID":            p.ID,

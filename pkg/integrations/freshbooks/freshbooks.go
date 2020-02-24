@@ -9,8 +9,11 @@ import (
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
+
+const ServiceName = "freshbooks"
 
 type Service struct {
 	WorkspaceID int
@@ -19,7 +22,7 @@ type Service struct {
 }
 
 func (s *Service) Name() string {
-	return "freshbooks"
+	return ServiceName
 }
 
 func (s *Service) GetWorkspaceID() int {
@@ -165,3 +168,5 @@ func (s *Service) SetSince(*time.Time) {}
 func (s *Service) TodoLists() ([]*toggl.Task, error) {
 	return []*toggl.Task{}, nil
 }
+
+var _ integrations.Integration = (*Service)(nil)

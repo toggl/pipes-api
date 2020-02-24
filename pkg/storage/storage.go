@@ -1,29 +1,15 @@
 package storage
 
 import (
-	"database/sql"
-	"log"
-
 	_ "github.com/lib/pq"
 )
 
-type Storage struct {
-	ConnString string
-	*sql.DB
-}
+const maxPayloadSizeBytes = 800 * 1000
 
-func (sg *Storage) Connect() *sql.DB {
-	var err error
-	sg.DB, err = sql.Open("postgres", sg.ConnString)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return sg.DB
-}
-
-func (sg *Storage) IsDown() bool {
-	if _, err := sg.DB.Exec("SELECT 1"); err != nil {
-		return true
-	}
-	return false
-}
+const (
+	usersPipeID    = "users"
+	clientsPipeID  = "clients"
+	projectsPipeID = "projects"
+	tasksPipeId    = "tasks"
+	todoPipeId     = "todolists"
+)

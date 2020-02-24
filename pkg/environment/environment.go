@@ -1,4 +1,4 @@
-package cfg
+package environment
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 	"github.com/tambet/oauthplain"
 )
 
-type Service struct {
-	environment string
+type Environment struct {
+	envType string
 
 	urls struct {
 		ReturnURL     map[string]string   `json:"return_url"`
@@ -21,14 +21,14 @@ type Service struct {
 		CorsWhitelist map[string][]string `json:"cors_whitelist"`
 	}
 
-	availableIntegrations   []*Integration
+	availableIntegrations   []*IntegrationConfig
 	oAuth2Configs           map[string]*oauth.Config
 	oAuth1Configs           map[string]*oauthplain.Config
 	availableAuthorizations map[string]string
 }
 
-func NewService(env, workDir string) *Service {
-	svc := &Service{environment: env}
+func New(envType, workDir string) *Environment {
+	svc := &Environment{envType: envType}
 	svc.loadUrls(workDir)
 	svc.loadIntegrations(workDir)
 	svc.loadOauth2Configs(workDir)
@@ -37,7 +37,7 @@ func NewService(env, workDir string) *Service {
 	return svc
 }
 
-func (c *Service) loadIntegrations(workDir string) {
+func (c *Environment) loadIntegrations(workDir string) {
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "integrations.json"))
 	if err != nil {
 		log.Fatal(err)
@@ -47,7 +47,7 @@ func (c *Service) loadIntegrations(workDir string) {
 	}
 }
 
-func (c *Service) loadOauth2Configs(workDir string) {
+func (c *Environment) loadOauth2Configs(workDir string) {
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth2.json"))
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +58,7 @@ func (c *Service) loadOauth2Configs(workDir string) {
 
 }
 
-func (c *Service) loadOauth1Configs(workDir string) {
+func (c *Environment) loadOauth1Configs(workDir string) {
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth1.json"))
 	if err != nil {
 		log.Fatal(err)
@@ -68,17 +68,17 @@ func (c *Service) loadOauth1Configs(workDir string) {
 	}
 }
 
-func (c *Service) fillAuthorizations(availableIntegrations []*Integration) {
+func (c *Environment) fillAuthorizations(availableIntegrations []*IntegrationConfig) {
 	for _, integration := range availableIntegrations {
 		c.availableAuthorizations[integration.ID] = integration.AuthType
 	}
 }
 
-func (c *Service) GetIntegrations() []*Integration {
+func (c *Environment) GetIntegrations() []*IntegrationConfig {
 	return c.availableIntegrations
 }
 
-func (c *Service) loadUrls(workDir string) {
+func (c *Environment) loadUrls(workDir string) {
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "urls.json"))
 	if err != nil {
 		log.Fatal(err)
@@ -88,27 +88,27 @@ func (c *Service) loadUrls(workDir string) {
 	}
 }
 
-func (c *Service) GetTogglAPIHost() string {
-	return c.urls.TogglAPIHost[c.environment]
+func (c *Environment) GetTogglAPIHost() string {
+	return c.urls.TogglAPIHost[c.envType]
 }
 
-func (c *Service) GetPipesAPIHost() string {
-	return c.urls.PipesAPIHost[c.environment]
+func (c *Environment) GetPipesAPIHost() string {
+	return c.urls.PipesAPIHost[c.envType]
 }
 
-func (c *Service) GetCorsWhitelist() []string {
-	return c.urls.CorsWhitelist[c.environment]
+func (c *Environment) GetCorsWhitelist() []string {
+	return c.urls.CorsWhitelist[c.envType]
 }
 
-func (c *Service) OAuth2URL(service string) string {
-	config, ok := c.oAuth2Configs[service+"_"+c.environment]
+func (c *Environment) OAuth2URL(service string) string {
+	config, ok := c.oAuth2Configs[service+"_"+c.envType]
 	if !ok {
 		return ""
 	}
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (c *Service) OAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
+func (c *Environment) OAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
 	accountName := payload["account_name"].(string)
 	if accountName == "" {
 		return nil, errors.New("missing account_name")
@@ -144,12 +144,12 @@ func (c *Service) OAuth1Exchange(serviceID string, payload map[string]interface{
 	return b, nil
 }
 
-func (c *Service) OAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
+func (c *Environment) OAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
 	code := payload["code"].(string)
 	if code == "" {
 		return nil, errors.New("missing code")
 	}
-	config, res := c.oAuth2Configs[serviceID+"_"+c.environment]
+	config, res := c.oAuth2Configs[serviceID+"_"+c.envType]
 	if !res {
 		return nil, errors.New("service OAuth config not found")
 	}
@@ -165,16 +165,16 @@ func (c *Service) OAuth2Exchange(serviceID string, payload map[string]interface{
 	return b, nil
 }
 
-func (c *Service) GetOAuth1Configs(serviceID string) (*oauthplain.Config, bool) {
+func (c *Environment) GetOAuth1Configs(serviceID string) (*oauthplain.Config, bool) {
 	v, found := c.oAuth1Configs[serviceID]
 	return v, found
 }
 
-func (c *Service) GetOAuth2Configs(serviceID string) (*oauth.Config, bool) {
-	v, found := c.oAuth2Configs[serviceID+"_"+c.environment]
+func (c *Environment) GetOAuth2Configs(serviceID string) (*oauth.Config, bool) {
+	v, found := c.oAuth2Configs[serviceID+"_"+c.envType]
 	return v, found
 }
 
-func (c *Service) GetAvailableAuthorizations(serviceID string) string {
+func (c *Environment) GetAvailableAuthorizations(serviceID string) string {
 	return c.availableAuthorizations[serviceID]
 }

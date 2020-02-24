@@ -12,13 +12,17 @@ import (
 	"time"
 )
 
-type Service struct {
-	URL string
+type ApiClient struct {
+	url string
 }
 
-func (t *Service) GetWorkspaceID(APIToken string) (int, error) {
+func NewApiClient(url string) *ApiClient {
+	return &ApiClient{url: url}
+}
+
+func (t *ApiClient) GetWorkspaceID(APIToken string) (int, error) {
 	var workspaceID int
-	url := fmt.Sprintf("%s/api/pipes/workspace", t.URL)
+	url := fmt.Sprintf("%s/api/pipes/workspace", t.url)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return workspaceID, err
@@ -48,9 +52,29 @@ func (t *Service) GetWorkspaceID(APIToken string) (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (t *Service) PostPipesAPI(APIToken, pipeID string, payload interface{}) ([]byte, error) {
+func (t *ApiClient) PostClients(APIToken, clientsPipeID string, clients interface{}) ([]byte, error) {
+	return t.postPipesAPI(APIToken, clientsPipeID, clients)
+}
+
+func (t *ApiClient) PostProjects(APIToken, projectsPipeID string, projects interface{}) ([]byte, error) {
+	return t.postPipesAPI(APIToken, projectsPipeID, projects)
+}
+
+func (t *ApiClient) PostTasks(APIToken, tasksPipeID string, tasks interface{}) ([]byte, error) {
+	return t.postPipesAPI(APIToken, tasksPipeID, tasks)
+}
+
+func (t *ApiClient) PostTodoLists(APIToken, tasksPipeID string, tasks interface{}) ([]byte, error) {
+	return t.postPipesAPI(APIToken, tasksPipeID, tasks)
+}
+
+func (t *ApiClient) PostUsers(APIToken, usersPipeID string, users interface{}) ([]byte, error) {
+	return t.postPipesAPI(APIToken, usersPipeID, users)
+}
+
+func (t *ApiClient) postPipesAPI(APIToken, pipeID string, payload interface{}) ([]byte, error) {
 	start := time.Now()
-	url := fmt.Sprintf("%s/api/pipes/%s", t.URL, pipeID)
+	url := fmt.Sprintf("%s/api/pipes/%s", t.url, pipeID)
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -79,9 +103,9 @@ func (t *Service) PostPipesAPI(APIToken, pipeID string, payload interface{}) ([]
 	return b, nil
 }
 
-func (t *Service) GetTimeEntries(APIToken string, lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error) {
+func (t *ApiClient) GetTimeEntries(APIToken string, lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
-		t.URL, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
+		t.url, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

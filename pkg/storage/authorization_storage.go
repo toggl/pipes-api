@@ -1,4 +1,4 @@
-package pipes
+package storage
 
 import (
 	"database/sql"
@@ -7,18 +7,17 @@ import (
 
 	"code.google.com/p/goauth2/oauth"
 
-	"github.com/toggl/pipes-api/pkg/cfg"
+	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/storage"
 )
 
-type AuthorizationService struct {
-	Storage       *storage.Storage
-	ConfigService *cfg.Service
+type AuthorizationStorage struct {
+	db  *sql.DB
+	env *environment.Environment
 }
 
-func (as *AuthorizationService) Save(a *cfg.Authorization) error {
-	_, err := as.Storage.Exec(insertAuthorizationSQL,
+func (as *AuthorizationStorage) Save(a *environment.AuthorizationConfig) error {
+	_, err := as.db.Exec(insertAuthorizationSQL,
 		a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
@@ -26,7 +25,7 @@ func (as *AuthorizationService) Save(a *cfg.Authorization) error {
 	return nil
 }
 
-func (as *AuthorizationService) Load(rows *sql.Rows, a *cfg.Authorization) error {
+func (as *AuthorizationStorage) Load(rows *sql.Rows, a *environment.AuthorizationConfig) error {
 	err := rows.Scan(&a.WorkspaceID, &a.ServiceID, &a.WorkspaceToken, &a.Data)
 	if err != nil {
 		return err
@@ -34,13 +33,13 @@ func (as *AuthorizationService) Load(rows *sql.Rows, a *cfg.Authorization) error
 	return nil
 }
 
-func (as *AuthorizationService) Destroy(s integrations.Service) error {
-	_, err := as.Storage.Exec(deleteAuthorizationSQL, s.GetWorkspaceID(), s.Name())
+func (as *AuthorizationStorage) Destroy(s integrations.Integration) error {
+	_, err := as.db.Exec(deleteAuthorizationSQL, s.GetWorkspaceID(), s.Name())
 	return err
 }
 
-func (as *AuthorizationService) Refresh(a *cfg.Authorization) error {
-	if as.ConfigService.GetAvailableAuthorizations(a.ServiceID) != "oauth2" { // TODO: Remove global state.
+func (as *AuthorizationStorage) Refresh(a *environment.AuthorizationConfig) error {
+	if as.env.GetAvailableAuthorizations(a.ServiceID) != "oauth2" { // TODO: Remove global state.
 		return nil
 	}
 	var token oauth.Token
@@ -50,7 +49,7 @@ func (as *AuthorizationService) Refresh(a *cfg.Authorization) error {
 	if !token.Expired() {
 		return nil
 	}
-	config, res := as.ConfigService.GetOAuth2Configs(a.ServiceID)
+	config, res := as.env.GetOAuth2Configs(a.ServiceID)
 	if !res {
 		return errors.New("service OAuth config not found")
 	}
@@ -69,8 +68,8 @@ func (as *AuthorizationService) Refresh(a *cfg.Authorization) error {
 	return nil
 }
 
-func (as *AuthorizationService) LoadAuth(s integrations.Service) (*cfg.Authorization, error) {
-	rows, err := as.Storage.Query(selectAuthorizationSQL, s.GetWorkspaceID(), s.Name())
+func (as *AuthorizationStorage) LoadAuth(s integrations.Integration) (*environment.AuthorizationConfig, error) {
+	rows, err := as.db.Query(selectAuthorizationSQL, s.GetWorkspaceID(), s.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +77,7 @@ func (as *AuthorizationService) LoadAuth(s integrations.Service) (*cfg.Authoriza
 	if !rows.Next() {
 		return nil, rows.Err()
 	}
-	var authorization cfg.Authorization
+	var authorization environment.AuthorizationConfig
 	if err := as.Load(rows, &authorization); err != nil {
 		return nil, err
 	}
@@ -88,9 +87,9 @@ func (as *AuthorizationService) LoadAuth(s integrations.Service) (*cfg.Authoriza
 	return &authorization, nil
 }
 
-func (as *AuthorizationService) LoadAuthorizations(workspaceID int) (map[string]bool, error) {
+func (as *AuthorizationStorage) LoadAuthorizations(workspaceID int) (map[string]bool, error) {
 	authorizations := make(map[string]bool)
-	rows, err := as.Storage.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
+	rows, err := as.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return nil, err
 	}

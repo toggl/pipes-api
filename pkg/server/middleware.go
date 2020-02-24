@@ -6,22 +6,32 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 
-	"github.com/toggl/pipes-api/pkg/pipes"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 type Middleware struct {
-	PipeService *pipes.PipeService
+	stResolver ServiceTypeResolver
+	ptResolver PipeTypeResolver
+	api        *toggl.ApiClient
+}
+
+func NewMiddleware(api *toggl.ApiClient, str ServiceTypeResolver, ptr PipeTypeResolver) *Middleware {
+	return &Middleware{
+		stResolver: str,
+		ptResolver: ptr,
+		api:        api,
+	}
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := mux.Vars(r)["service"]
-		if !mw.PipeService.AvailableServiceType.MatchString(serviceID) {
+		if !mw.stResolver.AvailableServiceType(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := mux.Vars(r)["pipe"]
-		if !mw.PipeService.AvailablePipeType.MatchString(pipeID) {
+		if !mw.ptResolver.AvailablePipeType(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}
@@ -44,7 +54,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.PipeService.TogglService.GetWorkspaceID(authData.Username)
+		workspaceID, err = mw.api.GetWorkspaceID(authData.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

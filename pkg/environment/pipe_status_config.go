@@ -1,4 +1,4 @@
-package cfg
+package environment
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ const (
 	startStatus = "running"
 )
 
-type PipeStatus struct {
+type PipeStatusConfig struct {
 	Status        string   `json:"status,omitempty"`
 	Message       string   `json:"message,omitempty"`
 	SyncLog       string   `json:"sync_log,omitempty"`
@@ -25,8 +25,8 @@ type PipeStatus struct {
 	pipesApiHost string `json:"-"`
 }
 
-func NewPipeStatus(workspaceID int, serviceID, pipeID, pipesApiHost string) *PipeStatus {
-	return &PipeStatus{
+func NewPipeStatus(workspaceID int, serviceID, pipeID, pipesApiHost string) *PipeStatusConfig {
+	return &PipeStatusConfig{
 		Status:       startStatus,
 		SyncDate:     time.Now().Format(time.RFC3339),
 		WorkspaceID:  workspaceID,
@@ -37,12 +37,12 @@ func NewPipeStatus(workspaceID int, serviceID, pipeID, pipesApiHost string) *Pip
 	}
 }
 
-func (p *PipeStatus) AddError(err error) {
+func (p *PipeStatusConfig) AddError(err error) {
 	p.Status = "error"
 	p.Message = err.Error()
 }
 
-func (p *PipeStatus) Complete(objType string, notifications []string, objCount int) {
+func (p *PipeStatusConfig) Complete(objType string, notifications []string, objCount int) {
 	if p.Status == "error" {
 		return
 	}
@@ -54,7 +54,7 @@ func (p *PipeStatus) Complete(objType string, notifications []string, objCount i
 	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log", p.pipesApiHost, p.ServiceID, p.PipeID)
 }
 
-func (p *PipeStatus) GenerateLog() string {
+func (p *PipeStatusConfig) GenerateLog() string {
 	warnings := strings.Join(p.Notifications, "\r\n")
 	splitter := "------------------------------------------------"
 	result := fmt.Sprintf("Log for '%s %s' (%s)\r\n%s\r\n%s.\r\n%s",

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"math/rand"
 	"runtime"
 	"time"
@@ -8,8 +10,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 
 	"github.com/toggl/pipes-api/pkg/autosync"
-	"github.com/toggl/pipes-api/pkg/cfg"
-	"github.com/toggl/pipes-api/pkg/pipes"
+	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/storage"
 	"github.com/toggl/pipes-api/pkg/toggl"
@@ -19,39 +20,35 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().Unix())
 
-	flags := cfg.Flags{}
-	cfg.ParseFlags(&flags)
+	envFlags := environment.Flags{}
+	environment.ParseFlags(&envFlags)
 
 	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:              flags.BugsnagAPIKey,
-		ReleaseStage:        flags.Environment,
-		NotifyReleaseStages: []string{"production", "staging"},
+		APIKey:       envFlags.BugsnagAPIKey,
+		ReleaseStage: envFlags.Environment,
+		NotifyReleaseStages: []string{
+			environment.EnvTypeProduction,
+			environment.EnvTypeStaging,
+		},
 		// more configuration options
 	})
 
-	store := &storage.Storage{ConnString: flags.DbConnString}
-	store.Connect()
-	defer store.Close()
+	env := environment.New(envFlags.Environment, envFlags.WorkDir)
 
-	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
-
-	togglService := &toggl.Service{
-		URL: cfgService.GetTogglAPIHost(),
+	db, err := sql.Open("postgres", envFlags.DbConnString)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer db.Close()
 
-	pipeService := pipes.NewPipeService(cfgService, store, togglService)
+	api := toggl.NewApiClient(env.GetTogglAPIHost())
+	pipes := storage.NewPipesStorage(env, api, db)
 
-	sync := &autosync.Service{
-		Environment: flags.Environment,
-		PipeService: pipeService,
-	}
+	autosync.NewService(envFlags.Environment, pipes).Start()
 
-	sync.Start()
-
-	router := server.NewRouter(cfgService.GetCorsWhitelist())
-	router.AttachHandlers(
-		&server.Controller{PipeService: pipeService},
-		&server.Middleware{PipeService: pipeService},
+	router := server.NewRouter(env.GetCorsWhitelist()).AttachHandlers(
+		server.NewController(env, pipes),
+		server.NewMiddleware(api, pipes, pipes),
 	)
-	server.Start(flags.Port, router)
+	server.Start(envFlags.Port, router)
 }

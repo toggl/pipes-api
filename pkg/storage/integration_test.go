@@ -1,29 +1,29 @@
-package pipes
+package storage
 
 import (
+	"database/sql"
+	"log"
 	"reflect"
 	"testing"
 
-	"github.com/toggl/pipes-api/pkg/cfg"
-	"github.com/toggl/pipes-api/pkg/storage"
+	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 func TestWorkspaceIntegrations(t *testing.T) {
-	flags := cfg.Flags{}
-	cfg.ParseFlags(&flags)
+	flags := environment.Flags{}
+	environment.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
+	cfgService := environment.New(flags.Environment, flags.WorkDir)
 
-	store := &storage.Storage{ConnString: flags.TestDBConnString}
-	store.Connect()
-	defer store.Close()
-
-	togglService := &toggl.Service{
-		URL: cfgService.GetTogglAPIHost(),
+	db, err := sql.Open("postgres", flags.TestDBConnString)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer db.Close()
 
-	pipeService := NewPipeService(cfgService, store, togglService)
+	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
+	pipeService := NewPipesStorage(cfgService, api, db)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -35,7 +35,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		integrations[i].Pipes = nil
 	}
 
-	want := []cfg.Integration{
+	want := []environment.IntegrationConfig{
 		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
 		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
 		{ID: "teamweek", Name: "Toggl Plan", Link: "https://support.toggl.com/articles/2212490-integration-with-toggl-plan-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
@@ -56,20 +56,19 @@ func TestWorkspaceIntegrations(t *testing.T) {
 
 func TestWorkspaceIntegrationPipes(t *testing.T) {
 
-	flags := cfg.Flags{}
-	cfg.ParseFlags(&flags)
+	flags := environment.Flags{}
+	environment.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
+	cfgService := environment.New(flags.Environment, flags.WorkDir)
 
-	store := &storage.Storage{ConnString: flags.TestDBConnString}
-	store.Connect()
-	defer store.Close()
-
-	togglService := &toggl.Service{
-		URL: cfgService.GetTogglAPIHost(),
+	db, err := sql.Open("postgres", flags.TestDBConnString)
+	if err != nil {
+		log.Fatal(err)
 	}
+	defer db.Close()
 
-	pipeService := NewPipeService(cfgService, store, togglService)
+	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
+	pipeService := NewPipesStorage(cfgService, api, db)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -77,7 +76,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
 	}
 
-	want := [][]*cfg.Pipe{
+	want := [][]*environment.PipeConfig{
 		{ // Basecamp
 			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
 			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},

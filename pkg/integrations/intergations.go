@@ -1,22 +1,15 @@
 package integrations
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/toggl/pipes-api/pkg/integrations/asana"
-	"github.com/toggl/pipes-api/pkg/integrations/basecamp"
-	"github.com/toggl/pipes-api/pkg/integrations/freshbooks"
-	"github.com/toggl/pipes-api/pkg/integrations/github"
-	"github.com/toggl/pipes-api/pkg/integrations/mock"
-	"github.com/toggl/pipes-api/pkg/integrations/teamweek"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 type (
-	// Service interface for external services
+	// Integration interface for external integrations
 	// Example implementation: github.go
-	Service interface {
+	Integration interface {
 		// Name of the service
 		Name() string
 
@@ -24,16 +17,16 @@ type (
 		GetWorkspaceID() int
 
 		// setSince takes the provided time.Time
-		// and adds it to Service struct. This can be used
+		// and adds it to Integration struct. This can be used
 		// to fetch just the modified data from external services.
 		SetSince(*time.Time)
 
-		// setParams takes the necessary Service params
+		// setParams takes the necessary Integration params
 		// (for example the selected account id) as JSON
-		// and adds them to Service struct.
+		// and adds them to Integration struct.
 		SetParams([]byte) error
 
-		// SetAuthData adds the provided oauth token to Service struct
+		// SetAuthData adds the provided oauth token to Integration struct
 		SetAuthData([]byte) error
 
 		// keyFor should provide unique key for object type
@@ -70,29 +63,3 @@ type (
 		ExportTimeEntry(*toggl.TimeEntry) (int, error)
 	}
 )
-
-func GetService(serviceID string, workspaceID int) Service {
-	switch serviceID {
-	case "basecamp":
-		return &basecamp.Service{WorkspaceID: workspaceID}
-	case "freshbooks":
-		return &freshbooks.Service{WorkspaceID: workspaceID}
-	case "teamweek":
-		return &teamweek.Service{WorkspaceID: workspaceID}
-	case "asana":
-		return &asana.Service{WorkspaceID: workspaceID}
-	case "github":
-		return &github.Service{WorkspaceID: workspaceID}
-	case mock.ServiceName:
-		return &mock.Service{WorkspaceID: workspaceID}
-	default:
-		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
-	}
-}
-
-var _ Service = (*basecamp.Service)(nil)
-var _ Service = (*freshbooks.Service)(nil)
-var _ Service = (*teamweek.Service)(nil)
-var _ Service = (*asana.Service)(nil)
-var _ Service = (*github.Service)(nil)
-var _ Service = (*mock.Service)(nil)

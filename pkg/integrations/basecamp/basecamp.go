@@ -10,8 +10,11 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/toggl/go-basecamp"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
+
+const ServiceName = "basecamp"
 
 type Service struct {
 	WorkspaceID int
@@ -25,7 +28,7 @@ type BasecampParams struct {
 }
 
 func (s *Service) Name() string {
-	return "basecamp"
+	return ServiceName
 }
 
 func (s *Service) GetWorkspaceID() int {
@@ -200,3 +203,5 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
 	return 0, nil
 }
+
+var _ integrations.Integration = (*Service)(nil)

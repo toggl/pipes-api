@@ -1,14 +1,15 @@
-package pipes
+package storage
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 
-	"github.com/toggl/pipes-api/pkg/cfg"
+	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
-	"github.com/toggl/pipes-api/pkg/storage"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -80,22 +81,22 @@ func TestTaskSplittingSmallDifferent(t *testing.T) {
 }
 
 func TestGetProjects(t *testing.T) {
-	flags := cfg.Flags{}
-	cfg.ParseFlags(&flags)
+	flags := environment.Flags{}
+	environment.ParseFlags(&flags)
 
-	cfgService := cfg.NewService(flags.Environment, flags.WorkDir)
+	cfgService := environment.New(flags.Environment, flags.WorkDir)
 
-	store := &storage.Storage{ConnString: flags.TestDBConnString}
-	store.Connect()
-	defer store.Close()
-
-	togglService := &toggl.Service{
-		URL: cfgService.GetTogglAPIHost(),
+	db, err := sql.Open("postgres", flags.TestDBConnString)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	pipeService := NewPipeService(cfgService, store, togglService)
+	defer db.Close()
 
-	p := cfg.NewPipe(1, mock.ServiceName, "projects")
+	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
+	pipeService := NewPipesStorage(cfgService, api, db)
+
+	p := environment.NewPipe(1, mock.ServiceName, "projects")
 
 	pipeService.fetchProjects(p)
 
