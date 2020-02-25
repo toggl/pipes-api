@@ -364,9 +364,16 @@ func (ps *PipesStorage) loadPipeStatuses(workspaceID int) (map[string]*environme
 	defer rows.Close()
 	for rows.Next() {
 		var pipeStatus environment.PipeStatusConfig
-		if err := ps.loadPipeStatusFromStore(rows, &pipeStatus); err != nil {
+		var b []byte
+		var key string
+		if err := rows.Scan(&key, &b); err != nil {
 			return nil, err
 		}
+		err := json.Unmarshal(b, &pipeStatus)
+		if err != nil {
+			return nil, err
+		}
+		pipeStatus.Key = key
 		pipeStatuses[pipeStatus.Key] = &pipeStatus
 	}
 	return pipeStatuses, nil
@@ -388,20 +395,6 @@ func (ps *PipesStorage) savePipeStatus(p *environment.PipeStatusConfig) error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func (ps *PipesStorage) loadPipeStatusFromStore(rows *sql.Rows, p *environment.PipeStatusConfig) error {
-	var b []byte
-	var key string
-	if err := rows.Scan(&key, &b); err != nil {
-		return err
-	}
-	err := json.Unmarshal(b, p)
-	if err != nil {
-		return err
-	}
-	p.Key = key
 	return nil
 }
 
