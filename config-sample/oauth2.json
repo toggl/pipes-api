@@ -37,6 +37,6 @@
 		"ClientSecret": "<client secret>",
 		"RedirectURL": "<redirect url based on registrated one>",
 		"AuthURL": "https://github.com/login/oauth/authorize",
-		"TokenURL": "https://github.com/login/oauth/access_token",
+		"TokenURL": "https://github.com/login/oauth/access_token"
 	}
 }

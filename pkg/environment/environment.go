@@ -15,12 +15,7 @@ import (
 type Environment struct {
 	envType string
 
-	urls struct {
-		ReturnURL     map[string]string   `json:"return_url"`
-		TogglAPIHost  map[string]string   `json:"toggl_api_host"`
-		PipesAPIHost  map[string]string   `json:"pipes_api_host"`
-		CorsWhitelist map[string][]string `json:"cors_whitelist"`
-	}
+	urls EnvUrls
 
 	availableIntegrations   []*IntegrationConfig
 	oAuth2Configs           map[string]*oauth.Config
@@ -30,8 +25,28 @@ type Environment struct {
 	mx sync.RWMutex
 }
 
+type EnvUrls struct {
+	ReturnURL     map[string]string   `json:"return_url"`
+	TogglAPIHost  map[string]string   `json:"toggl_api_host"`
+	PipesAPIHost  map[string]string   `json:"pipes_api_host"`
+	CorsWhitelist map[string][]string `json:"cors_whitelist"`
+}
+
 func New(envType, workDir string) *Environment {
-	svc := &Environment{envType: envType}
+	svc := &Environment{
+		envType: envType,
+		urls: EnvUrls{
+			ReturnURL:     map[string]string{},
+			TogglAPIHost:  map[string]string{},
+			PipesAPIHost:  map[string]string{},
+			CorsWhitelist: map[string][]string{},
+		},
+		availableIntegrations:   []*IntegrationConfig{},
+		oAuth2Configs:           map[string]*oauth.Config{},
+		oAuth1Configs:           map[string]*oauthplain.Config{},
+		availableAuthorizations: map[string]string{},
+	}
+
 	svc.loadUrls(workDir)
 	svc.loadIntegrations(workDir)
 	svc.loadOauth2Configs(workDir)
@@ -166,10 +181,10 @@ func (c *Environment) loadIntegrations(workDir string) {
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "integrations.json"))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read integrations.json, reason: %v", err)
 	}
 	if err := json.Unmarshal(b, &c.availableIntegrations); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not parse integrations.json, reason: %v", err)
 	}
 }
 
@@ -178,10 +193,10 @@ func (c *Environment) loadOauth2Configs(workDir string) {
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth2.json"))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read oauth2.json, reason: %v", err)
 	}
 	if err := json.Unmarshal(b, &c.oAuth2Configs); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not parse oauth2.json, reason: %v", err)
 	}
 
 }
@@ -191,10 +206,10 @@ func (c *Environment) loadOauth1Configs(workDir string) {
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth1.json"))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read oauth1.json, reason: %v", err)
 	}
 	if err := json.Unmarshal(b, &c.oAuth1Configs); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not parse oauth1.json, reason: %v", err)
 	}
 }
 
@@ -203,10 +218,10 @@ func (c *Environment) loadUrls(workDir string) {
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "urls.json"))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not read urls.json, reason: %v", err)
 	}
 	if err := json.Unmarshal(b, &c.urls); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Could not parse urls.json, reason: %v", err)
 	}
 }
 
