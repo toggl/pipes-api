@@ -58,24 +58,73 @@ func (t *ApiClient) GetWorkspaceID() (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (t *ApiClient) PostClients(clientsPipeID string, clients interface{}) ([]byte, error) {
-	return t.postPipesAPI(clientsPipeID, clients)
+func (t *ApiClient) PostClients(clientsPipeID string, clients interface{}) (*ClientsImport, error) {
+	b, err := t.postPipesAPI(clientsPipeID, clients)
+	if err != nil {
+		return nil, err
+	}
+
+	var clientsImport *ClientsImport
+	if err := json.Unmarshal(b, clientsImport); err != nil {
+		return nil, err
+	}
+
+	return clientsImport, nil
 }
 
-func (t *ApiClient) PostProjects(projectsPipeID string, projects interface{}) ([]byte, error) {
-	return t.postPipesAPI(projectsPipeID, projects)
+func (t *ApiClient) PostProjects(projectsPipeID string, projects interface{}) (*ProjectsImport, error) {
+	b, err := t.postPipesAPI(projectsPipeID, projects)
+	if err != nil {
+		return nil, err
+	}
+
+	var projectsImport *ProjectsImport
+	if err := json.Unmarshal(b, projectsImport); err != nil {
+		return nil, err
+	}
+
+	return projectsImport, nil
 }
 
-func (t *ApiClient) PostTasks(tasksPipeID string, tasks interface{}) ([]byte, error) {
-	return t.postPipesAPI(tasksPipeID, tasks)
+func (t *ApiClient) PostTasks(tasksPipeID string, tasks interface{}) (*TasksImport, error) {
+	b, err := t.postPipesAPI(tasksPipeID, tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	var tasksImport *TasksImport
+	if err := json.Unmarshal(b, &tasksImport); err != nil {
+		return nil, err
+	}
+
+	return tasksImport, nil
 }
 
-func (t *ApiClient) PostTodoLists(tasksPipeID string, tasks interface{}) ([]byte, error) {
-	return t.postPipesAPI(tasksPipeID, tasks)
+func (t *ApiClient) PostTodoLists(tasksPipeID string, tasks interface{}) (*TasksImport, error) {
+	b, err := t.postPipesAPI(tasksPipeID, tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	var tasksImport *TasksImport
+	if err := json.Unmarshal(b, &tasksImport); err != nil {
+		return nil, err
+	}
+
+	return tasksImport, nil
 }
 
-func (t *ApiClient) PostUsers(usersPipeID string, users interface{}) ([]byte, error) {
-	return t.postPipesAPI(usersPipeID, users)
+func (t *ApiClient) PostUsers(usersPipeID string, users interface{}) (*UsersImport, error) {
+	b, err := t.postPipesAPI(usersPipeID, users)
+	if err != nil {
+		return nil, err
+	}
+
+	var usersImport *UsersImport
+	if err := json.Unmarshal(b, &usersImport); err != nil {
+		return nil, err
+	}
+	return usersImport, nil
 }
 
 func (t *ApiClient) postPipesAPI(pipeID string, payload interface{}) ([]byte, error) {

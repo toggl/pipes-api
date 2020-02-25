@@ -655,16 +655,10 @@ func (ps *PipesStorage) postUsers(p *environment.PipeConfig) error {
 		}
 	}
 
-	b, err := ps.api.PostUsers(usersPipeID, toggl.UsersRequest{Users: users})
+	usersImport, err := ps.api.PostUsers(usersPipeID, toggl.UsersRequest{Users: users})
 	if err != nil {
 		return err
 	}
-
-	var usersImport toggl.UsersImport
-	if err := json.Unmarshal(b, &usersImport); err != nil {
-		return err
-	}
-
 	var connection *Connection
 	if connection, err = ps.ConnectionStorage.LoadConnection(s, usersPipeID); err != nil {
 		return err
@@ -698,12 +692,8 @@ func (ps *PipesStorage) postClients(p *environment.PipeConfig) error {
 	if len(clientsResponse.Clients) == 0 {
 		return nil
 	}
-	b, err := ps.api.PostClients(clientsPipeID, clients)
+	clientsImport, err := ps.api.PostClients(clientsPipeID, clients)
 	if err != nil {
-		return err
-	}
-	var clientsImport toggl.ClientsImport
-	if err := json.Unmarshal(b, &clientsImport); err != nil {
 		return err
 	}
 	var connection *Connection
@@ -735,13 +725,8 @@ func (ps *PipesStorage) postProjects(p *environment.PipeConfig) error {
 	projects := toggl.ProjectRequest{
 		Projects: projectsResponse.Projects,
 	}
-
-	b, err := ps.api.PostProjects(projectsPipeID, projects)
+	projectsImport, err := ps.api.PostProjects(projectsPipeID, projects)
 	if err != nil {
-		return err
-	}
-	var projectsImport toggl.ProjectsImport
-	if err := json.Unmarshal(b, &projectsImport); err != nil {
 		return err
 	}
 	var connection *Connection
@@ -777,12 +762,8 @@ func (ps *PipesStorage) postTodoLists(p *environment.PipeConfig) error {
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		b, err := ps.api.PostTodoLists(tasksPipeId, tr)
+		tasksImport, err := ps.api.PostTodoLists(tasksPipeId, tr)
 		if err != nil {
-			return err
-		}
-		var tasksImport toggl.TasksImport
-		if err := json.Unmarshal(b, &tasksImport); err != nil {
 			return err
 		}
 		connection, err := ps.ConnectionStorage.LoadConnection(s, todoPipeId)
@@ -821,19 +802,14 @@ func (ps *PipesStorage) postTasks(p *environment.PipeConfig) error {
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		b, err := ps.api.PostTasks(tasksPipeId, tr)
+		tasksImport, err := ps.api.PostTasks(tasksPipeId, tr)
 		if err != nil {
-			return err
-		}
-		var tasksImport toggl.TasksImport
-		if err := json.Unmarshal(b, &tasksImport); err != nil {
 			return err
 		}
 		connection, err := ps.ConnectionStorage.LoadConnection(s, tasksPipeId)
 		if err != nil {
 			return err
 		}
-
 		for _, task := range tasksImport.Tasks {
 			connection.Data[task.ForeignID] = task.ID
 		}
