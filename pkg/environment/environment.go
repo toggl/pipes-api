@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"sync"
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/tambet/oauthplain"
@@ -25,6 +26,8 @@ type Environment struct {
 	oAuth2Configs           map[string]*oauth.Config
 	oAuth1Configs           map[string]*oauthplain.Config
 	availableAuthorizations map[string]string
+
+	mx sync.RWMutex
 }
 
 func New(envType, workDir string) *Environment {
@@ -37,70 +40,33 @@ func New(envType, workDir string) *Environment {
 	return svc
 }
 
-func (c *Environment) loadIntegrations(workDir string) {
-	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "integrations.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := json.Unmarshal(b, &c.availableIntegrations); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (c *Environment) loadOauth2Configs(workDir string) {
-	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth2.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := json.Unmarshal(b, &c.oAuth2Configs); err != nil {
-		log.Fatal(err)
-	}
-
-}
-
-func (c *Environment) loadOauth1Configs(workDir string) {
-	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth1.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := json.Unmarshal(b, &c.oAuth1Configs); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func (c *Environment) fillAuthorizations(availableIntegrations []*IntegrationConfig) {
-	for _, integration := range availableIntegrations {
-		c.availableAuthorizations[integration.ID] = integration.AuthType
-	}
-}
-
 func (c *Environment) GetIntegrations() []*IntegrationConfig {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	return c.availableIntegrations
 }
 
-func (c *Environment) loadUrls(workDir string) {
-	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "urls.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := json.Unmarshal(b, &c.urls); err != nil {
-		log.Fatal(err)
-	}
-}
-
 func (c *Environment) GetTogglAPIHost() string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	return c.urls.TogglAPIHost[c.envType]
 }
 
 func (c *Environment) GetPipesAPIHost() string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	return c.urls.PipesAPIHost[c.envType]
 }
 
 func (c *Environment) GetCorsWhitelist() []string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	return c.urls.CorsWhitelist[c.envType]
 }
 
 func (c *Environment) OAuth2URL(service string) string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	config, ok := c.oAuth2Configs[service+"_"+c.envType]
 	if !ok {
 		return ""
@@ -121,10 +87,15 @@ func (c *Environment) OAuth1Exchange(serviceID string, payload map[string]interf
 	if oAuthVerifier == "" {
 		return nil, errors.New("missing oauth_verifier")
 	}
+
+	c.mx.RLock()
 	config, res := c.oAuth1Configs[serviceID]
 	if !res {
+		c.mx.RUnlock()
 		return nil, errors.New("service OAuth config not found")
 	}
+	c.mx.RUnlock()
+
 	transport := &oauthplain.Transport{
 		Config: config.UpdateURLs(accountName),
 	}
@@ -149,10 +120,15 @@ func (c *Environment) OAuth2Exchange(serviceID string, payload map[string]interf
 	if code == "" {
 		return nil, errors.New("missing code")
 	}
+
+	c.mx.RLock()
 	config, res := c.oAuth2Configs[serviceID+"_"+c.envType]
 	if !res {
+		c.mx.RUnlock()
 		return nil, errors.New("service OAuth config not found")
 	}
+	c.mx.RUnlock()
+
 	transport := &oauth.Transport{Config: config}
 	token, err := transport.Exchange(code)
 	if err != nil {
@@ -166,15 +142,78 @@ func (c *Environment) OAuth2Exchange(serviceID string, payload map[string]interf
 }
 
 func (c *Environment) GetOAuth1Configs(serviceID string) (*oauthplain.Config, bool) {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	v, found := c.oAuth1Configs[serviceID]
 	return v, found
 }
 
 func (c *Environment) GetOAuth2Configs(serviceID string) (*oauth.Config, bool) {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	v, found := c.oAuth2Configs[serviceID+"_"+c.envType]
 	return v, found
 }
 
 func (c *Environment) GetAvailableAuthorizations(serviceID string) string {
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 	return c.availableAuthorizations[serviceID]
+}
+
+func (c *Environment) loadIntegrations(workDir string) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "integrations.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &c.availableIntegrations); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (c *Environment) loadOauth2Configs(workDir string) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth2.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &c.oAuth2Configs); err != nil {
+		log.Fatal(err)
+	}
+
+}
+
+func (c *Environment) loadOauth1Configs(workDir string) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "oauth1.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &c.oAuth1Configs); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (c *Environment) loadUrls(workDir string) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "urls.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := json.Unmarshal(b, &c.urls); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (c *Environment) fillAuthorizations(availableIntegrations []*IntegrationConfig) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+	for _, integration := range availableIntegrations {
+		c.availableAuthorizations[integration.ID] = integration.AuthType
+	}
 }

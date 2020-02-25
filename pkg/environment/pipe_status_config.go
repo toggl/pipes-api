@@ -7,8 +7,12 @@ import (
 )
 
 const (
-	startStatus = "running"
+	StatusRunning = "running"
+	StatusError   = "error"
+	StatusSuccess = "success"
 )
+
+const startStatus = StatusRunning
 
 type PipeStatusConfig struct {
 	Status        string   `json:"status,omitempty"`
@@ -22,7 +26,7 @@ type PipeStatusConfig struct {
 	ServiceID    string `json:"-"`
 	PipeID       string `json:"-"`
 	Key          string `json:"-"`
-	pipesApiHost string `json:"-"`
+	PipesApiHost string `json:"-"`
 }
 
 func NewPipeStatus(workspaceID int, serviceID, pipeID, pipesApiHost string) *PipeStatusConfig {
@@ -33,25 +37,25 @@ func NewPipeStatus(workspaceID int, serviceID, pipeID, pipesApiHost string) *Pip
 		ServiceID:    serviceID,
 		PipeID:       pipeID,
 		Key:          PipesKey(serviceID, pipeID),
-		pipesApiHost: pipesApiHost,
+		PipesApiHost: pipesApiHost,
 	}
 }
 
 func (p *PipeStatusConfig) AddError(err error) {
-	p.Status = "error"
+	p.Status = StatusError
 	p.Message = err.Error()
 }
 
 func (p *PipeStatusConfig) Complete(objType string, notifications []string, objCount int) {
-	if p.Status == "error" {
+	if p.Status == StatusError {
 		return
 	}
-	p.Status = "success"
+	p.Status = StatusSuccess
 	p.Notifications = notifications
 	if objCount > 0 {
 		p.ObjectCounts = append(p.ObjectCounts, fmt.Sprintf("%d %s", objCount, objType))
 	}
-	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log", p.pipesApiHost, p.ServiceID, p.PipeID)
+	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log", p.PipesApiHost, p.ServiceID, p.PipeID)
 }
 
 func (p *PipeStatusConfig) GenerateLog() string {
