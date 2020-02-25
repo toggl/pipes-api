@@ -64,18 +64,6 @@ func (ps *PipesStorage) IsDown() bool {
 	return false
 }
 
-func (ps *PipesStorage) fillAvailablePipeTypes() {
-	ps.availablePipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
-}
-
-func (ps *PipesStorage) fillAvailableServices(integrations []*environment.IntegrationConfig) {
-	ids := make([]string, len(integrations))
-	for i := range integrations {
-		ids = append(ids, integrations[i].ID)
-	}
-	ps.availableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
-}
-
 func (ps *PipesStorage) LoadPipe(workspaceID int, serviceID, pipeID string) (*environment.PipeConfig, error) {
 	key := environment.PipesKey(serviceID, pipeID)
 	return ps.LoadPipeWithKey(workspaceID, key)
@@ -256,7 +244,6 @@ func (ps *PipesStorage) postObjects(p *environment.PipeConfig, saveStatus bool) 
 	case "todolists":
 		err = ps.postTodoLists(p)
 	case "todos", "tasks":
-		err = ps.postTasks(p)
 		err = ps.postTasks(p)
 	case "timeentries":
 		var service integrations.Integration
@@ -456,75 +443,6 @@ func (ps *PipesStorage) WorkspaceIntegrations(workspaceID int) ([]environment.In
 	return igr, nil
 }
 
-func (ps *PipesStorage) fetchTimeEntries(p *environment.PipeConfig) error {
-	return nil
-}
-
-func (ps *PipesStorage) postTimeEntries(p *environment.PipeConfig, service integrations.Integration) error {
-	var err error
-	var entriesCon *Connection
-	var usersCon, tasksCon, projectsCon *ReversedConnection
-	if usersCon, err = ps.ConnectionStorage.LoadConnectionRev(service, "users"); err != nil {
-		return err
-	}
-	if tasksCon, err = ps.ConnectionStorage.LoadConnectionRev(service, "tasks"); err != nil {
-		return err
-	}
-	if projectsCon, err = ps.ConnectionStorage.LoadConnectionRev(service, "projects"); err != nil {
-		return err
-	}
-	if entriesCon, err = ps.ConnectionStorage.LoadConnection(service, "time_entries"); err != nil {
-		return err
-	}
-
-	if p.LastSync == nil {
-		currentTime := time.Now()
-		p.LastSync = &currentTime
-	}
-
-	timeEntries, err := ps.api.GetTimeEntries(*p.LastSync, usersCon.GetKeys(), projectsCon.GetKeys())
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range timeEntries {
-		entry.ForeignID = strconv.Itoa(entriesCon.Data[strconv.Itoa(entry.ID)])
-		entry.ForeignTaskID = strconv.Itoa(tasksCon.GetInt(entry.TaskID))
-		entry.ForeignUserID = strconv.Itoa(usersCon.GetInt(entry.UserID))
-		entry.ForeignProjectID = strconv.Itoa(projectsCon.GetInt(entry.ProjectID))
-
-		entryID, err := service.ExportTimeEntry(&entry)
-		if err != nil {
-			bugsnag.Notify(err, bugsnag.MetaData{
-				"Workspace": {
-					"ID": service.GetWorkspaceID(),
-				},
-				"Entry": {
-					"ID":        entry.ID,
-					"TaskID":    entry.TaskID,
-					"UserID":    entry.UserID,
-					"ProjectID": entry.ProjectID,
-				},
-				"Foreign Entry": {
-					"ForeignID":        entry.ForeignID,
-					"ForeignTaskID":    entry.ForeignTaskID,
-					"ForeignUserID":    entry.ForeignUserID,
-					"ForeignProjectID": entry.ForeignProjectID,
-				},
-			})
-			p.PipeStatus.AddError(err)
-		} else {
-			entriesCon.Data[strconv.Itoa(entry.ID)] = entryID
-		}
-	}
-
-	if err := ps.ConnectionStorage.Save(entriesCon); err != nil {
-		return err
-	}
-	p.PipeStatus.Complete("timeentries", []string{}, len(timeEntries))
-	return nil
-}
-
 func (ps *PipesStorage) QueueAutomaticPipes() error {
 	_, err := ps.db.Exec(queueAutomaticPipesSQL)
 	return err
@@ -599,27 +517,7 @@ func (ps *PipesStorage) ClearImportFor(s integrations.Integration, pipeID string
 	return err
 }
 
-func (ps *PipesStorage) getObject(s integrations.Integration, pipeID string) ([]byte, error) {
-	var result []byte
-	rows, err := ps.db.Query(`
-		SELECT data FROM imports
-		WHERE workspace_id = $1 AND Key = $2
-		ORDER by created_at DESC
-		LIMIT 1
-	`, s.GetWorkspaceID(), s.KeyFor(pipeID))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return nil, rows.Err()
-	}
-	if err := rows.Scan(&result); err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
+// ==========================  postSomething ===================================
 func (ps *PipesStorage) postUsers(p *environment.PipeConfig) error {
 	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
@@ -816,27 +714,74 @@ func (ps *PipesStorage) postTasks(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (ps *PipesStorage) saveObject(p *environment.PipeConfig, pipeID string, obj interface{}) error {
-	b, err := json.Marshal(obj)
-	if err != nil {
-		bugsnag.Notify(err)
+func (ps *PipesStorage) postTimeEntries(p *environment.PipeConfig, service integrations.Integration) error {
+	var err error
+	var entriesCon *Connection
+	var usersCon, tasksCon, projectsCon *ReversedConnection
+	if usersCon, err = ps.ConnectionStorage.LoadConnectionRev(service, "users"); err != nil {
 		return err
 	}
-	s, err := ps.AuthorizationStorage.IntegrationFor(p)
+	if tasksCon, err = ps.ConnectionStorage.LoadConnectionRev(service, "tasks"); err != nil {
+		return err
+	}
+	if projectsCon, err = ps.ConnectionStorage.LoadConnectionRev(service, "projects"); err != nil {
+		return err
+	}
+	if entriesCon, err = ps.ConnectionStorage.LoadConnection(service, "time_entries"); err != nil {
+		return err
+	}
+
+	if p.LastSync == nil {
+		currentTime := time.Now()
+		p.LastSync = &currentTime
+	}
+
+	timeEntries, err := ps.api.GetTimeEntries(*p.LastSync, usersCon.GetKeys(), projectsCon.GetKeys())
 	if err != nil {
 		return err
 	}
-	_, err = ps.db.Exec(`
-	  INSERT INTO imports(workspace_id, Key, data, created_at)
-    VALUES($1, $2, $3, NOW())
-	`, p.WorkspaceID, s.KeyFor(pipeID), b)
-	if err != nil {
-		bugsnag.Notify(err)
+
+	for _, entry := range timeEntries {
+		entry.ForeignID = strconv.Itoa(entriesCon.Data[strconv.Itoa(entry.ID)])
+		entry.ForeignTaskID = strconv.Itoa(tasksCon.GetInt(entry.TaskID))
+		entry.ForeignUserID = strconv.Itoa(usersCon.GetInt(entry.UserID))
+		entry.ForeignProjectID = strconv.Itoa(projectsCon.GetInt(entry.ProjectID))
+
+		entryID, err := service.ExportTimeEntry(&entry)
+		if err != nil {
+			bugsnag.Notify(err, bugsnag.MetaData{
+				"Workspace": {
+					"ID": service.GetWorkspaceID(),
+				},
+				"Entry": {
+					"ID":        entry.ID,
+					"TaskID":    entry.TaskID,
+					"UserID":    entry.UserID,
+					"ProjectID": entry.ProjectID,
+				},
+				"Foreign Entry": {
+					"ForeignID":        entry.ForeignID,
+					"ForeignTaskID":    entry.ForeignTaskID,
+					"ForeignUserID":    entry.ForeignUserID,
+					"ForeignProjectID": entry.ForeignProjectID,
+				},
+			})
+			p.PipeStatus.AddError(err)
+		} else {
+			entriesCon.Data[strconv.Itoa(entry.ID)] = entryID
+		}
+	}
+
+	if err := ps.ConnectionStorage.Save(entriesCon); err != nil {
 		return err
 	}
+	p.PipeStatus.Complete("timeentries", []string{}, len(timeEntries))
 	return nil
 }
 
+// =============================================================================
+
+// ==========================  fetchSomething ==================================
 func (ps *PipesStorage) fetchUsers(p *environment.PipeConfig) error {
 	s, err := ps.AuthorizationStorage.IntegrationFor(p)
 	if err != nil {
@@ -1012,6 +957,14 @@ func (ps *PipesStorage) fetchTasks(p *environment.PipeConfig) error {
 	return nil
 }
 
+func (ps *PipesStorage) fetchTimeEntries(p *environment.PipeConfig) error {
+	return nil
+}
+
+// =============================================================================
+
+// ==========================  getSomething ====================================
+
 func (ps *PipesStorage) GetUsers(s integrations.Integration) (*toggl.UsersResponse, error) {
 	b, err := ps.getObject(s, usersPipeID)
 	if err != nil || b == nil {
@@ -1067,6 +1020,65 @@ func (ps *PipesStorage) getTasks(s integrations.Integration, objType string) (*t
 		return nil, err
 	}
 	return &tasksResponse, nil
+}
+
+// =============================================================================
+
+// ========================== get/saveObject ===================================
+func (ps *PipesStorage) getObject(s integrations.Integration, pipeID string) ([]byte, error) {
+	var result []byte
+	rows, err := ps.db.Query(`
+		SELECT data FROM imports
+		WHERE workspace_id = $1 AND Key = $2
+		ORDER by created_at DESC
+		LIMIT 1
+	`, s.GetWorkspaceID(), s.KeyFor(pipeID))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, rows.Err()
+	}
+	if err := rows.Scan(&result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (ps *PipesStorage) saveObject(p *environment.PipeConfig, pipeID string, obj interface{}) error {
+	b, err := json.Marshal(obj)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
+	s, err := ps.AuthorizationStorage.IntegrationFor(p)
+	if err != nil {
+		return err
+	}
+	_, err = ps.db.Exec(`
+	  INSERT INTO imports(workspace_id, Key, data, created_at)
+    VALUES($1, $2, $3, NOW())
+	`, p.WorkspaceID, s.KeyFor(pipeID), b)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
+	return nil
+}
+
+// =============================================================================
+
+func (ps *PipesStorage) fillAvailablePipeTypes() {
+	ps.availablePipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
+}
+
+func (ps *PipesStorage) fillAvailableServices(integrations []*environment.IntegrationConfig) {
+	ids := make([]string, len(integrations))
+	for i := range integrations {
+		ids = append(ids, integrations[i].ID)
+	}
+	ps.availableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
 }
 
 const (
