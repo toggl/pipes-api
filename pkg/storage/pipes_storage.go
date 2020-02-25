@@ -11,12 +11,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bugsnag/bugsnag-go"
-
 	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
+
+type ErrorNotifier interface {
+	NotifyPipeError(p *environment.PipeConfig, err error)
+	NotifyError(err error)
+	NotifyTimeEntryError(workspaceID int, te toggl.TimeEntry, err error)
+}
 
 type PipesStorage struct {
 	AuthorizationStorage *AuthorizationStorage
@@ -24,12 +28,13 @@ type PipesStorage struct {
 	availablePipeType    *regexp.Regexp
 	availableServiceType *regexp.Regexp
 
-	env *environment.Environment
-	db  *sql.DB
-	api *toggl.ApiClient
+	env         *environment.Environment
+	db          *sql.DB
+	api         *toggl.ApiClient
+	errNotifier ErrorNotifier
 }
 
-func NewPipesStorage(env *environment.Environment, api *toggl.ApiClient, db *sql.DB) *PipesStorage {
+func NewPipesStorage(env *environment.Environment, api *toggl.ApiClient, db *sql.DB, en ErrorNotifier) *PipesStorage {
 	svc := &PipesStorage{
 		AuthorizationStorage: &AuthorizationStorage{
 			db:  db,
@@ -38,9 +43,10 @@ func NewPipesStorage(env *environment.Environment, api *toggl.ApiClient, db *sql
 		ConnectionStorage: &ConnectionStorage{
 			db: db,
 		},
-		api: api,
-		db:  db,
-		env: env,
+		api:         api,
+		db:          db,
+		env:         env,
+		errNotifier: en,
 	}
 
 	svc.fillAvailablePipeTypes()
@@ -181,23 +187,23 @@ func (ps *PipesStorage) Run(p *environment.PipeConfig) {
 	}()
 
 	if err = ps.NewStatus(p); err != nil {
-		p.BugsnagNotifyPipe(err)
+		ps.errNotifier.NotifyPipeError(p, err)
 		return
 	}
 
 	auth, err := ps.AuthorizationStorage.LoadAuthFor(p)
 	if err != nil {
-		p.BugsnagNotifyPipe(err)
+		ps.errNotifier.NotifyPipeError(p, err)
 		return
 	}
 	ps.api.WithAuthToken(auth.WorkspaceToken)
 
 	if err = ps.FetchObjects(p, false); err != nil {
-		p.BugsnagNotifyPipe(err)
+		ps.errNotifier.NotifyPipeError(p, err)
 		return
 	}
 	if err = ps.postObjects(p, false); err != nil {
-		p.BugsnagNotifyPipe(err)
+		ps.errNotifier.NotifyPipeError(p, err)
 		return
 	}
 }
@@ -398,7 +404,7 @@ func (ps *PipesStorage) endSync(p *environment.PipeConfig, saveStatus bool, err 
 		p.PipeStatus.AddError(err)
 	}
 	if err = ps.savePipeStatus(p.PipeStatus); err != nil {
-		p.BugsnagNotifyPipe(err)
+		ps.errNotifier.NotifyPipeError(p, err)
 		return err
 	}
 
@@ -495,7 +501,7 @@ func (ps *PipesStorage) FetchAccounts(s integrations.Integration) error {
 
 	b, err := json.Marshal(response)
 	if err != nil {
-		bugsnag.Notify(err)
+		ps.errNotifier.NotifyError(err)
 		return err
 	}
 	_, err = ps.db.Exec(`
@@ -503,7 +509,7 @@ func (ps *PipesStorage) FetchAccounts(s integrations.Integration) error {
     VALUES($1, $2, $3, NOW())
   	`, s.GetWorkspaceID(), s.KeyFor("accounts"), b)
 	if err != nil {
-		bugsnag.Notify(err)
+		ps.errNotifier.NotifyError(err)
 		return err
 	}
 	return nil
@@ -749,23 +755,7 @@ func (ps *PipesStorage) postTimeEntries(p *environment.PipeConfig, service integ
 
 		entryID, err := service.ExportTimeEntry(&entry)
 		if err != nil {
-			bugsnag.Notify(err, bugsnag.MetaData{
-				"Workspace": {
-					"ID": service.GetWorkspaceID(),
-				},
-				"Entry": {
-					"ID":        entry.ID,
-					"TaskID":    entry.TaskID,
-					"UserID":    entry.UserID,
-					"ProjectID": entry.ProjectID,
-				},
-				"Foreign Entry": {
-					"ForeignID":        entry.ForeignID,
-					"ForeignTaskID":    entry.ForeignTaskID,
-					"ForeignUserID":    entry.ForeignUserID,
-					"ForeignProjectID": entry.ForeignProjectID,
-				},
-			})
+			ps.errNotifier.NotifyTimeEntryError(service.GetWorkspaceID(), entry, err)
 			p.PipeStatus.AddError(err)
 		} else {
 			entriesCon.Data[strconv.Itoa(entry.ID)] = entryID
@@ -1049,7 +1039,7 @@ func (ps *PipesStorage) getObject(s integrations.Integration, pipeID string) ([]
 func (ps *PipesStorage) saveObject(p *environment.PipeConfig, pipeID string, obj interface{}) error {
 	b, err := json.Marshal(obj)
 	if err != nil {
-		bugsnag.Notify(err)
+		ps.errNotifier.NotifyError(err)
 		return err
 	}
 	s, err := ps.AuthorizationStorage.IntegrationFor(p)
@@ -1061,7 +1051,7 @@ func (ps *PipesStorage) saveObject(p *environment.PipeConfig, pipeID string, obj
     VALUES($1, $2, $3, NOW())
 	`, p.WorkspaceID, s.KeyFor(pipeID), b)
 	if err != nil {
-		bugsnag.Notify(err)
+		ps.errNotifier.NotifyError(err)
 		return err
 	}
 	return nil

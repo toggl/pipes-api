@@ -7,10 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/bugsnag/bugsnag-go"
-
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/environment"
+	"github.com/toggl/pipes-api/pkg/errnotifier"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/storage"
 	"github.com/toggl/pipes-api/pkg/toggl"
@@ -23,17 +22,15 @@ func main() {
 	envFlags := environment.Flags{}
 	environment.ParseFlags(&envFlags)
 
-	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:       envFlags.BugsnagAPIKey,
-		ReleaseStage: envFlags.Environment,
-		NotifyReleaseStages: []string{
-			environment.EnvTypeProduction,
-			environment.EnvTypeStaging,
-		},
-		// more configuration options
-	})
+	env := environment.New(
+		envFlags.Environment,
+		envFlags.WorkDir,
+	)
 
-	env := environment.New(envFlags.Environment, envFlags.WorkDir)
+	bugSnagNotifier := errnotifier.NewBugSnagNotifier(
+		envFlags.BugsnagAPIKey,
+		envFlags.Environment,
+	)
 
 	db, err := sql.Open("postgres", envFlags.DbConnString)
 	if err != nil {
@@ -42,9 +39,9 @@ func main() {
 	defer db.Close()
 
 	api := toggl.NewApiClient(env.GetTogglAPIHost())
-	pipes := storage.NewPipesStorage(env, api, db)
+	pipes := storage.NewPipesStorage(env, api, db, bugSnagNotifier)
 
-	autosync.NewService(envFlags.Environment, pipes).Start()
+	autosync.NewService(envFlags.Environment, pipes, bugSnagNotifier).Start()
 
 	router := server.NewRouter(env.GetCorsWhitelist()).AttachHandlers(
 		server.NewController(env, pipes),

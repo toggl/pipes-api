@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/toggl/pipes-api/pkg/environment"
+	"github.com/toggl/pipes-api/pkg/errnotifier"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -93,8 +94,9 @@ func TestGetProjects(t *testing.T) {
 
 	defer db.Close()
 
+	errNotifier := errnotifier.NewDummyNotifier()
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	pipeService := NewPipesStorage(cfgService, api, db)
+	pipeService := NewPipesStorage(cfgService, api, db, errNotifier)
 
 	p := environment.NewPipe(1, mock.ServiceName, "projects")
 

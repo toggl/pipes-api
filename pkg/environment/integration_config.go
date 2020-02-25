@@ -17,10 +17,10 @@ type IntegrationConfig struct {
 	Name       string        `json:"name"`
 	Link       string        `json:"link"`
 	Image      string        `json:"image"`
-	Pipes      []*PipeConfig `json:"pipes"`
 	AuthURL    string        `json:"auth_url,omitempty"`
 	AuthType   string        `json:"auth_type,omitempty"`
 	Authorized bool          `json:"authorized"`
+	Pipes      []*PipeConfig `json:"pipes"`
 }
 
 func Create(serviceID string, workspaceID int) integrations.Integration {

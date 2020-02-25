@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/bugsnag/bugsnag-go"
 )
 
 type PipeConfig struct {
@@ -16,8 +14,8 @@ type PipeConfig struct {
 	AutomaticOption bool              `json:"automatic_option"`
 	Configured      bool              `json:"configured"`
 	Premium         bool              `json:"premium"`
-	PipeStatus      *PipeStatusConfig `json:"pipe_status,omitempty"`
 	ServiceParams   []byte            `json:"service_params,omitempty"`
+	PipeStatus      *PipeStatusConfig `json:"pipe_status,omitempty"`
 
 	WorkspaceID int        `json:"-"`
 	ServiceID   string     `json:"-"`
@@ -51,20 +49,6 @@ func (p *PipeConfig) ValidatePayload(payload []byte) string {
 	}
 	p.Payload = payload
 	return ""
-}
-
-// BugsnagNotifyPipe notifies bugsnag with metadata for the given pipe
-func (p *PipeConfig) BugsnagNotifyPipe(err error) {
-	bugsnag.Notify(err, bugsnag.MetaData{
-		"pipe": {
-			"ID":            p.ID,
-			"Name":          p.Name,
-			"ServiceParams": string(p.ServiceParams),
-			"WorkspaceID":   p.WorkspaceID,
-			"ServiceID":     p.ServiceID,
-		},
-	})
-	return
 }
 
 func PipesKey(serviceID, pipeID string) string {

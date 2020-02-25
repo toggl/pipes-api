@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/toggl/pipes-api/pkg/environment"
+	"github.com/toggl/pipes-api/pkg/errnotifier"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -22,8 +23,10 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 	defer db.Close()
 
+	errNotifier := errnotifier.NewDummyNotifier()
+
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	pipeService := NewPipesStorage(cfgService, api, db)
+	pipeService := NewPipesStorage(cfgService, api, db, errNotifier)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -67,8 +70,10 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 	defer db.Close()
 
+	errNotifier := errnotifier.NewDummyNotifier()
+
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	pipeService := NewPipesStorage(cfgService, api, db)
+	pipeService := NewPipesStorage(cfgService, api, db, errNotifier)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
