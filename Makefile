@@ -8,7 +8,7 @@ test: inittestdb
 	go test -v -race -cover ./pkg/...
 
 test-integration: inittestdb
-	source config/test_accounts.sh && go test -v -race -cover -tags=integration
+	source config/test_accounts.sh && go test -v -race -cover -tags=integration ./pkg/...
 
 inittestdb:
 	psql -c 'DROP database pipes_test;' -U postgres
@@ -18,7 +18,7 @@ inittestdb:
 run:
 	mkdir -p bin
 	cp -r config bin/
-	go build -race -o bin/$(APPNAME) && ./bin/$(APPNAME)
+	go build -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
 
 .PHONY: dist
 dist:
@@ -28,7 +28,7 @@ dist:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/$(APPNAME) ./cmd/pipes-api
 
 build:
-	go build ./cmd/pipes-api
+	go build -o bin/$(APPNAME) ./cmd/pipes-api
 
 vendor: dist
 	cd dist && tar czf pipes-api.tgz pipes-api config
