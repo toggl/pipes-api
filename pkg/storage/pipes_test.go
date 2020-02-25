@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/errnotifier"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -42,8 +41,7 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
 
-	errNotifier := errnotifier.NewDummyNotifier()
-	pipeService := NewPipesStorage(cfgService, api, db, errNotifier)
+	pipeService := NewPipesStorage(cfgService, api, db)
 
 	p := environment.NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
 
@@ -82,9 +80,8 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	defer db.Close()
 
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	errNotifier := errnotifier.NewDummyNotifier()
 
-	pipeService := NewPipesStorage(cfgService, api, db, errNotifier)
+	pipeService := NewPipesStorage(cfgService, api, db)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *environment.PipeConfig {
 		pipe := environment.NewPipe(workspaceID, serviceID, pipeID)

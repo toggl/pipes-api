@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bugsnag/bugsnag-go"
+
 	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/storage"
 )
@@ -19,22 +21,15 @@ const (
 	sleepMax     = 300
 )
 
-type ErrorNotifier interface {
-	NotifyPipeError(p *environment.PipeConfig, err error)
-	NotifyError(err error)
-}
-
 type Service struct {
 	env          string
 	pipesStorage *storage.PipesStorage
-	errNotifier  ErrorNotifier
 }
 
-func NewService(env string, p *storage.PipesStorage, en ErrorNotifier) *Service {
+func NewService(env string, p *storage.PipesStorage) *Service {
 	return &Service{
 		env:          env,
 		pipesStorage: p,
-		errNotifier:  en,
 	}
 }
 
@@ -65,7 +60,7 @@ func (ss *Service) pipeWorker(id int) {
 	for {
 		pipes, err := ss.pipesStorage.GetPipesFromQueue()
 		if err != nil {
-			ss.errNotifier.NotifyError(err)
+			bugsnag.Notify(err)
 			continue
 		}
 
@@ -86,7 +81,15 @@ func (ss *Service) pipeWorker(id int) {
 
 			err := ss.pipesStorage.SetQueuedPipeSynced(pipe)
 			if err != nil {
-				ss.errNotifier.NotifyPipeError(pipe, err)
+				bugsnag.Notify(err, bugsnag.MetaData{
+					"pipe": {
+						"ID":            pipe.ID,
+						"Name":          pipe.Name,
+						"ServiceParams": string(pipe.ServiceParams),
+						"WorkspaceID":   pipe.WorkspaceID,
+						"ServiceID":     pipe.ServiceID,
+					},
+				})
 			}
 			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key, (err != nil))
 		}
@@ -112,7 +115,7 @@ func (ss *Service) pipeWorkerStub() {
 	for {
 		pipes, err := ss.pipesStorage.GetPipesFromQueue()
 		if err != nil {
-			ss.errNotifier.NotifyError(err)
+			bugsnag.Notify(err)
 			continue
 		}
 		if pipes == nil {
@@ -171,7 +174,7 @@ func (ss *Service) startQueue() {
 
 		if err := ss.pipesStorage.QueueAutomaticPipes(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
-				ss.errNotifier.NotifyError(err)
+				bugsnag.Notify(err)
 			}
 		}
 		log.Println("-- startQueue finished")
