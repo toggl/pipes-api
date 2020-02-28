@@ -393,6 +393,10 @@ func (c *Controller) PostPipeRun(req Request) Response {
 }
 
 func (c *Controller) GetStatus(req Request) Response {
+	resp := &struct {
+		Reasons []string `json:"reasons"`
+	}{}
+
 	if c.PipesStorage.IsDown() {
 		resp := &struct {
 			Reasons []string `json:"reasons"`
@@ -401,5 +405,13 @@ func (c *Controller) GetStatus(req Request) Response {
 		}
 		return serviceUnavailable(resp)
 	}
-	return ok("OK")
+
+	if err := pingTogglAPI(); err != nil {
+		resp.Reasons = append(resp.Reasons, err.Error())
+	}
+
+	if len(resp.Reasons) > 0 {
+		return serviceUnavailable(resp)
+	}
+	return ok(map[string]string{"status": "OK"})
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
+	"github.com/gorilla/mux"
 )
 
 type (
@@ -120,9 +121,25 @@ func parseRemoteAddr(r *http.Request) string {
 // handleRequest wraps API request/response calls and writes the response out.
 func handleRequest(handler HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		requestStarted := time.Now()
+		// take care of panic
+		defer func() {
+			if recover() != nil {
+				log.Println("panic when handling", r.URL.Path)
+				bugsnag.Recover(bugsnag.StartSession(r.Context()))
+			}
+		}()
 
 		uuidToken := uuid(r)
+		requestStarted := time.Now()
+
+		// define resp so it can be used in log
+		var resp Response
+
+		// log request
+		log.Println(uuidToken, "Start", r.Method, r.URL, "for", parseRemoteAddr(r))
+		defer func() {
+			log.Println(uuidToken, r.Method, resp.status, r.URL, "-", time.Since(requestStarted))
+		}()
 
 		// Parse request body, if any
 		var body []byte
@@ -141,12 +158,9 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 			}
 		}
 
+		// run the actual handler
 		req := Request{w, r, body}
-		resp := handler(req)
-
-		defer func() {
-			log.Println(uuidToken, r.Method, resp.status, r.URL, "-", time.Since(requestStarted))
-		}()
+		resp = handler(req)
 
 		// Handle error
 		if err, isError := resp.content.(error); isError {
