@@ -50,7 +50,7 @@ func main() {
 	autosync.NewService(envFlags.Environment, pipes).Start()
 
 	router := server.NewRouter(env.GetCorsWhitelist()).AttachHandlers(
-		server.NewController(env, pipes),
+		server.NewController(env, pipes, api),
 		server.NewMiddleware(api, pipes, pipes),
 	)
 	server.Start(envFlags.Port, router)

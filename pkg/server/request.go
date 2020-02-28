@@ -13,7 +13,6 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
 )
 
 type (

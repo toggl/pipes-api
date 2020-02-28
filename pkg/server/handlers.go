@@ -12,6 +12,7 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/storage"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 // mutex to prevent multiple of postPipeRun on same workspace run at same time
@@ -26,14 +27,16 @@ type Controller struct {
 	ConnectionStorage    *storage.ConnectionStorage
 	PipesStorage         *storage.PipesStorage
 	Environment          *environment.Environment
+	Api                  *toggl.ApiClient
 }
 
-func NewController(env *environment.Environment, pipes *storage.PipesStorage) *Controller {
+func NewController(env *environment.Environment, pipes *storage.PipesStorage, api *toggl.ApiClient) *Controller {
 	return &Controller{
 		AuthorizationStorage: pipes.AuthorizationStorage,
 		ConnectionStorage:    pipes.ConnectionStorage,
 		PipesStorage:         pipes,
 		Environment:          env,
+		Api:                  api,
 
 		stResolver: pipes,
 		ptResolver: pipes,
@@ -406,7 +409,7 @@ func (c *Controller) GetStatus(req Request) Response {
 		return serviceUnavailable(resp)
 	}
 
-	if err := pingTogglAPI(); err != nil {
+	if err := c.Api.PingTogglApi(); err != nil {
 		resp.Reasons = append(resp.Reasons, err.Error())
 	}
 

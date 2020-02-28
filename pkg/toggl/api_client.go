@@ -189,6 +189,22 @@ func (t *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []in
 	return timeEntries, nil
 }
 
+var togglAPIPingClient = &http.Client{
+	Timeout: 3 * time.Second,
+}
+
+func (t *ApiClient) PingTogglApi() error {
+	url := fmt.Sprintf("%s/api/v9/status", t.url)
+	resp, err := togglAPIPingClient.Get(url)
+	if err != nil {
+		return fmt.Errorf("error checking toggl api: %s", err.Error())
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("toggl api is not healthy, got status code: %d", resp.StatusCode)
+	}
+	return nil
+}
+
 func stringify(values []int) string {
 	s := make([]string, 0, len(values))
 	for _, value := range values {
