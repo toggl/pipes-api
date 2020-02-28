@@ -14,7 +14,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	gouuid "github.com/nu7hatch/gouuid"
 )
 
 type (
@@ -165,9 +164,25 @@ func withAuth(handler http.HandlerFunc) http.HandlerFunc {
 // handleRequest wraps API request/response calls and writes the response out.
 func handleRequest(handler HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		requestStarted := time.Now()
+		// take care of panic
+		defer func() {
+			if recover() != nil {
+				log.Println("panic when handling", r.URL.Path)
+				bugsnag.Recover(bugsnag.StartSession(r.Context()))
+			}
+		}()
 
 		uuidToken := uuid(r)
+		requestStarted := time.Now()
+
+		// define resp so it can be used in log
+		var resp Response
+
+		// log request
+		log.Println(uuidToken, "Start", r.Method, r.URL, "for", parseRemoteAddr(r))
+		defer func() {
+			log.Println(uuidToken, r.Method, resp.status, r.URL, "-", time.Since(requestStarted))
+		}()
 
 		// Parse request body, if any
 		var body []byte
@@ -186,12 +201,9 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 			}
 		}
 
+		// run the actual handler
 		req := Request{w, r, body}
-		resp := handler(req)
-
-		defer func() {
-			log.Println(uuidToken, r.Method, resp.status, r.URL, "-", time.Since(requestStarted))
-		}()
+		resp = handler(req)
 
 		// Handle error
 		if err, isError := resp.content.(error); isError {
@@ -241,36 +253,4 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		w.WriteHeader(resp.status)
 		w.Write(output)
 	}
-}
-
-func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer context.Clear(r)
-
-	u4, err := gouuid.NewV4()
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	uuidToken := u4.String()
-	context.Set(r, uuidKey, uuidToken)
-
-	log.Println(uuidToken, "Start", r.Method, r.URL, "for", parseRemoteAddr(r))
-
-	w.Header().Set("Cache-Control", "no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0")
-
-	if origin, ok := isWhiteListedCorsOrigin(r); ok {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Depth, User-Agent, X-File-Size, X-Requested-With, If-Modified-Since, X-File-Name, Cache-Control, Authorization, Accept, Accept-Encoding, Accept-Language, Access-Control-Request-Headers, Access-Control-Request-Method, Connection, Host, Origin, User-Agent")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS, PUT, POST, DELETE")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		w.Header().Set("Access-Control-Max-Age", "1728000")
-	}
-
-	if r.Method == "OPTIONS" {
-		w.Header().Set("Content-Length", "0")
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-	router.Routes.ServeHTTP(w, r)
 }
