@@ -27,6 +27,7 @@ require (
 	github.com/namsral/flag v1.7.4-pre
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/range-labs/go-asana v0.0.0-20200127233601-f09b5bdfed8d
+	github.com/stretchr/testify v1.5.1
 	github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701
 	github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d
 	github.com/toggl/go-teamweek v0.0.0-20190812140547-f3996a352cd2
