@@ -303,3 +303,197 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 	})
 
 }
+
+func TestApiClient_PostClients(t *testing.T) {
+	t.Run("PostClients Ok", func(t *testing.T) {
+		in := &ClientsImport{
+			Clients: []*Client{
+				{
+					ID:        1,
+					Name:      "test",
+					ForeignID: "test",
+				},
+			},
+			Notifications: []string{""},
+		}
+
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			b, err := json.Marshal(in)
+			assert.NoError(t, err)
+			res.Write(b)
+		}))
+
+		client := NewApiClient(srv.URL)
+		out, err := client.PostClients(ClientsPipeID, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, in, out)
+	})
+
+	t.Run("PostClients Response Error", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
+
+		client := NewApiClient(srv.URL)
+		res, err := client.PostClients(ClientsPipeID, nil)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected end of JSON input")
+		assert.Empty(t, res)
+	})
+}
+
+func TestApiClient_PostProjects(t *testing.T) {
+	t.Run("PostProjects Ok", func(t *testing.T) {
+		in := &ProjectsImport{
+			Projects: []*Project{
+				{
+					ID:        1,
+					Name:      "test1",
+					Active:    true,
+					Billable:  true,
+					ClientID:  1,
+					ForeignID: "test2",
+				},
+			},
+			Notifications: []string{""},
+		}
+
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			b, err := json.Marshal(in)
+			assert.NoError(t, err)
+			res.Write(b)
+		}))
+
+		client := NewApiClient(srv.URL)
+		out, err := client.PostProjects(ProjectsPipeID, nil)
+		assert.NoError(t, err)
+		assert.EqualValues(t, *in, *out)
+	})
+
+	t.Run("PostProjects Response Error", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
+
+		client := NewApiClient(srv.URL)
+		res, err := client.PostProjects(ProjectsPipeID, nil)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected end of JSON input")
+		assert.Empty(t, res)
+	})
+}
+
+func TestApiClient_PostTasks(t *testing.T) {
+	t.Run("PostTasks Ok", func(t *testing.T) {
+		in := &TasksImport{
+			Tasks: []*Task{
+				{
+					ID:        1,
+					Name:      "test1",
+					Active:    false,
+					ProjectID: 1,
+					ForeignID: "test2",
+				},
+			},
+			Notifications: []string{},
+		}
+
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			b, err := json.Marshal(in)
+			assert.NoError(t, err)
+			res.Write(b)
+		}))
+
+		client := NewApiClient(srv.URL)
+		out, err := client.PostTasks(TasksPipeID, nil)
+		assert.NoError(t, err)
+		assert.EqualValues(t, *in, *out)
+	})
+
+	t.Run("PostTasks Response Error", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
+
+		client := NewApiClient(srv.URL)
+		res, err := client.PostTasks(TasksPipeID, nil)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected end of JSON input")
+		assert.Empty(t, res)
+	})
+}
+
+func TestApiClient_PostTodoLists(t *testing.T) {
+	t.Run("PostTodoLists Ok", func(t *testing.T) {
+		in := &TasksImport{
+			Tasks: []*Task{
+				{
+					ID:        1,
+					Name:      "test1",
+					Active:    false,
+					ProjectID: 1,
+					ForeignID: "test2",
+				},
+			},
+			Notifications: []string{},
+		}
+
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			b, err := json.Marshal(in)
+			assert.NoError(t, err)
+			res.Write(b)
+		}))
+
+		client := NewApiClient(srv.URL)
+		out, err := client.PostTodoLists(TodoPipeID, nil)
+		assert.NoError(t, err)
+		assert.EqualValues(t, *in, *out)
+	})
+
+	t.Run("PostTodoLists Response Error", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
+
+		client := NewApiClient(srv.URL)
+		res, err := client.PostTodoLists(TodoPipeID, nil)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected end of JSON input")
+		assert.Empty(t, res)
+	})
+}
+
+func TestApiClient_PostUsers(t *testing.T) {
+	t.Run("PostUsers Ok", func(t *testing.T) {
+		in := &UsersImport{
+			WorkspaceUsers: []*User{
+				{
+					ID:             1,
+					Email:          "test",
+					Name:           "test2",
+					SendInvitation: false,
+					ForeignID:      "test3",
+				},
+			},
+			Notifications: []string{},
+		}
+
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			b, err := json.Marshal(in)
+			assert.NoError(t, err)
+			res.Write(b)
+		}))
+
+		client := NewApiClient(srv.URL)
+		out, err := client.PostUsers(TodoPipeID, nil)
+		assert.NoError(t, err)
+		assert.EqualValues(t, *in, *out)
+	})
+
+	t.Run("PostUsers Response Error", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
+
+		client := NewApiClient(srv.URL)
+		res, err := client.PostUsers(TodoPipeID, nil)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected end of JSON input")
+		assert.Empty(t, res)
+	})
+}

@@ -14,6 +14,15 @@ import (
 	"time"
 )
 
+const (
+	UsersPipeID       = "users"
+	ClientsPipeID     = "clients"
+	ProjectsPipeID    = "projects"
+	TasksPipeID       = "tasks"
+	TodoPipeID        = "todolists"
+	TimeEntriesPipeID = "time_entries"
+)
+
 var (
 	ErrApiNotHealthy = errors.New("toggl api is not healthy, got status code")
 )
@@ -76,7 +85,7 @@ func (c *ApiClient) PostClients(clientsPipeID string, clients interface{}) (*Cli
 		return nil, err
 	}
 
-	var clientsImport *ClientsImport
+	clientsImport := new(ClientsImport)
 	if err := json.Unmarshal(b, clientsImport); err != nil {
 		return nil, err
 	}
@@ -90,7 +99,7 @@ func (c *ApiClient) PostProjects(projectsPipeID string, projects interface{}) (*
 		return nil, err
 	}
 
-	var projectsImport *ProjectsImport
+	projectsImport := new(ProjectsImport)
 	if err := json.Unmarshal(b, projectsImport); err != nil {
 		return nil, err
 	}
