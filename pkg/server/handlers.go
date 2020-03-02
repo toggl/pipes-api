@@ -13,7 +13,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 // mutex to prevent multiple of postPipeRun on same workspace run at same time
@@ -28,16 +27,14 @@ type Controller struct {
 	pipesStore *integrations.Storage
 	authStore  *authorization.Storage
 	env        *config.Config
-	api        *toggl.ApiClient
 }
 
-func NewController(env *config.Config, pipes *integrations.Service, pipesStore *integrations.Storage, authStore *authorization.Storage, api *toggl.ApiClient) *Controller {
+func NewController(env *config.Config, pipes *integrations.Service, pipesStore *integrations.Storage, authStore *authorization.Storage) *Controller {
 	return &Controller{
 		pipesSvc:   pipes,
 		pipesStore: pipesStore,
 		authStore:  authStore,
 		env:        env,
-		api:        api,
 
 		stResolver: pipes,
 		ptResolver: pipes,
@@ -414,16 +411,8 @@ func (c *Controller) GetStatus(req Request) Response {
 		Reasons []string `json:"reasons"`
 	}{}
 
-	if c.pipesStore.IsDown() {
-		resp := &struct {
-			Reasons []string `json:"reasons"`
-		}{
-			[]string{"Database is down"},
-		}
-		return serviceUnavailable(resp)
-	}
-
-	if err := c.api.PingTogglApi(); err != nil {
+	errs := c.pipesSvc.Ready()
+	for _, err := range errs {
 		resp.Reasons = append(resp.Reasons, err.Error())
 	}
 

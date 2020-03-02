@@ -9,12 +9,15 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type ApiClient struct {
 	url       string
 	autoToken string
+
+	mx sync.Mutex
 }
 
 func NewApiClient(url string) *ApiClient {
@@ -22,11 +25,16 @@ func NewApiClient(url string) *ApiClient {
 }
 
 func (t *ApiClient) WithAuthToken(authToken string) *ApiClient {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	t.autoToken = authToken
 	return t
 }
 
-func (t *ApiClient) GetWorkspaceID() (int, error) {
+func (t *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
+	t.WithAuthToken(token)
+
 	var workspaceID int
 	url := fmt.Sprintf("%s/api/pipes/workspace", t.url)
 	req, err := http.NewRequest("GET", url, nil)
@@ -189,13 +197,11 @@ func (t *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []in
 	return timeEntries, nil
 }
 
-var togglAPIPingClient = &http.Client{
-	Timeout: 3 * time.Second,
-}
+func (t *ApiClient) Ping() error {
+	var client = &http.Client{Timeout: 3 * time.Second}
 
-func (t *ApiClient) PingTogglApi() error {
 	url := fmt.Sprintf("%s/api/v9/status", t.url)
-	resp, err := togglAPIPingClient.Get(url)
+	resp, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("error checking toggl api: %s", err.Error())
 	}

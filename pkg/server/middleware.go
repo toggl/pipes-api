@@ -5,21 +5,23 @@ import (
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-
-	"github.com/toggl/pipes-api/pkg/toggl"
 )
+
+type WorkspaceFinder interface {
+	GetWorkspaceIdByToken(authToken string) (int, error)
+}
 
 type Middleware struct {
 	stResolver ServiceTypeResolver
 	ptResolver PipeTypeResolver
-	api        *toggl.ApiClient
+	wsFinder   WorkspaceFinder
 }
 
-func NewMiddleware(api *toggl.ApiClient, str ServiceTypeResolver, ptr PipeTypeResolver) *Middleware {
+func NewMiddleware(wsFinder WorkspaceFinder, str ServiceTypeResolver, ptr PipeTypeResolver) *Middleware {
 	return &Middleware{
 		stResolver: str,
 		ptResolver: ptr,
-		api:        api,
+		wsFinder:   wsFinder,
 	}
 }
 
@@ -54,7 +56,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.api.WithAuthToken(authData.Username).GetWorkspaceID()
+		workspaceID, err = mw.wsFinder.GetWorkspaceIdByToken(authData.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

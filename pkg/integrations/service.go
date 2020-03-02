@@ -1053,6 +1053,19 @@ func (svc *Service) ClearPipeConnections(p *Pipe) error {
 	return nil
 }
 
+func (svc *Service) Ready() []error {
+	errs := make([]error, 0)
+
+	if svc.pipes.IsDown() {
+		errs = append(errs, errors.New("database is down"))
+	}
+
+	if err := svc.api.Ping(); err != nil {
+		errs = append(errs, err)
+	}
+	return errs
+}
+
 func (svc *Service) GetPipesFromQueue() ([]*Pipe, error) {
 	return svc.pipes.GetPipesFromQueue()
 }
