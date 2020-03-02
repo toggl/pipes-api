@@ -57,11 +57,6 @@ func (s *Service) SetAuthData(b []byte) error {
 	return nil
 }
 
-func (s *Service) client() *teamweek.Client {
-	t := &oauth.Transport{Token: &s.token}
-	return teamweek.NewClient(t.Client())
-}
-
 // Map Teamweek accounts to local accounts
 func (s *Service) Accounts() ([]*toggl.Account, error) {
 	foreignObject, err := s.client().GetUserProfile()
@@ -152,4 +147,9 @@ func (s *Service) Clients() ([]*toggl.Client, error) {
 
 func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
+}
+
+func (s *Service) client() *teamweek.Client {
+	t := &oauth.Transport{Token: &s.token}
+	return teamweek.NewClient(t.Client())
 }

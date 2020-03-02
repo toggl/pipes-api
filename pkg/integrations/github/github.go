@@ -64,11 +64,6 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 	return projects, nil
 }
 
-func (s *Service) client() *github.Client {
-	t := &oauth.Transport{Token: &s.token}
-	return github.NewClient(t.Client())
-}
-
 func (s *Service) SetSince(*time.Time) {}
 
 func (s *Service) SetParams([]byte) error {
@@ -93,4 +88,9 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 
 func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
+}
+
+func (s *Service) client() *github.Client {
+	t := &oauth.Transport{Token: &s.token}
+	return github.NewClient(t.Client())
 }

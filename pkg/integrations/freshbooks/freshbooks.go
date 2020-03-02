@@ -48,12 +48,8 @@ func (s *Service) Accounts() ([]*toggl.Account, error) {
 	return nil, nil
 }
 
-func (s *Service) Api() *freshbooks.Api {
-	return freshbooks.NewApi(s.accountName, &s.token)
-}
-
 func (s *Service) Users() ([]*toggl.User, error) {
-	foreignObjects, err := s.Api().Users()
+	foreignObjects, err := s.client().Users()
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +66,7 @@ func (s *Service) Users() ([]*toggl.User, error) {
 }
 
 func (s *Service) Clients() ([]*toggl.Client, error) {
-	foreignObjects, err := s.Api().Clients()
+	foreignObjects, err := s.client().Clients()
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +82,7 @@ func (s *Service) Clients() ([]*toggl.Client, error) {
 }
 
 func (s *Service) Projects() ([]*toggl.Project, error) {
-	foreignObjects, err := s.Api().Projects()
+	foreignObjects, err := s.client().Projects()
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +101,11 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 }
 
 func (s *Service) Tasks() ([]*toggl.Task, error) {
-	foreignProjects, err := s.Api().Projects()
+	foreignProjects, err := s.client().Projects()
 	if err != nil {
 		return nil, err
 	}
-	foreignTasks, err := s.Api().Tasks()
+	foreignTasks, err := s.client().Tasks()
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +147,7 @@ func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
 	if entry.TaskId == 0 {
 		return 0, fmt.Errorf("task not provided for time entry '%s'", entry.Notes)
 	}
-	return s.Api().SaveTimeEntry(entry)
+	return s.client().SaveTimeEntry(entry)
 }
 
 func numberStrToInt(s string) int {
@@ -166,4 +162,8 @@ func (s *Service) SetSince(*time.Time) {}
 
 func (s *Service) TodoLists() ([]*toggl.Task, error) {
 	return []*toggl.Task{}, nil
+}
+
+func (s *Service) client() *freshbooks.Api {
+	return freshbooks.NewApi(s.accountName, &s.token)
 }

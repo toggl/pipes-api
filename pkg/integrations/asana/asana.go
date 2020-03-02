@@ -58,11 +58,6 @@ func (s *Service) SetAuthData(b []byte) error {
 	return json.Unmarshal(b, &s.token)
 }
 
-func (s *Service) client() *asana.Client {
-	t := &oauth.Transport{Token: &s.token}
-	return asana.NewClient(t.Client())
-}
-
 // Map Asana accounts to local accounts
 func (s *Service) Accounts() ([]*toggl.Account, error) {
 	foreignObjects, err := s.client().ListWorkspaces(context.Background())
@@ -223,4 +218,9 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 
 func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
+}
+
+func (s *Service) client() *asana.Client {
+	t := &oauth.Transport{Token: &s.token}
+	return asana.NewClient(t.Client())
 }

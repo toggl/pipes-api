@@ -8,7 +8,7 @@ import (
 func generateTasks(nr int) []*Task {
 	var ts []*Task
 	for i := 0; i < nr; i++ {
-		t := Task{ID: i, Name: `Name`, Active: (i%2 == 0), ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
+		t := Task{ID: i, Name: `Name`, Active: i%2 == 0, ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
 		ts = append(ts, &t)
 	}
 	return ts

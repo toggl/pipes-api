@@ -59,13 +59,6 @@ func (s *Service) SetSince(since *time.Time) {
 	s.modifiedSince = since
 }
 
-func (s *Service) client() *basecamp.Client {
-	return &basecamp.Client{
-		ModifiedSince: s.modifiedSince,
-		AccessToken:   s.token.AccessToken,
-	}
-}
-
 // Map basecamp accounts to local accounts
 func (s *Service) Accounts() ([]*toggl.Account, error) {
 	foreignObjects, err := s.client().GetAccounts()
@@ -201,4 +194,11 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 
 func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
 	return 0, nil
+}
+
+func (s *Service) client() *basecamp.Client {
+	return &basecamp.Client{
+		ModifiedSince: s.modifiedSince,
+		AccessToken:   s.token.AccessToken,
+	}
 }
