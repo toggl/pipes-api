@@ -1,4 +1,4 @@
-package storage
+package pipes
 
 import (
 	"database/sql"
@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/toggl/pipes-api/pkg/authorization"
+	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -23,7 +25,11 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	defer db.Close()
 
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	pipeService := NewPipesStorage(cfgService, api, db)
+	authStore := authorization.NewStorage(db, cfgService)
+	connStore := connection.NewStorage(db)
+
+	pipesStorage := NewStorage(cfgService, db)
+	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -68,7 +74,11 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	defer db.Close()
 
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	pipeService := NewPipesStorage(cfgService, api, db)
+	authStore := authorization.NewStorage(db, cfgService)
+	connStore := connection.NewStorage(db)
+
+	pipesStorage := NewStorage(cfgService, db)
+	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 

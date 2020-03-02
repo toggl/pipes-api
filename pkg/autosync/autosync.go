@@ -10,7 +10,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/storage"
+	"github.com/toggl/pipes-api/pkg/pipes"
 )
 
 var wg sync.WaitGroup
@@ -22,22 +22,22 @@ const (
 )
 
 type Service struct {
-	env          string
-	pipesStorage *storage.PipesStorage
+	envType  string
+	pipesSvc *pipes.Service
 }
 
-func NewService(env string, p *storage.PipesStorage) *Service {
+func NewService(env string, p *pipes.Service) *Service {
 	return &Service{
-		env:          env,
-		pipesStorage: p,
+		envType:  env,
+		pipesSvc: p,
 	}
 }
 
 func (ss *Service) Start() {
-	if ss.env == environment.EnvTypeProduction {
+	if ss.envType == environment.EnvTypeProduction {
 		go ss.startRunner()
 	}
-	if ss.env == environment.EnvTypeStaging {
+	if ss.envType == environment.EnvTypeStaging {
 		go ss.startStubRunner()
 	}
 	go ss.startQueue()
@@ -58,7 +58,7 @@ func (ss *Service) pipeWorker(id int) {
 		wg.Done()
 	}()
 	for {
-		pipes, err := ss.pipesStorage.GetPipesFromQueue()
+		pipes, err := ss.pipesSvc.GetPipesFromQueue()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -77,9 +77,9 @@ func (ss *Service) pipeWorker(id int) {
 		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
 			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
-			ss.pipesStorage.Run(pipe)
+			ss.pipesSvc.Run(pipe)
 
-			err := ss.pipesStorage.SetQueuedPipeSynced(pipe)
+			err := ss.pipesSvc.SetQueuedPipeSynced(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
@@ -113,7 +113,7 @@ func (ss *Service) pipeWorkerStub() {
 		wg.Done()
 	}()
 	for {
-		pipes, err := ss.pipesStorage.GetPipesFromQueue()
+		pipes, err := ss.pipesSvc.GetPipesFromQueue()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -124,7 +124,7 @@ func (ss *Service) pipeWorkerStub() {
 		gotCount += len(pipes)
 		for _, pipe := range pipes {
 			// NO PIPE RUN HERE
-			err := ss.pipesStorage.SetQueuedPipeSynced(pipe)
+			err := ss.pipesSvc.SetQueuedPipeSynced(pipe)
 			if err != nil {
 				log.Printf("ERROR: %s\n", err.Error())
 			}
@@ -172,7 +172,7 @@ func (ss *Service) startQueue() {
 
 		log.Println("-- startQueue started")
 
-		if err := ss.pipesStorage.QueueAutomaticPipes(); err != nil {
+		if err := ss.pipesSvc.QueueAutomaticPipes(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}

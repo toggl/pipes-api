@@ -9,10 +9,12 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
+	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/autosync"
+	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/environment"
+	"github.com/toggl/pipes-api/pkg/pipes"
 	"github.com/toggl/pipes-api/pkg/server"
-	"github.com/toggl/pipes-api/pkg/storage"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -45,13 +47,16 @@ func main() {
 	defer db.Close()
 
 	api := toggl.NewApiClient(env.GetTogglAPIHost())
-	pipes := storage.NewPipesStorage(env, api, db)
+	authStore := authorization.NewStorage(db, env)
+	connStore := connection.NewStorage(db)
+	pipesStore := pipes.NewStorage(env, db)
+	pipesService := pipes.NewService(env, authStore, pipesStore, connStore, api)
 
-	autosync.NewService(envFlags.Environment, pipes).Start()
+	autosync.NewService(envFlags.Environment, pipesService).Start()
 
 	router := server.NewRouter(env.GetCorsWhitelist()).AttachHandlers(
-		server.NewController(env, pipes, api),
-		server.NewMiddleware(api, pipes, pipes),
+		server.NewController(env, pipesService, pipesStore, authStore, api),
+		server.NewMiddleware(api, pipesService, pipesService),
 	)
 	server.Start(envFlags.Port, router)
 }

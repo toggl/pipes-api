@@ -1,4 +1,4 @@
-package storage
+package pipes
 
 type Selector struct {
 	IDs         []int `json:"ids"`

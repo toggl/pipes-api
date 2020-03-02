@@ -1,4 +1,4 @@
-package storage
+package connection
 
 import (
 	"database/sql"
@@ -7,11 +7,15 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
-type ConnectionStorage struct {
+type Storage struct {
 	db *sql.DB
 }
 
-func (cs *ConnectionStorage) Save(c *Connection) error {
+func NewStorage(db *sql.DB) *Storage {
+	return &Storage{db: db}
+}
+
+func (cs *Storage) Save(c *Connection) error {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -23,19 +27,7 @@ func (cs *ConnectionStorage) Save(c *Connection) error {
 	return nil
 }
 
-func (cs *ConnectionStorage) Load(rows *sql.Rows, c *Connection) error {
-	var b []byte
-	if err := rows.Scan(&c.key, &b); err != nil {
-		return err
-	}
-	err := json.Unmarshal(b, c)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (cs *ConnectionStorage) LoadConnection(s integrations.Integration, pipeID string) (*Connection, error) {
+func (cs *Storage) LoadConnection(s integrations.Integration, pipeID string) (*Connection, error) {
 	rows, err := cs.db.Query(selectConnectionSQL, s.GetWorkspaceID(), s.KeyFor(pipeID))
 	if err != nil {
 		return nil, err
@@ -43,14 +35,14 @@ func (cs *ConnectionStorage) LoadConnection(s integrations.Integration, pipeID s
 	defer rows.Close()
 	connection := NewConnection(s, pipeID)
 	if rows.Next() {
-		if err := cs.Load(rows, connection); err != nil {
+		if err := cs.scan(rows, connection); err != nil {
 			return nil, err
 		}
 	}
 	return connection, nil
 }
 
-func (cs *ConnectionStorage) LoadConnectionRev(s integrations.Integration, pipeID string) (*ReversedConnection, error) {
+func (cs *Storage) LoadConnectionRev(s integrations.Integration, pipeID string) (*ReversedConnection, error) {
 	connection, err := cs.LoadConnection(s, pipeID)
 	if err != nil {
 		return nil, err
@@ -60,6 +52,18 @@ func (cs *ConnectionStorage) LoadConnectionRev(s integrations.Integration, pipeI
 		reversed.Data[value] = key
 	}
 	return reversed, nil
+}
+
+func (cs *Storage) scan(rows *sql.Rows, c *Connection) error {
+	var b []byte
+	if err := rows.Scan(&c.key, &b); err != nil {
+		return err
+	}
+	err := json.Unmarshal(b, c)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 const (

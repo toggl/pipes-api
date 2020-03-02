@@ -10,8 +10,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/tambet/oauthplain"
 
+	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/storage"
+	"github.com/toggl/pipes-api/pkg/pipes"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -23,20 +24,20 @@ type Controller struct {
 	stResolver ServiceTypeResolver
 	ptResolver PipeTypeResolver
 
-	AuthorizationStorage *storage.AuthorizationStorage
-	ConnectionStorage    *storage.ConnectionStorage
-	PipesStorage         *storage.PipesStorage
-	Environment          *environment.Environment
-	Api                  *toggl.ApiClient
+	pipesSvc   *pipes.Service
+	pipesStore *pipes.Storage
+	authStore  *authorization.Storage
+	env        *environment.Environment
+	api        *toggl.ApiClient
 }
 
-func NewController(env *environment.Environment, pipes *storage.PipesStorage, api *toggl.ApiClient) *Controller {
+func NewController(env *environment.Environment, pipes *pipes.Service, pipesStore *pipes.Storage, authStore *authorization.Storage, api *toggl.ApiClient) *Controller {
 	return &Controller{
-		AuthorizationStorage: pipes.AuthorizationStorage,
-		ConnectionStorage:    pipes.ConnectionStorage,
-		PipesStorage:         pipes,
-		Environment:          env,
-		Api:                  api,
+		pipesSvc:   pipes,
+		pipesStore: pipesStore,
+		authStore:  authStore,
+		env:        env,
+		api:        api,
 
 		stResolver: pipes,
 		ptResolver: pipes,
@@ -45,7 +46,7 @@ func NewController(env *environment.Environment, pipes *storage.PipesStorage, ap
 
 func (c *Controller) GetIntegrations(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	resp, err := c.PipesStorage.WorkspaceIntegrations(workspaceID)
+	resp, err := c.pipesSvc.WorkspaceIntegrations(workspaceID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -63,7 +64,7 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 		return badRequest("Missing or invalid pipe")
 	}
 
-	pipe, err := c.PipesStorage.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -71,7 +72,7 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 		pipe = environment.NewPipe(workspaceID, serviceID, pipeID)
 	}
 
-	pipe.PipeStatus, err = c.PipesStorage.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	pipe.PipeStatus, err = c.pipesStore.LoadPipeStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -96,7 +97,7 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 		return badRequest(errorMsg)
 	}
 
-	if err := c.PipesStorage.Save(pipe); err != nil {
+	if err := c.pipesStore.Save(pipe); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
@@ -115,7 +116,7 @@ func (c *Controller) PutPipeSetup(req Request) Response {
 	if len(req.body) == 0 {
 		return badRequest("Missing payload")
 	}
-	pipe, err := c.PipesStorage.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -125,7 +126,7 @@ func (c *Controller) PutPipeSetup(req Request) Response {
 	if err := json.Unmarshal(req.body, &pipe); err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := c.PipesStorage.Save(pipe); err != nil {
+	if err := c.pipesStore.Save(pipe); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
@@ -141,14 +142,14 @@ func (c *Controller) DeletePipeSetup(req Request) Response {
 	if !c.ptResolver.AvailablePipeType(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
-	pipe, err := c.PipesStorage.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
 		return badRequest("PipeConfig is not configured")
 	}
-	if err := c.PipesStorage.Destroy(pipe, workspaceID); err != nil {
+	if err := c.pipesStore.Destroy(pipe, workspaceID); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
@@ -168,9 +169,9 @@ func (c *Controller) GetAuthURL(req Request) Response {
 	if callbackURL == "" {
 		return badRequest("Missing or invalid callback_url")
 	}
-	config, found := c.Environment.GetOAuth1Configs(serviceID)
+	config, found := c.env.GetOAuth1Configs(serviceID)
 	if !found {
-		return badRequest("Environment OAuth config not found")
+		return badRequest("env OAuth config not found")
 	}
 	transport := &oauthplain.Transport{
 		Config: config.UpdateURLs(accountName),
@@ -205,17 +206,17 @@ func (c *Controller) PostAuthorization(req Request) Response {
 	authorization := environment.NewAuthorization(workspaceID, serviceID)
 	authorization.WorkspaceToken = currentWorkspaceToken(req.r)
 
-	switch c.Environment.GetAvailableAuthorizations(serviceID) {
+	switch c.env.GetAvailableAuthorizations(serviceID) {
 	case "oauth1":
-		authorization.Data, err = c.Environment.OAuth1Exchange(serviceID, payload)
+		authorization.Data, err = c.env.OAuth1Exchange(serviceID, payload)
 	case "oauth2":
-		authorization.Data, err = c.Environment.OAuth2Exchange(serviceID, payload)
+		authorization.Data, err = c.env.OAuth2Exchange(serviceID, payload)
 	}
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	if err := c.AuthorizationStorage.Save(authorization); err != nil {
+	if err := c.authStore.Save(authorization); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
@@ -228,14 +229,14 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := environment.Create(serviceID, workspaceID)
-	_, err := c.AuthorizationStorage.LoadAuth(service)
+	_, err := c.authStore.LoadAuth(service)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := c.AuthorizationStorage.Destroy(service); err != nil {
+	if err := c.authStore.Destroy(service); err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := c.PipesStorage.DeletePipeByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
+	if err := c.pipesStore.DeletePipeByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
@@ -248,26 +249,26 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := environment.Create(serviceID, workspaceID)
-	auth, err := c.AuthorizationStorage.LoadAuth(service)
+	auth, err := c.authStore.LoadAuth(service)
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
-	if err := c.AuthorizationStorage.Refresh(auth); err != nil {
+	if err := c.authStore.Refresh(auth); err != nil {
 		return badRequest("oAuth refresh failed!")
 	}
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {
-		if err := c.PipesStorage.ClearImportFor(service, "accounts"); err != nil {
+		if err := c.pipesStore.ClearImportFor(service, "accounts"); err != nil {
 			return internalServerError(err.Error())
 		}
 	}
-	accountsResponse, err := c.PipesStorage.GetAccounts(service)
+	accountsResponse, err := c.pipesStore.GetAccounts(service)
 	if err != nil {
 		return internalServerError("Unable to get accounts from DB")
 	}
 	if accountsResponse == nil {
 		go func() {
-			if err := c.PipesStorage.FetchAccounts(service); err != nil {
+			if err := c.pipesStore.FetchAccounts(service); err != nil {
 				log.Print(err.Error())
 			}
 		}()
@@ -284,11 +285,11 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := environment.Create(serviceID, workspaceID)
-	if _, err := c.AuthorizationStorage.LoadAuth(service); err != nil {
+	if _, err := c.authStore.LoadAuth(service); err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
 	pipeID := "users"
-	pipe, err := c.PipesStorage.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -301,19 +302,19 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {
-		if err := c.PipesStorage.ClearImportFor(service, pipeID); err != nil {
+		if err := c.pipesStore.ClearImportFor(service, pipeID); err != nil {
 			return internalServerError(err.Error())
 		}
 	}
 
-	usersResponse, err := c.PipesStorage.GetUsers(service)
+	usersResponse, err := c.pipesSvc.GetUsers(service)
 	if err != nil {
 		return internalServerError("Unable to get users from DB")
 	}
 	if usersResponse == nil {
 		if forceImport == "true" {
 			go func() {
-				if err := c.PipesStorage.FetchObjects(pipe, false); err != nil {
+				if err := c.pipesSvc.FetchObjects(pipe, false); err != nil {
 					log.Print(err.Error())
 				}
 			}()
@@ -327,7 +328,7 @@ func (c *Controller) GetServicePipeLog(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	pipeStatus, err := c.PipesStorage.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	pipeStatus, err := c.pipesStore.LoadPipeStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError("Unable to get log from DB")
 	}
@@ -341,7 +342,7 @@ func (c *Controller) PostServicePipeClearConnections(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	pipe, err := c.PipesStorage.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -349,7 +350,7 @@ func (c *Controller) PostServicePipeClearConnections(req Request) Response {
 		return badRequest("PipeConfig is not configured")
 	}
 
-	err = c.PipesStorage.ClearPipeConnections(pipe)
+	err = c.pipesSvc.ClearPipeConnections(pipe)
 	if err != nil {
 		return internalServerError("Unable to get clear connections")
 	}
@@ -370,7 +371,7 @@ func (c *Controller) PostPipeRun(req Request) Response {
 
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	pipe, err := c.PipesStorage.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -383,12 +384,12 @@ func (c *Controller) PostPipeRun(req Request) Response {
 	if pipe.ID == "users" {
 		go func() {
 			workspaceLock.Lock()
-			c.PipesStorage.Run(pipe)
+			c.pipesSvc.Run(pipe)
 			workspaceLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
 	} else {
-		if err := c.PipesStorage.QueuePipeAsFirst(pipe); err != nil {
+		if err := c.pipesSvc.QueuePipeAsFirst(pipe); err != nil {
 			return internalServerError(err.Error())
 		}
 	}
@@ -400,7 +401,7 @@ func (c *Controller) GetStatus(req Request) Response {
 		Reasons []string `json:"reasons"`
 	}{}
 
-	if c.PipesStorage.IsDown() {
+	if c.pipesStore.IsDown() {
 		resp := &struct {
 			Reasons []string `json:"reasons"`
 		}{
@@ -409,7 +410,7 @@ func (c *Controller) GetStatus(req Request) Response {
 		return serviceUnavailable(resp)
 	}
 
-	if err := c.Api.PingTogglApi(); err != nil {
+	if err := c.api.PingTogglApi(); err != nil {
 		resp.Reasons = append(resp.Reasons, err.Error())
 	}
 

@@ -27,7 +27,7 @@ func ParseFlags(flags *Flags) {
 	fs.IntVar(&flags.Port, "port", 8100, "port")
 	fs.StringVar(&flags.WorkDir, "workdir", ".", "Workdir of server")
 	fs.StringVar(&flags.BugsnagAPIKey, "bugsnag_key", "", "Bugsnag API Key")
-	fs.StringVar(&flags.Environment, "envType", EnvTypeDevelopment, "Environment")
+	fs.StringVar(&flags.Environment, "envType", EnvTypeDevelopment, "env")
 	fs.StringVar(&flags.DbConnString, "db_conn_string", "dbname=pipes_development user=pipes_user host=localhost sslmode=disable port=5432", "DB Connection String")
 	fs.StringVar(&flags.TestDBConnString, "test_db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "test DB Connection String")
 

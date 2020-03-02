@@ -1,12 +1,15 @@
-package storage
+package pipes
 
 import (
 	"database/sql"
 	"encoding/json"
 	"log"
 	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/toggl/pipes-api/pkg/authorization"
+	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
 	"github.com/toggl/pipes-api/pkg/toggl"
@@ -41,7 +44,11 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
 
-	pipeService := NewPipesStorage(cfgService, api, db)
+	authStore := authorization.NewStorage(db, cfgService)
+	connStore := connection.NewStorage(db)
+
+	pipesStorage := NewStorage(cfgService, db)
+	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
 	p := environment.NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
 
@@ -81,7 +88,11 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 
 	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
 
-	pipeService := NewPipesStorage(cfgService, api, db)
+	authStore := authorization.NewStorage(db, cfgService)
+	connStore := connection.NewStorage(db)
+
+	pipesStorage := NewStorage(cfgService, db)
+	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *environment.PipeConfig {
 		pipe := environment.NewPipe(workspaceID, serviceID, pipeID)
@@ -152,5 +163,62 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	}
 	if _, exists := retrievedWorkspace[pipes[0].WorkspaceID]; !exists {
 		t.Error("should return pipe with workspace from retrievedWorkspace")
+	}
+}
+
+func TestGetProjects(t *testing.T) {
+	flags := environment.Flags{}
+	environment.ParseFlags(&flags)
+
+	cfgService := environment.New(flags.Environment, flags.WorkDir)
+
+	db, err := sql.Open("postgres", flags.TestDBConnString)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer db.Close()
+
+	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
+	authStore := authorization.NewStorage(db, cfgService)
+	connStore := connection.NewStorage(db)
+
+	pipesStorage := NewStorage(cfgService, db)
+	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
+
+	p := environment.NewPipe(1, mock.ServiceName, "projects")
+
+	err = pipeService.fetchProjects(p)
+	if err != nil {
+		t.Error(err)
+	}
+
+	s, err := pipeService.auth.IntegrationFor(p)
+	if err != nil {
+		t.Error(err)
+	}
+	b, err := pipesStorage.getObject(s, "projects")
+	if err != nil {
+		t.Error(err)
+	}
+	var pr toggl.ProjectsResponse
+	err = json.Unmarshal(b, &pr)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(pr.Projects) != 4 {
+		t.Errorf("Expected 4 projects but got %d", len(pr.Projects))
+	}
+	if pr.Projects[0].Name != strings.TrimSpace(mock.P1Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P1Name), pr.Projects[0].Name)
+	}
+	if pr.Projects[1].Name != strings.TrimSpace(mock.P2Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P2Name), pr.Projects[1].Name)
+	}
+	if pr.Projects[2].Name != strings.TrimSpace(mock.P3Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P3Name), pr.Projects[2].Name)
+	}
+	if pr.Projects[3].Name != strings.TrimSpace(mock.P4Name) {
+		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P4Name), pr.Projects[3].Name)
 	}
 }

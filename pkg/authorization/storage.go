@@ -1,4 +1,4 @@
-package storage
+package authorization
 
 import (
 	"database/sql"
@@ -11,12 +11,19 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
-type AuthorizationStorage struct {
+type Storage struct {
 	db  *sql.DB
 	env *environment.Environment
 }
 
-func (as *AuthorizationStorage) Save(a *environment.AuthorizationConfig) error {
+func NewStorage(db *sql.DB, env *environment.Environment) *Storage {
+	return &Storage{
+		db:  db,
+		env: env,
+	}
+}
+
+func (as *Storage) Save(a *environment.AuthorizationConfig) error {
 	_, err := as.db.Exec(insertAuthorizationSQL,
 		a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
@@ -25,7 +32,7 @@ func (as *AuthorizationStorage) Save(a *environment.AuthorizationConfig) error {
 	return nil
 }
 
-func (as *AuthorizationStorage) Load(rows *sql.Rows, a *environment.AuthorizationConfig) error {
+func (as *Storage) Load(rows *sql.Rows, a *environment.AuthorizationConfig) error {
 	err := rows.Scan(&a.WorkspaceID, &a.ServiceID, &a.WorkspaceToken, &a.Data)
 	if err != nil {
 		return err
@@ -33,12 +40,12 @@ func (as *AuthorizationStorage) Load(rows *sql.Rows, a *environment.Authorizatio
 	return nil
 }
 
-func (as *AuthorizationStorage) Destroy(s integrations.Integration) error {
+func (as *Storage) Destroy(s integrations.Integration) error {
 	_, err := as.db.Exec(deleteAuthorizationSQL, s.GetWorkspaceID(), s.Name())
 	return err
 }
 
-func (as *AuthorizationStorage) Refresh(a *environment.AuthorizationConfig) error {
+func (as *Storage) Refresh(a *environment.AuthorizationConfig) error {
 	if as.env.GetAvailableAuthorizations(a.ServiceID) != "oauth2" { // TODO: Remove global state.
 		return nil
 	}
@@ -68,7 +75,7 @@ func (as *AuthorizationStorage) Refresh(a *environment.AuthorizationConfig) erro
 	return nil
 }
 
-func (as *AuthorizationStorage) LoadAuth(s integrations.Integration) (*environment.AuthorizationConfig, error) {
+func (as *Storage) LoadAuth(s integrations.Integration) (*environment.AuthorizationConfig, error) {
 	rows, err := as.db.Query(selectAuthorizationSQL, s.GetWorkspaceID(), s.Name())
 	if err != nil {
 		return nil, err
@@ -87,7 +94,7 @@ func (as *AuthorizationStorage) LoadAuth(s integrations.Integration) (*environme
 	return &authorization, nil
 }
 
-func (as *AuthorizationStorage) LoadAuthorizations(workspaceID int) (map[string]bool, error) {
+func (as *Storage) LoadAuthorizations(workspaceID int) (map[string]bool, error) {
 	authorizations := make(map[string]bool)
 	rows, err := as.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
@@ -104,7 +111,7 @@ func (as *AuthorizationStorage) LoadAuthorizations(workspaceID int) (map[string]
 	return authorizations, nil
 }
 
-func (as *AuthorizationStorage) LoadAuthFor(p *environment.PipeConfig) (*environment.AuthorizationConfig, error) {
+func (as *Storage) LoadAuthFor(p *environment.PipeConfig) (*environment.AuthorizationConfig, error) {
 	service := environment.Create(p.ServiceID, p.WorkspaceID)
 	auth, err := as.LoadAuth(service)
 	if err != nil {
@@ -116,7 +123,7 @@ func (as *AuthorizationStorage) LoadAuthFor(p *environment.PipeConfig) (*environ
 	return auth, nil
 }
 
-func (as *AuthorizationStorage) IntegrationFor(p *environment.PipeConfig) (integrations.Integration, error) {
+func (as *Storage) IntegrationFor(p *environment.PipeConfig) (integrations.Integration, error) {
 	service := environment.Create(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return service, err
