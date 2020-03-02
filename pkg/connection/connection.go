@@ -3,22 +3,18 @@ package connection
 import (
 	"strconv"
 	"strings"
-
-	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 type Connection struct {
-	workspaceID int
-	serviceID   string
-	pipeID      string
-	key         string
+	WorkspaceID int
+	Key         string
 	Data        map[string]int
 }
 
-func NewConnection(s integrations.Integration, pipeID string) *Connection {
+func NewConnection(workspaceID int, key string) *Connection {
 	return &Connection{
-		workspaceID: s.GetWorkspaceID(),
-		key:         s.KeyFor(pipeID),
+		WorkspaceID: workspaceID,
+		Key:         key,
 		Data:        make(map[string]int),
 	}
 }

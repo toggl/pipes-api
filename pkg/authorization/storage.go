@@ -11,6 +11,36 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
+const (
+	selectAuthorizationSQL = `SELECT
+		workspace_id, service, workspace_token, data
+		FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+		LIMIT 1
+  `
+	insertAuthorizationSQL = `WITH existing_auth AS (
+		UPDATE authorizations SET data = $4, workspace_token = $3
+		WHERE workspace_id = $1 AND service = $2
+		RETURNING service
+	),
+	inserted_auth AS (
+		INSERT INTO
+		authorizations(workspace_id, service, workspace_token, data)
+		SELECT $1, $2, $3, $4
+		WHERE NOT EXISTS (SELECT 1 FROM existing_auth)
+		RETURNING service
+	)
+	SELECT * FROM inserted_auth
+	UNION
+	SELECT * FROM existing_auth
+  `
+	deleteAuthorizationSQL = `DELETE FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+	`
+)
+
 type Storage struct {
 	db  *sql.DB
 	env *environment.Environment
@@ -24,8 +54,7 @@ func NewStorage(db *sql.DB, env *environment.Environment) *Storage {
 }
 
 func (as *Storage) Save(a *environment.AuthorizationConfig) error {
-	_, err := as.db.Exec(insertAuthorizationSQL,
-		a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
+	_, err := as.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
 	}
@@ -46,7 +75,7 @@ func (as *Storage) Destroy(s integrations.Integration) error {
 }
 
 func (as *Storage) Refresh(a *environment.AuthorizationConfig) error {
-	if as.env.GetAvailableAuthorizations(a.ServiceID) != "oauth2" { // TODO: Remove global state.
+	if as.env.GetAvailableAuthorizations(a.ServiceID) != TypeOauth2 {
 		return nil
 	}
 	var token oauth.Token
@@ -88,7 +117,7 @@ func (as *Storage) LoadAuth(s integrations.Integration) (*environment.Authorizat
 	if err := as.Load(rows, &authorization); err != nil {
 		return nil, err
 	}
-	if err := s.SetAuthData(authorization.Data); err != nil {
+	if err := s.SetAuthData(authorization.Data); err != nil { // TODO: Refactor, remove side effect.
 		return nil, err
 	}
 	return &authorization, nil
@@ -133,33 +162,3 @@ func (as *Storage) IntegrationFor(p *environment.PipeConfig) (integrations.Integ
 	}
 	return service, nil
 }
-
-const (
-	selectAuthorizationSQL = `SELECT
-		workspace_id, service, workspace_token, data
-		FROM authorizations
-		WHERE workspace_id = $1
-		AND service = $2
-		LIMIT 1
-  `
-	insertAuthorizationSQL = `WITH existing_auth AS (
-		UPDATE authorizations SET data = $4, workspace_token = $3
-		WHERE workspace_id = $1 AND service = $2
-		RETURNING service
-	),
-	inserted_auth AS (
-		INSERT INTO
-		authorizations(workspace_id, service, workspace_token, data)
-		SELECT $1, $2, $3, $4
-		WHERE NOT EXISTS (SELECT 1 FROM existing_auth)
-		RETURNING service
-	)
-	SELECT * FROM inserted_auth
-	UNION
-	SELECT * FROM existing_auth
-  `
-	deleteAuthorizationSQL = `DELETE FROM authorizations
-		WHERE workspace_id = $1
-		AND service = $2
-	`
-)
