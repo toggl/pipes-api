@@ -51,7 +51,7 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 		Struct: "Project",
 		Field:  "id",
 	}
-	if err := pipeService.NewStatus(p); err != nil {
+	if err := pipeService.newStatus(p); err != nil {
 		t.Fatalf("Unexpected error %v", err)
 	}
 

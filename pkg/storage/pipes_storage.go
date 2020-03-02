@@ -66,10 +66,10 @@ func (ps *PipesStorage) IsDown() bool {
 
 func (ps *PipesStorage) LoadPipe(workspaceID int, serviceID, pipeID string) (*environment.PipeConfig, error) {
 	key := environment.PipesKey(serviceID, pipeID)
-	return ps.LoadPipeWithKey(workspaceID, key)
+	return ps.loadPipeWithKey(workspaceID, key)
 }
 
-func (ps *PipesStorage) LoadPipeWithKey(workspaceID int, key string) (*environment.PipeConfig, error) {
+func (ps *PipesStorage) loadPipeWithKey(workspaceID int, key string) (*environment.PipeConfig, error) {
 	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -79,13 +79,13 @@ func (ps *PipesStorage) LoadPipeWithKey(workspaceID int, key string) (*environme
 		return nil, rows.Err()
 	}
 	var pipe environment.PipeConfig
-	if err := ps.Load(rows, &pipe); err != nil {
+	if err := ps.load(rows, &pipe); err != nil {
 		return nil, err
 	}
 	return &pipe, nil
 }
 
-func (ps *PipesStorage) LoadPipes(workspaceID int) (map[string]*environment.PipeConfig, error) {
+func (ps *PipesStorage) loadPipes(workspaceID int) (map[string]*environment.PipeConfig, error) {
 	pipes := make(map[string]*environment.PipeConfig)
 	rows, err := ps.db.Query(selectPipesSQL, workspaceID)
 	if err != nil {
@@ -94,7 +94,7 @@ func (ps *PipesStorage) LoadPipes(workspaceID int) (map[string]*environment.Pipe
 	defer rows.Close()
 	for rows.Next() {
 		var pipe environment.PipeConfig
-		if err := ps.Load(rows, &pipe); err != nil {
+		if err := ps.load(rows, &pipe); err != nil {
 			return nil, err
 		}
 		pipes[pipe.Key] = &pipe
@@ -122,7 +122,7 @@ func (ps *PipesStorage) GetPipesFromQueue() ([]*environment.PipeConfig, error) {
 		}
 
 		if workspaceID > 0 && len(key) > 0 {
-			pipe, err := ps.LoadPipeWithKey(workspaceID, key)
+			pipe, err := ps.loadPipeWithKey(workspaceID, key)
 			if err != nil {
 				return nil, err
 			}
@@ -150,7 +150,7 @@ func (ps *PipesStorage) Save(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (ps *PipesStorage) Load(rows *sql.Rows, p *environment.PipeConfig) error {
+func (ps *PipesStorage) load(rows *sql.Rows, p *environment.PipeConfig) error {
 	var wid int
 	var b []byte
 	var key string
@@ -167,7 +167,7 @@ func (ps *PipesStorage) Load(rows *sql.Rows, p *environment.PipeConfig) error {
 	return nil
 }
 
-func (ps *PipesStorage) NewStatus(p *environment.PipeConfig) error {
+func (ps *PipesStorage) newStatus(p *environment.PipeConfig) error {
 	ps.loadLastSync(p)
 	p.PipeStatus = environment.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, ps.env.GetPipesAPIHost())
 	return ps.savePipeStatus(p.PipeStatus)
@@ -180,7 +180,7 @@ func (ps *PipesStorage) Run(p *environment.PipeConfig) {
 		log.Println(err)
 	}()
 
-	if err = ps.NewStatus(p); err != nil {
+	if err = ps.newStatus(p); err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
 			"pipe": {
 				"ID":            p.ID,
@@ -450,7 +450,7 @@ func (ps *PipesStorage) WorkspaceIntegrations(workspaceID int) ([]environment.In
 	if err != nil {
 		return nil, err
 	}
-	workspacePipes, err := ps.LoadPipes(workspaceID)
+	workspacePipes, err := ps.loadPipes(workspaceID)
 	if err != nil {
 		return nil, err
 	}
