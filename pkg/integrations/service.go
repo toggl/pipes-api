@@ -17,7 +17,6 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/connection"
-	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -30,41 +29,39 @@ const (
 	timeEntriesPipeId = "time_entries"
 )
 
-type IntegrationsLoader interface {
-	LoadIntegrations() []*Integration
+type OauthProvider interface {
+	GetOAuth2URL(integrationID string) string
 }
 
 type Service struct {
-	env *environment.Environment
-	api *toggl.ApiClient
+	api   *toggl.ApiClient
+	oauth OauthProvider
 
 	conn  *connection.Storage
 	auth  *authorization.Storage
 	pipes *Storage
 
-	iLoader IntegrationsLoader
-
 	availablePipeType    *regexp.Regexp
 	availableServiceType *regexp.Regexp
 
 	availableIntegrations []*Integration
-
-	mx sync.RWMutex
+	pipesApiHost          string
+	mx                    sync.RWMutex
 }
 
-func NewService(env *environment.Environment, auth *authorization.Storage, pipes *Storage, conn *connection.Storage, api *toggl.ApiClient) *Service {
+func NewService(oauth OauthProvider, auth *authorization.Storage, pipes *Storage, conn *connection.Storage, api *toggl.ApiClient, pipesApiHost, workDir string) *Service {
 	svc := &Service{
-		env: env,
-		api: api,
-
+		api:   api,
+		oauth: oauth,
 		auth:  auth,
 		pipes: pipes,
 		conn:  conn,
 
+		pipesApiHost:          pipesApiHost,
 		availableIntegrations: []*Integration{},
 	}
 
-	svc.loadIntegrations(env.WorkDir).
+	svc.loadIntegrations(workDir).
 		fillAvailableServices().
 		fillAvailablePipeTypes()
 
@@ -828,7 +825,7 @@ func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]Integration, error
 	var igr []Integration
 	for _, current := range svc.getIntegrations() {
 		var integration = current
-		integration.AuthURL = svc.env.OAuth2URL(integration.ID)
+		integration.AuthURL = svc.oauth.GetOAuth2URL(integration.ID)
 		integration.Authorized = authorizations[integration.ID]
 		var pipes []*Pipe
 		for i := range integration.Pipes {
@@ -929,8 +926,14 @@ func (svc *Service) postObjects(p *Pipe, saveStatus bool) (err error) {
 
 func (svc *Service) newStatus(p *Pipe) error {
 	svc.pipes.loadLastSync(p)
-	p.PipeStatus = NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, svc.env.GetPipesAPIHost())
+	p.PipeStatus = NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, svc.getPipesApiHost())
 	return svc.pipes.savePipeStatus(p.PipeStatus)
+}
+
+func (svc *Service) getPipesApiHost() string {
+	svc.mx.RLock()
+	defer svc.mx.RUnlock()
+	return svc.pipesApiHost
 }
 
 func (svc *Service) Run(p *Pipe) {

@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"code.google.com/p/goauth2/oauth"
-
-	"github.com/toggl/pipes-api/pkg/environment"
 )
 
 const (
@@ -41,18 +39,22 @@ const (
 	`
 )
 
+type OauthProvider interface {
+	GetOAuth2Configs(serviceID string) (*oauth.Config, bool)
+}
+
 type Storage struct {
-	db  *sql.DB
-	env *environment.Environment
+	db    *sql.DB
+	oauth OauthProvider
 
 	availableAuthorizations map[string]string
 	mx                      sync.RWMutex
 }
 
-func NewStorage(db *sql.DB, env *environment.Environment) *Storage {
+func NewStorage(db *sql.DB, oauth OauthProvider) *Storage {
 	return &Storage{
 		db:                      db,
-		env:                     env,
+		oauth:                   oauth,
 		availableAuthorizations: map[string]string{},
 	}
 }
@@ -101,7 +103,7 @@ func (as *Storage) Refresh(a *Authorization) error {
 	if !token.Expired() {
 		return nil
 	}
-	config, res := as.env.GetOAuth2Configs(a.ServiceID)
+	config, res := as.oauth.GetOAuth2Configs(a.ServiceID)
 	if !res {
 		return errors.New("service OAuth config not found")
 	}

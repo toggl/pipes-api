@@ -1,4 +1,4 @@
-package environment
+package config
 
 import (
 	"encoding/json"
@@ -12,16 +12,14 @@ import (
 	"github.com/tambet/oauthplain"
 )
 
-type Environment struct {
-	envType string
+type Config struct {
 	WorkDir string
-
-	urls EnvUrls
+	EnvType string
+	Urls    EnvUrls
 
 	oAuth2Configs map[string]*oauth.Config
 	oAuth1Configs map[string]*oauthplain.Config
-
-	mx sync.RWMutex
+	mx            sync.RWMutex
 }
 
 type EnvUrls struct {
@@ -31,11 +29,11 @@ type EnvUrls struct {
 	CorsWhitelist map[string][]string `json:"cors_whitelist"`
 }
 
-func New(envType, workDir string) *Environment {
-	svc := &Environment{
-		envType: envType,
+func Load(envType, workDir string) *Config {
+	svc := &Config{
+		EnvType: envType,
 		WorkDir: workDir,
-		urls: EnvUrls{
+		Urls: EnvUrls{
 			ReturnURL:     map[string]string{},
 			TogglAPIHost:  map[string]string{},
 			PipesAPIHost:  map[string]string{},
@@ -52,35 +50,23 @@ func New(envType, workDir string) *Environment {
 	return svc
 }
 
-func (c *Environment) GetTogglAPIHost() string {
+func (c *Config) GetTogglAPIHost() string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	return c.urls.TogglAPIHost[c.envType]
+	return c.Urls.TogglAPIHost[c.EnvType]
 }
 
-func (c *Environment) GetPipesAPIHost() string {
+func (c *Config) GetOAuth2URL(service string) string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	return c.urls.PipesAPIHost[c.envType]
-}
-
-func (c *Environment) GetCorsWhitelist() []string {
-	c.mx.RLock()
-	defer c.mx.RUnlock()
-	return c.urls.CorsWhitelist[c.envType]
-}
-
-func (c *Environment) OAuth2URL(service string) string {
-	c.mx.RLock()
-	defer c.mx.RUnlock()
-	config, ok := c.oAuth2Configs[service+"_"+c.envType]
+	config, ok := c.oAuth2Configs[service+"_"+c.EnvType]
 	if !ok {
 		return ""
 	}
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (c *Environment) OAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
+func (c *Config) OAuth1Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
 	accountName := payload["account_name"].(string)
 	if accountName == "" {
 		return nil, errors.New("missing account_name")
@@ -121,14 +107,14 @@ func (c *Environment) OAuth1Exchange(serviceID string, payload map[string]interf
 	return b, nil
 }
 
-func (c *Environment) OAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
+func (c *Config) OAuth2Exchange(serviceID string, payload map[string]interface{}) ([]byte, error) {
 	code := payload["code"].(string)
 	if code == "" {
 		return nil, errors.New("missing code")
 	}
 
 	c.mx.RLock()
-	config, res := c.oAuth2Configs[serviceID+"_"+c.envType]
+	config, res := c.oAuth2Configs[serviceID+"_"+c.EnvType]
 	if !res {
 		c.mx.RUnlock()
 		return nil, errors.New("service OAuth config not found")
@@ -147,21 +133,21 @@ func (c *Environment) OAuth2Exchange(serviceID string, payload map[string]interf
 	return b, nil
 }
 
-func (c *Environment) GetOAuth1Configs(serviceID string) (*oauthplain.Config, bool) {
+func (c *Config) GetOAuth1Configs(serviceID string) (*oauthplain.Config, bool) {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
 	v, found := c.oAuth1Configs[serviceID]
 	return v, found
 }
 
-func (c *Environment) GetOAuth2Configs(serviceID string) (*oauth.Config, bool) {
+func (c *Config) GetOAuth2Configs(serviceID string) (*oauth.Config, bool) {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	v, found := c.oAuth2Configs[serviceID+"_"+c.envType]
+	v, found := c.oAuth2Configs[serviceID+"_"+c.EnvType]
 	return v, found
 }
 
-func (c *Environment) loadOauth2Configs() {
+func (c *Config) loadOauth2Configs() {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(c.WorkDir, "config", "oauth2.json"))
@@ -174,7 +160,7 @@ func (c *Environment) loadOauth2Configs() {
 
 }
 
-func (c *Environment) loadOauth1Configs() {
+func (c *Config) loadOauth1Configs() {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(c.WorkDir, "config", "oauth1.json"))
@@ -186,14 +172,14 @@ func (c *Environment) loadOauth1Configs() {
 	}
 }
 
-func (c *Environment) loadUrls() {
+func (c *Config) loadUrls() {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 	b, err := ioutil.ReadFile(filepath.Join(c.WorkDir, "config", "urls.json"))
 	if err != nil {
 		log.Fatalf("Could not read urls.json, reason: %v", err)
 	}
-	if err := json.Unmarshal(b, &c.urls); err != nil {
+	if err := json.Unmarshal(b, &c.Urls); err != nil {
 		log.Fatalf("Could not parse urls.json, reason: %v", err)
 	}
 }

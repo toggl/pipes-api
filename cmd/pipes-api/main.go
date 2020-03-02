@@ -12,8 +12,8 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/autosync"
+	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
-	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/toggl"
@@ -23,20 +23,20 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().Unix())
 
-	envFlags := environment.Flags{}
-	environment.ParseFlags(&envFlags)
+	envFlags := config.Flags{}
+	config.ParseFlags(&envFlags)
 
-	env := environment.New(
-		envFlags.Environment,
-		envFlags.WorkDir,
-	)
+	cfg := config.Load(envFlags.Environment, envFlags.WorkDir)
+	corsWhitelist := cfg.Urls.CorsWhitelist[cfg.EnvType]
+	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
+	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
 
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:       envFlags.BugsnagAPIKey,
 		ReleaseStage: envFlags.Environment,
 		NotifyReleaseStages: []string{
-			environment.EnvTypeProduction,
-			environment.EnvTypeStaging,
+			config.EnvTypeProduction,
+			config.EnvTypeStaging,
 		},
 		// more configuration options
 	})
@@ -47,29 +47,19 @@ func main() {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(env.GetTogglAPIHost())
-	authStore := authorization.NewStorage(db, env)
+	api := toggl.NewApiClient(togglApiHost)
+
+	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
-	pipesStore := integrations.NewStorage(env, db)
-	pipesService := integrations.NewService(env, authStore, pipesStore, connStore, api)
+	pipesStore := integrations.NewStorage(db)
+
+	pipesService := integrations.NewService(cfg, authStore, pipesStore, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	autosync.NewService(envFlags.Environment, pipesService).Start()
 
-	router := server.NewRouter(env.GetCorsWhitelist()).AttachHandlers(
-		server.NewController(env, pipesService, pipesStore, authStore, api),
+	router := server.NewRouter(corsWhitelist).AttachHandlers(
+		server.NewController(cfg, pipesService, pipesStore, authStore, api),
 		server.NewMiddleware(api, pipesService, pipesService),
 	)
 	server.Start(envFlags.Port, router)
 }
-
-//
-//
-//func (as *Storage) IntegrationFor(s integrations.ExternalService, serviceParams []byte) (integrations.ExternalService, error) {
-//	if err := s.SetParams(serviceParams); err != nil {
-//		return s, err
-//	}
-//	if _, err := as.LoadAuth(s); err != nil {
-//		return s, err
-//	}
-//	return s, nil
-//}

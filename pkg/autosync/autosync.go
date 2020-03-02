@@ -9,7 +9,7 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/environment"
+	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
@@ -34,10 +34,10 @@ func NewService(env string, p *integrations.Service) *Service {
 }
 
 func (ss *Service) Start() {
-	if ss.envType == environment.EnvTypeProduction {
+	if ss.envType == config.EnvTypeProduction {
 		go ss.startRunner()
 	}
-	if ss.envType == environment.EnvTypeStaging {
+	if ss.envType == config.EnvTypeStaging {
 		go ss.startStubRunner()
 	}
 	go ss.startQueue()

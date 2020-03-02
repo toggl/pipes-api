@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/toggl/pipes-api/pkg/authorization"
+	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
-	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/integrations/mock"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -31,10 +31,12 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestPipeEndSyncJSONParsingFail(t *testing.T) {
-	flags := environment.Flags{}
-	environment.ParseFlags(&flags)
+	flags := config.Flags{}
+	config.ParseFlags(&flags)
 
-	cfgService := environment.New(flags.Environment, flags.WorkDir)
+	cfg := config.Load(flags.Environment, flags.WorkDir)
+	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
+	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
 	db, err := sql.Open("postgres", flags.TestDBConnString)
 	if err != nil {
@@ -42,13 +44,13 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
+	api := toggl.NewApiClient(togglApiHost)
 
-	authStore := authorization.NewStorage(db, cfgService)
+	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 
-	pipesStorage := NewStorage(cfgService, db)
-	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
+	pipesStorage := NewStorage(db)
+	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	p := NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
 
@@ -75,10 +77,12 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 }
 
 func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
-	flags := environment.Flags{}
-	environment.ParseFlags(&flags)
+	flags := config.Flags{}
+	config.ParseFlags(&flags)
 
-	cfgService := environment.New(flags.Environment, flags.WorkDir)
+	cfg := config.Load(flags.Environment, flags.WorkDir)
+	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
+	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
 	db, err := sql.Open("postgres", flags.TestDBConnString)
 	if err != nil {
@@ -86,13 +90,13 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
+	api := toggl.NewApiClient(togglApiHost)
 
-	authStore := authorization.NewStorage(db, cfgService)
+	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 
-	pipesStorage := NewStorage(cfgService, db)
-	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
+	pipesStorage := NewStorage(db)
+	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *Pipe {
 		pipe := NewPipe(workspaceID, serviceID, pipeID)
@@ -167,10 +171,12 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 }
 
 func TestGetProjects(t *testing.T) {
-	flags := environment.Flags{}
-	environment.ParseFlags(&flags)
+	flags := config.Flags{}
+	config.ParseFlags(&flags)
 
-	cfgService := environment.New(flags.Environment, flags.WorkDir)
+	cfg := config.Load(flags.Environment, flags.WorkDir)
+	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
+	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
 	db, err := sql.Open("postgres", flags.TestDBConnString)
 	if err != nil {
@@ -179,12 +185,12 @@ func TestGetProjects(t *testing.T) {
 
 	defer db.Close()
 
-	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	authStore := authorization.NewStorage(db, cfgService)
+	api := toggl.NewApiClient(togglApiHost)
+	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 
-	pipesStorage := NewStorage(cfgService, db)
-	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
+	pipesStorage := NewStorage(db)
+	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	p := NewPipe(1, mock.ServiceName, "projects")
 

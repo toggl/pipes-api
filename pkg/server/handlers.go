@@ -11,7 +11,7 @@ import (
 	"github.com/tambet/oauthplain"
 
 	"github.com/toggl/pipes-api/pkg/authorization"
-	"github.com/toggl/pipes-api/pkg/environment"
+	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -27,11 +27,11 @@ type Controller struct {
 	pipesSvc   *integrations.Service
 	pipesStore *integrations.Storage
 	authStore  *authorization.Storage
-	env        *environment.Environment
+	env        *config.Config
 	api        *toggl.ApiClient
 }
 
-func NewController(env *environment.Environment, pipes *integrations.Service, pipesStore *integrations.Storage, authStore *authorization.Storage, api *toggl.ApiClient) *Controller {
+func NewController(env *config.Config, pipes *integrations.Service, pipesStore *integrations.Storage, authStore *authorization.Storage, api *toggl.ApiClient) *Controller {
 	return &Controller{
 		pipesSvc:   pipes,
 		pipesStore: pipesStore,

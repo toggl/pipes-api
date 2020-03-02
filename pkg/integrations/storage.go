@@ -9,19 +9,16 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 type Storage struct {
-	env *environment.Environment
-	db  *sql.DB
+	db *sql.DB
 }
 
-func NewStorage(env *environment.Environment, db *sql.DB) *Storage {
+func NewStorage(db *sql.DB) *Storage {
 	svc := &Storage{
-		db:  db,
-		env: env,
+		db: db,
 	}
 
 	return svc

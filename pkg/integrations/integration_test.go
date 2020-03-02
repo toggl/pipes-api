@@ -7,16 +7,18 @@ import (
 	"testing"
 
 	"github.com/toggl/pipes-api/pkg/authorization"
+	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
-	"github.com/toggl/pipes-api/pkg/environment"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 func TestWorkspaceIntegrations(t *testing.T) {
-	flags := environment.Flags{}
-	environment.ParseFlags(&flags)
+	flags := config.Flags{}
+	config.ParseFlags(&flags)
 
-	cfgService := environment.New(flags.Environment, flags.WorkDir)
+	cfg := config.Load(flags.Environment, flags.WorkDir)
+	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
+	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
 	db, err := sql.Open("postgres", flags.TestDBConnString)
 	if err != nil {
@@ -24,12 +26,12 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	authStore := authorization.NewStorage(db, cfgService)
+	api := toggl.NewApiClient(togglApiHost)
+	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 
-	pipesStorage := NewStorage(cfgService, db)
-	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
+	pipesStorage := NewStorage(db)
+	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -50,7 +52,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 
 	if len(integrations) != len(want) {
-		t.Fatalf("New integration(s) detected - please add tests!")
+		t.Fatalf("Load integration(s) detected - please add tests!")
 	}
 
 	for i := range integrations {
@@ -62,10 +64,12 @@ func TestWorkspaceIntegrations(t *testing.T) {
 
 func TestWorkspaceIntegrationPipes(t *testing.T) {
 
-	flags := environment.Flags{}
-	environment.ParseFlags(&flags)
+	flags := config.Flags{}
+	config.ParseFlags(&flags)
 
-	cfgService := environment.New(flags.Environment, flags.WorkDir)
+	cfg := config.Load(flags.Environment, flags.WorkDir)
+	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
+	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
 	db, err := sql.Open("postgres", flags.TestDBConnString)
 	if err != nil {
@@ -73,12 +77,12 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(cfgService.GetTogglAPIHost())
-	authStore := authorization.NewStorage(db, cfgService)
+	api := toggl.NewApiClient(togglApiHost)
+	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 
-	pipesStorage := NewStorage(cfgService, db)
-	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
+	pipesStorage := NewStorage(db)
+	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -115,7 +119,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 
 	if len(integrations) != len(want) {
-		t.Fatalf("New integration(s) detected - please add tests!")
+		t.Fatalf("Load integration(s) detected - please add tests!")
 	}
 
 	for i := range integrations {
