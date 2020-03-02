@@ -12,7 +12,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/range-labs/go-asana/asana"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -225,5 +224,3 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
 }
-
-var _ integrations.ExternalService = (*Service)(nil)

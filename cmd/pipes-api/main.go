@@ -14,7 +14,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/pipes"
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -50,8 +50,8 @@ func main() {
 	api := toggl.NewApiClient(env.GetTogglAPIHost())
 	authStore := authorization.NewStorage(db, env)
 	connStore := connection.NewStorage(db)
-	pipesStore := pipes.NewStorage(env, db)
-	pipesService := pipes.NewService(env, authStore, pipesStore, connStore, api)
+	pipesStore := integrations.NewStorage(env, db)
+	pipesService := integrations.NewService(env, authStore, pipesStore, connStore, api)
 
 	autosync.NewService(envFlags.Environment, pipesService).Start()
 
@@ -61,3 +61,15 @@ func main() {
 	)
 	server.Start(envFlags.Port, router)
 }
+
+//
+//
+//func (as *Storage) IntegrationFor(s integrations.ExternalService, serviceParams []byte) (integrations.ExternalService, error) {
+//	if err := s.SetParams(serviceParams); err != nil {
+//		return s, err
+//	}
+//	if _, err := as.LoadAuth(s); err != nil {
+//		return s, err
+//	}
+//	return s, nil
+//}

@@ -10,7 +10,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/pipes"
+	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 var wg sync.WaitGroup
@@ -23,10 +23,10 @@ const (
 
 type Service struct {
 	envType  string
-	pipesSvc *pipes.Service
+	pipesSvc *integrations.Service
 }
 
-func NewService(env string, p *pipes.Service) *Service {
+func NewService(env string, p *integrations.Service) *Service {
 	return &Service{
 		envType:  env,
 		pipesSvc: p,

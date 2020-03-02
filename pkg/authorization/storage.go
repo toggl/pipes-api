@@ -9,7 +9,6 @@ import (
 	"code.google.com/p/goauth2/oauth"
 
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 const (
@@ -86,8 +85,8 @@ func (as *Storage) Load(rows *sql.Rows, a *Authorization) error {
 	return nil
 }
 
-func (as *Storage) Destroy(s integrations.ExternalService) error {
-	_, err := as.db.Exec(deleteAuthorizationSQL, s.GetWorkspaceID(), s.Name())
+func (as *Storage) Destroy(workspaceID int, externalServiceName string) error {
+	_, err := as.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceName)
 	return err
 }
 
@@ -106,6 +105,7 @@ func (as *Storage) Refresh(a *Authorization) error {
 	if !res {
 		return errors.New("service OAuth config not found")
 	}
+
 	transport := &oauth.Transport{Config: config, Token: &token}
 	if err := transport.Refresh(); err != nil {
 		return err
@@ -121,8 +121,8 @@ func (as *Storage) Refresh(a *Authorization) error {
 	return nil
 }
 
-func (as *Storage) LoadAuth(s integrations.ExternalService) (*Authorization, error) {
-	rows, err := as.db.Query(selectAuthorizationSQL, s.GetWorkspaceID(), s.Name())
+func (as *Storage) LoadAuth(workspaceID int, externalServiceName string) (*Authorization, error) {
+	rows, err := as.db.Query(selectAuthorizationSQL, workspaceID, externalServiceName)
 	if err != nil {
 		return nil, err
 	}
@@ -132,9 +132,6 @@ func (as *Storage) LoadAuth(s integrations.ExternalService) (*Authorization, err
 	}
 	var authorization Authorization
 	if err := as.Load(rows, &authorization); err != nil {
-		return nil, err
-	}
-	if err := s.SetAuthData(authorization.Data); err != nil { // TODO: Refactor, remove side effect.
 		return nil, err
 	}
 	return &authorization, nil
@@ -155,25 +152,4 @@ func (as *Storage) LoadAuthorizations(workspaceID int) (map[string]bool, error) 
 		authorizations[service] = true
 	}
 	return authorizations, nil
-}
-
-func (as *Storage) LoadAuthFor(s integrations.ExternalService) (*Authorization, error) {
-	auth, err := as.LoadAuth(s)
-	if err != nil {
-		return auth, err
-	}
-	if err = as.Refresh(auth); err != nil {
-		return auth, err
-	}
-	return auth, nil
-}
-
-func (as *Storage) IntegrationFor(s integrations.ExternalService, serviceParams []byte) (integrations.ExternalService, error) {
-	if err := s.SetParams(serviceParams); err != nil {
-		return s, err
-	}
-	if _, err := as.LoadAuth(s); err != nil {
-		return s, err
-	}
-	return s, nil
 }

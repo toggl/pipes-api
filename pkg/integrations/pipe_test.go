@@ -1,4 +1,4 @@
-package pipes
+package integrations
 
 import (
 	"database/sql"
@@ -194,11 +194,18 @@ func TestGetProjects(t *testing.T) {
 	}
 
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := pipeService.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		t.Error(err)
+	}
+	auth, err := pipeService.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		t.Error(err)
 	}
-	b, err := pipesStorage.getObject(s, "projects")
+	if err := service.SetAuthData(auth.Data); err != nil {
+		t.Error(err)
+	}
+
+	b, err := pipesStorage.getObject(service, "projects")
 	if err != nil {
 		t.Error(err)
 	}

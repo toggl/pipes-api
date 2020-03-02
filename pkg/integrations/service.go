@@ -1,4 +1,4 @@
-package pipes
+package integrations
 
 import (
 	"encoding/json"
@@ -18,7 +18,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -108,11 +107,19 @@ func (svc *Service) fillAvailableServices() *Service {
 
 func (svc *Service) postUsers(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
-	usersResponse, err := svc.GetUsers(s)
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	usersResponse, err := svc.GetUsers(service)
 	if err != nil {
 		return errors.New("unable to get users from DB")
 	}
@@ -120,7 +127,10 @@ func (svc *Service) postUsers(p *Pipe) error {
 		return errors.New("service users not found")
 	}
 
-	var selector Selector
+	var selector struct {
+		IDs         []int `json:"ids"`
+		SendInvites bool  `json:"send_invites"`
+	}
 	if err := json.Unmarshal(p.Payload, &selector); err != nil {
 		return err
 	}
@@ -140,7 +150,7 @@ func (svc *Service) postUsers(p *Pipe) error {
 		return err
 	}
 	var connection *connection.Connection
-	if connection, err = svc.conn.Load(s.GetWorkspaceID(), s.KeyFor(usersPipeID)); err != nil {
+	if connection, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(usersPipeID)); err != nil {
 		return err
 	}
 	for _, user := range usersImport.WorkspaceUsers {
@@ -156,10 +166,17 @@ func (svc *Service) postUsers(p *Pipe) error {
 
 func (svc *Service) postClients(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
 	clientsResponse, err := svc.getClients(service)
 	if err != nil {
 		return errors.New("unable to get clients from DB")
@@ -193,11 +210,19 @@ func (svc *Service) postClients(p *Pipe) error {
 
 func (svc *Service) postProjects(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
-	projectsResponse, err := svc.getProjects(s)
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	projectsResponse, err := svc.getProjects(service)
 	if err != nil {
 		return errors.New("unable to get projects from DB")
 	}
@@ -212,7 +237,7 @@ func (svc *Service) postProjects(p *Pipe) error {
 		return err
 	}
 	var connection *connection.Connection
-	if connection, err = svc.conn.Load(s.GetWorkspaceID(), s.KeyFor(projectsPipeID)); err != nil {
+	if connection, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(projectsPipeID)); err != nil {
 		return err
 	}
 	for _, project := range projectsImport.Projects {
@@ -227,11 +252,19 @@ func (svc *Service) postProjects(p *Pipe) error {
 
 func (svc *Service) postTodoLists(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
-	tasksResponse, err := svc.getTasks(s, todoPipeId)
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	tasksResponse, err := svc.getTasks(service, todoPipeId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -249,7 +282,7 @@ func (svc *Service) postTodoLists(p *Pipe) error {
 		if err != nil {
 			return err
 		}
-		connection, err := svc.conn.Load(s.GetWorkspaceID(), s.KeyFor(todoPipeId))
+		connection, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(todoPipeId))
 		if err != nil {
 			return err
 		}
@@ -268,11 +301,18 @@ func (svc *Service) postTodoLists(p *Pipe) error {
 
 func (svc *Service) postTasks(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
-	tasksResponse, err := svc.getTasks(s, tasksPipeId)
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	tasksResponse, err := svc.getTasks(service, tasksPipeId)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -290,7 +330,7 @@ func (svc *Service) postTasks(p *Pipe) error {
 		if err != nil {
 			return err
 		}
-		con, err := svc.conn.Load(s.GetWorkspaceID(), s.KeyFor(tasksPipeId))
+		con, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(tasksPipeId))
 		if err != nil {
 			return err
 		}
@@ -307,7 +347,7 @@ func (svc *Service) postTasks(p *Pipe) error {
 	return nil
 }
 
-func (svc *Service) postTimeEntries(p *Pipe, service integrations.ExternalService) error {
+func (svc *Service) postTimeEntries(p *Pipe, service ExternalService) error {
 	var err error
 	var entriesCon *connection.Connection
 	var usersCon, tasksCon, projectsCon *connection.ReversedConnection
@@ -375,20 +415,37 @@ func (svc *Service) postTimeEntries(p *Pipe, service integrations.ExternalServic
 // ==========================  fetchSomething ==================================
 func (svc *Service) fetchUsers(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
-	users, err := s.Users()
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	users, err := service.Users()
 	response := toggl.UsersResponse{Users: users}
 	defer func() {
-		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
-		if err != nil {
-			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
+		if err := service.SetParams(p.ServiceParams); err != nil {
+			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		workspaceID := s.GetWorkspaceID()
-		objKey := s.KeyFor(usersPipeID)
+		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		if err != nil {
+			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
+			return
+		}
+		if err := service.SetAuthData(auth.Data); err != nil {
+			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
+			return
+		}
+
+		workspaceID := service.GetWorkspaceID()
+		objKey := service.KeyFor(usersPipeID)
 
 		if err := svc.pipes.saveObject(workspaceID, objKey, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", workspaceID, objKey, err)
@@ -404,20 +461,36 @@ func (svc *Service) fetchUsers(p *Pipe) error {
 
 func (svc *Service) fetchClients(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
-	clients, err := s.Clients()
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	clients, err := service.Clients()
 	response := toggl.ClientsResponse{Clients: clients}
 	defer func() {
-		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
-		if err != nil {
-			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
+		if err := service.SetParams(p.ServiceParams); err != nil {
+			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		workspaceID := s.GetWorkspaceID()
-		objKey := s.KeyFor(clientsPipeID)
+		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		if err != nil {
+			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
+			return
+		}
+		if err := service.SetAuthData(auth.Data); err != nil {
+			log.Printf("could not ser service auth data: %v, reason: %v", p.ID, err)
+			return
+		}
+
+		workspaceID := service.GetWorkspaceID()
+		objKey := service.KeyFor(clientsPipeID)
 
 		if err := svc.pipes.saveObject(workspaceID, objKey, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", workspaceID, objKey, err)
@@ -428,7 +501,7 @@ func (svc *Service) fetchClients(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	connections, err := svc.conn.Load(s.GetWorkspaceID(), s.KeyFor(clientsPipeID))
+	connections, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(clientsPipeID))
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -444,13 +517,22 @@ func (svc *Service) fetchProjects(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
 
 	defer func() {
-		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
-		if err != nil {
-			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
+		if err := service.SetParams(p.ServiceParams); err != nil {
+			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		workspaceID := s.GetWorkspaceID()
-		objKey := s.KeyFor(projectsPipeID)
+		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		if err != nil {
+			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
+			return
+		}
+		if err := service.SetAuthData(auth.Data); err != nil {
+			log.Printf("could not ser service auth data: %v, reason: %v", p.ID, err)
+			return
+		}
+
+		workspaceID := service.GetWorkspaceID()
+		objKey := service.KeyFor(projectsPipeID)
 
 		if err := svc.pipes.saveObject(workspaceID, objKey, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", workspaceID, objKey, err)
@@ -467,10 +549,18 @@ func (svc *Service) fetchProjects(p *Pipe) error {
 		return err
 	}
 
-	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
 	service.SetSince(p.LastSync)
 	projects, err := service.Projects()
 	if err != nil {
@@ -503,13 +593,22 @@ func (svc *Service) fetchTodoLists(p *Pipe) error {
 	service := Create(p.ServiceID, p.WorkspaceID)
 
 	defer func() {
-		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
-		if err != nil {
-			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
+		if err := service.SetParams(p.ServiceParams); err != nil {
+			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		workspaceID := s.GetWorkspaceID()
-		objKey := s.KeyFor(todoPipeId)
+		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		if err != nil {
+			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
+			return
+		}
+		if err := service.SetAuthData(auth.Data); err != nil {
+			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
+			return
+		}
+
+		workspaceID := service.GetWorkspaceID()
+		objKey := service.KeyFor(todoPipeId)
 
 		if err := svc.pipes.saveObject(workspaceID, objKey, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", workspaceID, objKey, err)
@@ -526,10 +625,17 @@ func (svc *Service) fetchTodoLists(p *Pipe) error {
 		return err
 	}
 
-	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
 	service.SetSince(p.LastSync)
 	tasks, err := service.TodoLists()
 	if err != nil {
@@ -564,13 +670,23 @@ func (svc *Service) fetchTasks(p *Pipe) error {
 	response := toggl.TasksResponse{}
 	service := Create(p.ServiceID, p.WorkspaceID)
 	defer func() {
-		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
-		if err != nil {
-			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
+		if err := service.SetParams(p.ServiceParams); err != nil {
+			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		workspaceID := s.GetWorkspaceID()
-		objKey := s.KeyFor(tasksPipeId)
+
+		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		if err != nil {
+			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
+			return
+		}
+		if err := service.SetAuthData(auth.Data); err != nil {
+			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
+			return
+		}
+
+		workspaceID := service.GetWorkspaceID()
+		objKey := service.KeyFor(tasksPipeId)
 
 		if err := svc.pipes.saveObject(workspaceID, objKey, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", workspaceID, objKey, err)
@@ -587,10 +703,18 @@ func (svc *Service) fetchTasks(p *Pipe) error {
 		return err
 	}
 
-	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
 	service.SetSince(p.LastSync)
 	tasks, err := service.Tasks()
 	if err != nil {
@@ -628,7 +752,7 @@ func (svc *Service) fetchTimeEntries(p *Pipe) error {
 
 // ==========================  getSomething ====================================
 
-func (svc *Service) GetUsers(s integrations.ExternalService) (*toggl.UsersResponse, error) {
+func (svc *Service) GetUsers(s ExternalService) (*toggl.UsersResponse, error) {
 	b, err := svc.pipes.getObject(s, usersPipeID)
 	if err != nil || b == nil {
 		return nil, err
@@ -642,7 +766,7 @@ func (svc *Service) GetUsers(s integrations.ExternalService) (*toggl.UsersRespon
 	return &usersResponse, nil
 }
 
-func (svc *Service) getClients(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
+func (svc *Service) getClients(s ExternalService) (*toggl.ClientsResponse, error) {
 	b, err := svc.pipes.getObject(s, clientsPipeID)
 	if err != nil || b == nil {
 		return nil, err
@@ -656,7 +780,7 @@ func (svc *Service) getClients(s integrations.ExternalService) (*toggl.ClientsRe
 	return &clientsResponse, nil
 }
 
-func (svc *Service) getProjects(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
+func (svc *Service) getProjects(s ExternalService) (*toggl.ProjectsResponse, error) {
 	b, err := svc.pipes.getObject(s, projectsPipeID)
 	if err != nil || b == nil {
 		return nil, err
@@ -671,7 +795,7 @@ func (svc *Service) getProjects(s integrations.ExternalService) (*toggl.Projects
 	return &projectsResponse, nil
 }
 
-func (svc *Service) getTasks(s integrations.ExternalService, objType string) (*toggl.TasksResponse, error) {
+func (svc *Service) getTasks(s ExternalService, objType string) (*toggl.TasksResponse, error) {
 	b, err := svc.pipes.getObject(s, objType)
 	if err != nil || b == nil {
 		return nil, err
@@ -782,10 +906,18 @@ func (svc *Service) postObjects(p *Pipe, saveStatus bool) (err error) {
 	case "todos", "tasks":
 		err = svc.postTasks(p)
 	case "timeentries":
-		var service integrations.ExternalService
-		s := Create(p.ServiceID, p.WorkspaceID)
-		service, err = svc.auth.IntegrationFor(s, p.ServiceParams)
+		service := Create(p.ServiceID, p.WorkspaceID)
+		if err := service.SetParams(p.ServiceParams); err != nil {
+			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
+			break
+		}
+		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 		if err != nil {
+			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
+			break
+		}
+		if err := service.SetAuthData(auth.Data); err != nil {
+			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
 			break
 		}
 		err = svc.postTimeEntries(p, service)
@@ -822,8 +954,34 @@ func (svc *Service) Run(p *Pipe) {
 	}
 
 	s := Create(p.ServiceID, p.WorkspaceID)
-	auth, err := svc.auth.LoadAuthFor(s)
+	auth, err := svc.auth.LoadAuth(s.GetWorkspaceID(), s.Name())
 	if err != nil {
+		bugsnag.Notify(err, bugsnag.MetaData{
+			"pipe": {
+				"ID":            p.ID,
+				"Name":          p.Name,
+				"ServiceParams": string(p.ServiceParams),
+				"WorkspaceID":   p.WorkspaceID,
+				"ServiceID":     p.ServiceID,
+			},
+		})
+		return
+	}
+
+	if err := s.SetAuthData(auth.Data); err != nil {
+		bugsnag.Notify(err, bugsnag.MetaData{
+			"pipe": {
+				"ID":            p.ID,
+				"Name":          p.Name,
+				"ServiceParams": string(p.ServiceParams),
+				"WorkspaceID":   p.WorkspaceID,
+				"ServiceID":     p.ServiceID,
+			},
+		})
+		return
+	}
+
+	if err = svc.auth.Refresh(auth); err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
 			"pipe": {
 				"ID":            p.ID,
@@ -866,12 +1024,18 @@ func (svc *Service) Run(p *Pipe) {
 func (svc *Service) ClearPipeConnections(p *Pipe) error {
 
 	service := Create(p.ServiceID, p.WorkspaceID)
-	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
 
-	key := s.KeyFor(p.ID)
+	key := service.KeyFor(p.ID)
 
 	pipeStatus, err := svc.pipes.LoadPipeStatus(p.WorkspaceID, p.ServiceID, p.ID)
 	if err != nil {

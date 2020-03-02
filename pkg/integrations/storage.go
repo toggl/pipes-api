@@ -1,4 +1,4 @@
-package pipes
+package integrations
 
 import (
 	"database/sql"
@@ -10,7 +10,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -281,7 +280,7 @@ func (ps *Storage) QueuePipeAsFirst(pipe *Pipe) error {
 	return err
 }
 
-func (ps *Storage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+func (ps *Storage) GetAccounts(s ExternalService) (*toggl.AccountsResponse, error) {
 	var result []byte
 	rows, err := ps.db.Query(`
 		SELECT data FROM imports
@@ -308,7 +307,7 @@ func (ps *Storage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsR
 	return &accountsResponse, nil
 }
 
-func (ps *Storage) FetchAccounts(s integrations.ExternalService) error {
+func (ps *Storage) FetchAccounts(s ExternalService) error {
 	var response toggl.AccountsResponse
 	accounts, err := s.Accounts()
 	response.Accounts = accounts
@@ -332,7 +331,7 @@ func (ps *Storage) FetchAccounts(s integrations.ExternalService) error {
 	return nil
 }
 
-func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID string) error {
+func (ps *Storage) ClearImportFor(s ExternalService, pipeID string) error {
 	_, err := ps.db.Exec(`
 	    DELETE FROM imports
 	    WHERE workspace_id = $1 AND Key = $2
@@ -341,7 +340,7 @@ func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID string)
 }
 
 // ========================== get/saveObject ===================================
-func (ps *Storage) getObject(s integrations.ExternalService, pipeID string) ([]byte, error) {
+func (ps *Storage) getObject(s ExternalService, pipeID string) ([]byte, error) {
 	var result []byte
 	rows, err := ps.db.Query(`
 		SELECT data FROM imports

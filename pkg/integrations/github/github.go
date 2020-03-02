@@ -10,7 +10,6 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -95,5 +94,3 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
 }
-
-var _ integrations.ExternalService = (*Service)(nil)

@@ -9,7 +9,6 @@ import (
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -168,5 +167,3 @@ func (s *Service) SetSince(*time.Time) {}
 func (s *Service) TodoLists() ([]*toggl.Task, error) {
 	return []*toggl.Task{}, nil
 }
-
-var _ integrations.ExternalService = (*Service)(nil)

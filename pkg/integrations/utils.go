@@ -1,4 +1,4 @@
-package pipes
+package integrations
 
 import (
 	"strings"

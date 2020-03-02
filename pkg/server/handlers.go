@@ -12,7 +12,7 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/environment"
-	"github.com/toggl/pipes-api/pkg/pipes"
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -24,14 +24,14 @@ type Controller struct {
 	stResolver ServiceTypeResolver
 	ptResolver PipeTypeResolver
 
-	pipesSvc   *pipes.Service
-	pipesStore *pipes.Storage
+	pipesSvc   *integrations.Service
+	pipesStore *integrations.Storage
 	authStore  *authorization.Storage
 	env        *environment.Environment
 	api        *toggl.ApiClient
 }
 
-func NewController(env *environment.Environment, pipes *pipes.Service, pipesStore *pipes.Storage, authStore *authorization.Storage, api *toggl.ApiClient) *Controller {
+func NewController(env *environment.Environment, pipes *integrations.Service, pipesStore *integrations.Storage, authStore *authorization.Storage, api *toggl.ApiClient) *Controller {
 	return &Controller{
 		pipesSvc:   pipes,
 		pipesStore: pipesStore,
@@ -69,7 +69,7 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		pipe = pipes.NewPipe(workspaceID, serviceID, pipeID)
+		pipe = integrations.NewPipe(workspaceID, serviceID, pipeID)
 	}
 
 	pipe.PipeStatus, err = c.pipesStore.LoadPipeStatus(workspaceID, serviceID, pipeID)
@@ -91,7 +91,7 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 		return badRequest("Missing or invalid pipe")
 	}
 
-	pipe := pipes.NewPipe(workspaceID, serviceID, pipeID)
+	pipe := integrations.NewPipe(workspaceID, serviceID, pipeID)
 	errorMsg := pipe.ValidateServiceConfig(req.body)
 	if errorMsg != "" {
 		return badRequest(errorMsg)
@@ -228,12 +228,16 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := pipes.Create(serviceID, workspaceID)
-	_, err := c.authStore.LoadAuth(service)
+	service := integrations.Create(serviceID, workspaceID)
+	auth, err := c.authStore.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return internalServerError(err.Error())
 	}
-	if err := c.authStore.Destroy(service); err != nil {
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return internalServerError(err.Error())
+	}
+
+	if err := c.authStore.Destroy(service.GetWorkspaceID(), service.Name()); err != nil {
 		return internalServerError(err.Error())
 	}
 	if err := c.pipesStore.DeletePipeByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
@@ -248,11 +252,15 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := pipes.Create(serviceID, workspaceID)
-	auth, err := c.authStore.LoadAuth(service)
+	service := integrations.Create(serviceID, workspaceID)
+	auth, err := c.authStore.LoadAuth(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return internalServerError(err.Error())
+	}
+
 	if err := c.authStore.Refresh(auth); err != nil {
 		return badRequest("oAuth refresh failed!")
 	}
@@ -284,10 +292,15 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := pipes.Create(serviceID, workspaceID)
-	if _, err := c.authStore.LoadAuth(service); err != nil {
+	service := integrations.Create(serviceID, workspaceID)
+	auth, err := c.authStore.LoadAuth(service.GetWorkspaceID(), service.Name())
+	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return internalServerError(err.Error())
+	}
+
 	pipeID := "users"
 	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
