@@ -9,9 +9,15 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
+
+type PipesQueue interface {
+	QueueAutomaticPipes() error
+	GetPipesFromQueue() ([]*integrations.Pipe, error)
+	SetQueuedPipeSynced(*integrations.Pipe) error
+	Run(*integrations.Pipe)
+}
 
 var wg sync.WaitGroup
 
@@ -22,24 +28,17 @@ const (
 )
 
 type Service struct {
-	envType  string
-	pipesSvc *integrations.Service
+	pipesQueue PipesQueue
 }
 
-func NewService(env string, p *integrations.Service) *Service {
+func NewService(p PipesQueue) *Service {
 	return &Service{
-		envType:  env,
-		pipesSvc: p,
+		pipesQueue: p,
 	}
 }
 
 func (ss *Service) Start() {
-	if ss.envType == config.EnvTypeProduction {
-		go ss.startRunner()
-	}
-	if ss.envType == config.EnvTypeStaging {
-		go ss.startStubRunner()
-	}
+	go ss.startRunner()
 	go ss.startQueue()
 }
 
@@ -58,7 +57,7 @@ func (ss *Service) pipeWorker(id int) {
 		wg.Done()
 	}()
 	for {
-		pipes, err := ss.pipesSvc.GetPipesFromQueue()
+		pipes, err := ss.pipesQueue.GetPipesFromQueue()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -77,9 +76,9 @@ func (ss *Service) pipeWorker(id int) {
 		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
 			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
-			ss.pipesSvc.Run(pipe)
+			ss.pipesQueue.Run(pipe)
 
-			err := ss.pipesSvc.SetQueuedPipeSynced(pipe)
+			err := ss.pipesQueue.SetQueuedPipeSynced(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
@@ -91,44 +90,7 @@ func (ss *Service) pipeWorker(id int) {
 					},
 				})
 			}
-			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key, (err != nil))
-		}
-	}
-}
-
-// run dummy background workers
-func (ss *Service) runPipesStub() {
-	wg.Add(workersCount)
-	for i := 0; i < workersCount; i++ {
-		go ss.pipeWorkerStub()
-	}
-}
-
-// dummy background worker function
-func (ss *Service) pipeWorkerStub() {
-	ranCount := 0
-	gotCount := 0
-	defer func() {
-		log.Printf("Got %d pipes, ran %d pipes\n", gotCount, ranCount)
-		wg.Done()
-	}()
-	for {
-		pipes, err := ss.pipesSvc.GetPipesFromQueue()
-		if err != nil {
-			bugsnag.Notify(err)
-			continue
-		}
-		if pipes == nil {
-			continue
-		}
-		gotCount += len(pipes)
-		for _, pipe := range pipes {
-			// NO PIPE RUN HERE
-			err := ss.pipesSvc.SetQueuedPipeSynced(pipe)
-			if err != nil {
-				log.Printf("ERROR: %s\n", err.Error())
-			}
-			ranCount++
+			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key, err != nil)
 		}
 	}
 }
@@ -147,20 +109,6 @@ func (ss *Service) startRunner() {
 	}
 }
 
-func (ss *Service) startStubRunner() {
-	for {
-		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
-		log.Println("-- AutosyncStub sleeping for ", duration)
-		time.Sleep(duration)
-
-		log.Println("-- AutosyncStub started")
-		ss.runPipesStub()
-
-		wg.Wait()
-		log.Println("-- AutosyncStub finished")
-	}
-}
-
 // schedule background job for each integration with auto sync enabled
 func (ss *Service) startQueue() {
 	for {
@@ -172,7 +120,7 @@ func (ss *Service) startQueue() {
 
 		log.Println("-- startQueue started")
 
-		if err := ss.pipesSvc.QueueAutomaticPipes(); err != nil {
+		if err := ss.pipesQueue.QueueAutomaticPipes(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}
