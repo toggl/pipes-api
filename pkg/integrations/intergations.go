@@ -7,9 +7,9 @@ import (
 )
 
 type (
-	// Integration interface for external integrations
+	// ExternalService interface for external integrations
 	// Example implementation: github.go
-	Integration interface {
+	ExternalService interface {
 		// Name of the service
 		Name() string
 
@@ -17,16 +17,16 @@ type (
 		GetWorkspaceID() int
 
 		// setSince takes the provided time.Time
-		// and adds it to Integration struct. This can be used
+		// and adds it to ExternalService struct. This can be used
 		// to fetch just the modified data from external services.
 		SetSince(*time.Time)
 
-		// setParams takes the necessary Integration params
+		// setParams takes the necessary ExternalService params
 		// (for example the selected account id) as JSON
-		// and adds them to Integration struct.
+		// and adds them to ExternalService struct.
 		SetParams([]byte) error
 
-		// SetAuthData adds the provided oauth token to Integration struct
+		// SetAuthData adds the provided oauth token to ExternalService struct
 		SetAuthData([]byte) error
 
 		// keyFor should provide unique key for object type

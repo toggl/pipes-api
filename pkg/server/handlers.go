@@ -69,7 +69,7 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		pipe = environment.NewPipe(workspaceID, serviceID, pipeID)
+		pipe = pipes.NewPipe(workspaceID, serviceID, pipeID)
 	}
 
 	pipe.PipeStatus, err = c.pipesStore.LoadPipeStatus(workspaceID, serviceID, pipeID)
@@ -91,7 +91,7 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 		return badRequest("Missing or invalid pipe")
 	}
 
-	pipe := environment.NewPipe(workspaceID, serviceID, pipeID)
+	pipe := pipes.NewPipe(workspaceID, serviceID, pipeID)
 	errorMsg := pipe.ValidateServiceConfig(req.body)
 	if errorMsg != "" {
 		return badRequest(errorMsg)
@@ -121,7 +121,7 @@ func (c *Controller) PutPipeSetup(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		return badRequest("PipeConfig is not configured")
+		return badRequest("Pipe is not configured")
 	}
 	if err := json.Unmarshal(req.body, &pipe); err != nil {
 		return internalServerError(err.Error())
@@ -147,7 +147,7 @@ func (c *Controller) DeletePipeSetup(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		return badRequest("PipeConfig is not configured")
+		return badRequest("Pipe is not configured")
 	}
 	if err := c.pipesStore.Destroy(pipe, workspaceID); err != nil {
 		return internalServerError(err.Error())
@@ -203,20 +203,20 @@ func (c *Controller) PostAuthorization(req Request) Response {
 		return internalServerError(err.Error())
 	}
 
-	authorization := environment.NewAuthorization(workspaceID, serviceID)
-	authorization.WorkspaceToken = currentWorkspaceToken(req.r)
+	auth := authorization.New(workspaceID, serviceID)
+	auth.WorkspaceToken = currentWorkspaceToken(req.r)
 
-	switch c.env.GetAvailableAuthorizations(serviceID) {
-	case "oauth1":
-		authorization.Data, err = c.env.OAuth1Exchange(serviceID, payload)
-	case "oauth2":
-		authorization.Data, err = c.env.OAuth2Exchange(serviceID, payload)
+	switch c.authStore.GetAvailableAuthorizations(serviceID) {
+	case authorization.TypeOauth1:
+		auth.Data, err = c.env.OAuth1Exchange(serviceID, payload)
+	case authorization.TypeOauth2:
+		auth.Data, err = c.env.OAuth2Exchange(serviceID, payload)
 	}
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	if err := c.authStore.Save(authorization); err != nil {
+	if err := c.authStore.Save(auth); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
@@ -228,7 +228,7 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := environment.Create(serviceID, workspaceID)
+	service := pipes.Create(serviceID, workspaceID)
 	_, err := c.authStore.LoadAuth(service)
 	if err != nil {
 		return internalServerError(err.Error())
@@ -248,7 +248,7 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := environment.Create(serviceID, workspaceID)
+	service := pipes.Create(serviceID, workspaceID)
 	auth, err := c.authStore.LoadAuth(service)
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
@@ -284,7 +284,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := environment.Create(serviceID, workspaceID)
+	service := pipes.Create(serviceID, workspaceID)
 	if _, err := c.authStore.LoadAuth(service); err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
@@ -294,7 +294,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		return badRequest("PipeConfig is not configured")
+		return badRequest("Pipe is not configured")
 	}
 	if err := service.SetParams(pipe.ServiceParams); err != nil {
 		return badRequest(err.Error())
@@ -347,7 +347,7 @@ func (c *Controller) PostServicePipeClearConnections(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		return badRequest("PipeConfig is not configured")
+		return badRequest("Pipe is not configured")
 	}
 
 	err = c.pipesSvc.ClearPipeConnections(pipe)
@@ -376,7 +376,7 @@ func (c *Controller) PostPipeRun(req Request) Response {
 		return internalServerError(err.Error())
 	}
 	if pipe == nil {
-		return badRequest("PipeConfig is not configured")
+		return badRequest("Pipe is not configured")
 	}
 	if msg := pipe.ValidatePayload(req.body); msg != "" {
 		return badRequest(msg)

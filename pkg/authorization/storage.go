@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"sync"
 
 	"code.google.com/p/goauth2/oauth"
 
@@ -44,16 +45,20 @@ const (
 type Storage struct {
 	db  *sql.DB
 	env *environment.Environment
+
+	availableAuthorizations map[string]string
+	mx                      sync.RWMutex
 }
 
 func NewStorage(db *sql.DB, env *environment.Environment) *Storage {
 	return &Storage{
-		db:  db,
-		env: env,
+		db:                      db,
+		env:                     env,
+		availableAuthorizations: map[string]string{},
 	}
 }
 
-func (as *Storage) Save(a *environment.AuthorizationConfig) error {
+func (as *Storage) Save(a *Authorization) error {
 	_, err := as.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
@@ -61,7 +66,19 @@ func (as *Storage) Save(a *environment.AuthorizationConfig) error {
 	return nil
 }
 
-func (as *Storage) Load(rows *sql.Rows, a *environment.AuthorizationConfig) error {
+func (as *Storage) GetAvailableAuthorizations(serviceID string) string {
+	as.mx.RLock()
+	defer as.mx.RUnlock()
+	return as.availableAuthorizations[serviceID]
+}
+
+func (as *Storage) SetAuthorizationType(integrationID, authType string) {
+	as.mx.Lock()
+	defer as.mx.Unlock()
+	as.availableAuthorizations[integrationID] = authType
+}
+
+func (as *Storage) Load(rows *sql.Rows, a *Authorization) error {
 	err := rows.Scan(&a.WorkspaceID, &a.ServiceID, &a.WorkspaceToken, &a.Data)
 	if err != nil {
 		return err
@@ -69,13 +86,13 @@ func (as *Storage) Load(rows *sql.Rows, a *environment.AuthorizationConfig) erro
 	return nil
 }
 
-func (as *Storage) Destroy(s integrations.Integration) error {
+func (as *Storage) Destroy(s integrations.ExternalService) error {
 	_, err := as.db.Exec(deleteAuthorizationSQL, s.GetWorkspaceID(), s.Name())
 	return err
 }
 
-func (as *Storage) Refresh(a *environment.AuthorizationConfig) error {
-	if as.env.GetAvailableAuthorizations(a.ServiceID) != TypeOauth2 {
+func (as *Storage) Refresh(a *Authorization) error {
+	if as.GetAvailableAuthorizations(a.ServiceID) != TypeOauth2 {
 		return nil
 	}
 	var token oauth.Token
@@ -104,7 +121,7 @@ func (as *Storage) Refresh(a *environment.AuthorizationConfig) error {
 	return nil
 }
 
-func (as *Storage) LoadAuth(s integrations.Integration) (*environment.AuthorizationConfig, error) {
+func (as *Storage) LoadAuth(s integrations.ExternalService) (*Authorization, error) {
 	rows, err := as.db.Query(selectAuthorizationSQL, s.GetWorkspaceID(), s.Name())
 	if err != nil {
 		return nil, err
@@ -113,7 +130,7 @@ func (as *Storage) LoadAuth(s integrations.Integration) (*environment.Authorizat
 	if !rows.Next() {
 		return nil, rows.Err()
 	}
-	var authorization environment.AuthorizationConfig
+	var authorization Authorization
 	if err := as.Load(rows, &authorization); err != nil {
 		return nil, err
 	}
@@ -140,9 +157,8 @@ func (as *Storage) LoadAuthorizations(workspaceID int) (map[string]bool, error) 
 	return authorizations, nil
 }
 
-func (as *Storage) LoadAuthFor(p *environment.PipeConfig) (*environment.AuthorizationConfig, error) {
-	service := environment.Create(p.ServiceID, p.WorkspaceID)
-	auth, err := as.LoadAuth(service)
+func (as *Storage) LoadAuthFor(s integrations.ExternalService) (*Authorization, error) {
+	auth, err := as.LoadAuth(s)
 	if err != nil {
 		return auth, err
 	}
@@ -152,13 +168,12 @@ func (as *Storage) LoadAuthFor(p *environment.PipeConfig) (*environment.Authoriz
 	return auth, nil
 }
 
-func (as *Storage) IntegrationFor(p *environment.PipeConfig) (integrations.Integration, error) {
-	service := environment.Create(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return service, err
+func (as *Storage) IntegrationFor(s integrations.ExternalService, serviceParams []byte) (integrations.ExternalService, error) {
+	if err := s.SetParams(serviceParams); err != nil {
+		return s, err
 	}
-	if _, err := as.LoadAuth(service); err != nil {
-		return service, err
+	if _, err := as.LoadAuth(s); err != nil {
+		return s, err
 	}
-	return service, nil
+	return s, nil
 }

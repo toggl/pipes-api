@@ -23,7 +23,7 @@ var (
 
 func TestNewClient(t *testing.T) {
 	expectedKey := "basecamp:users"
-	p := environment.NewPipe(workspaceID, serviceID, pipeID)
+	p := NewPipe(workspaceID, serviceID, pipeID)
 
 	if p.Key != expectedKey {
 		t.Errorf("NewPipe Key = %v, want %v", p.Key, expectedKey)
@@ -50,7 +50,7 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 	pipesStorage := NewStorage(cfgService, db)
 	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
-	p := environment.NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
+	p := NewPipe(workspaceID, mock.ServiceName, projectsPipeID)
 
 	jsonUnmarshalError := &json.UnmarshalTypeError{
 		Value:  "asd",
@@ -66,10 +66,10 @@ func TestPipeEndSyncJSONParsingFail(t *testing.T) {
 		t.Fatalf("Unexpected error %v", err)
 	}
 
-	if p.PipeStatus.Message != environment.ErrJSONParsing.Error() {
+	if p.PipeStatus.Message != ErrJSONParsing.Error() {
 		t.Fatalf(
 			"FailPipe expected to get wrapper error %s, but get %s",
-			environment.ErrJSONParsing.Error(), p.PipeStatus.Message,
+			ErrJSONParsing.Error(), p.PipeStatus.Message,
 		)
 	}
 }
@@ -94,8 +94,8 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	pipesStorage := NewStorage(cfgService, db)
 	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
-	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *environment.PipeConfig {
-		pipe := environment.NewPipe(workspaceID, serviceID, pipeID)
+	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *Pipe {
+		pipe := NewPipe(workspaceID, serviceID, pipeID)
 		pipe.Automatic = true
 		pipe.Configured = true
 		data, err := json.Marshal(pipe)
@@ -186,14 +186,15 @@ func TestGetProjects(t *testing.T) {
 	pipesStorage := NewStorage(cfgService, db)
 	pipeService := NewService(cfgService, authStore, pipesStorage, connStore, api)
 
-	p := environment.NewPipe(1, mock.ServiceName, "projects")
+	p := NewPipe(1, mock.ServiceName, "projects")
 
 	err = pipeService.fetchProjects(p)
 	if err != nil {
 		t.Error(err)
 	}
 
-	s, err := pipeService.auth.IntegrationFor(p)
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := pipeService.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		t.Error(err)
 	}

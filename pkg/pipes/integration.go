@@ -1,4 +1,4 @@
-package environment
+package pipes
 
 import (
 	"fmt"
@@ -12,18 +12,18 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations/teamweek"
 )
 
-type IntegrationConfig struct {
-	ID         string        `json:"id"`
-	Name       string        `json:"name"`
-	Link       string        `json:"link"`
-	Image      string        `json:"image"`
-	AuthURL    string        `json:"auth_url,omitempty"`
-	AuthType   string        `json:"auth_type,omitempty"`
-	Authorized bool          `json:"authorized"`
-	Pipes      []*PipeConfig `json:"pipes"`
+type Integration struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	Link       string  `json:"link"`
+	Image      string  `json:"image"`
+	AuthURL    string  `json:"auth_url,omitempty"`
+	AuthType   string  `json:"auth_type,omitempty"`
+	Authorized bool    `json:"authorized"`
+	Pipes      []*Pipe `json:"pipes"`
 }
 
-func Create(serviceID string, workspaceID int) integrations.Integration {
+func Create(serviceID string, workspaceID int) integrations.ExternalService {
 	switch serviceID {
 	case basecamp.ServiceName:
 		return &basecamp.Service{WorkspaceID: workspaceID}

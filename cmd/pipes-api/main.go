@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bugsnag/bugsnag-go"
+	_ "github.com/lib/pq"
 
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/autosync"

@@ -169,4 +169,4 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 	return []*toggl.Task{}, nil
 }
 
-var _ integrations.Integration = (*Service)(nil)
+var _ integrations.ExternalService = (*Service)(nil)

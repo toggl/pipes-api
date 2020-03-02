@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/bugsnag/bugsnag-go"
@@ -28,6 +31,10 @@ const (
 	timeEntriesPipeId = "time_entries"
 )
 
+type IntegrationsLoader interface {
+	LoadIntegrations() []*Integration
+}
+
 type Service struct {
 	env *environment.Environment
 	api *toggl.ApiClient
@@ -36,8 +43,14 @@ type Service struct {
 	auth  *authorization.Storage
 	pipes *Storage
 
+	iLoader IntegrationsLoader
+
 	availablePipeType    *regexp.Regexp
 	availableServiceType *regexp.Regexp
+
+	availableIntegrations []*Integration
+
+	mx sync.RWMutex
 }
 
 func NewService(env *environment.Environment, auth *authorization.Storage, pipes *Storage, conn *connection.Storage, api *toggl.ApiClient) *Service {
@@ -48,15 +61,54 @@ func NewService(env *environment.Environment, auth *authorization.Storage, pipes
 		auth:  auth,
 		pipes: pipes,
 		conn:  conn,
+
+		availableIntegrations: []*Integration{},
 	}
 
-	svc.fillAvailablePipeTypes()
-	svc.fillAvailableServices(env.GetIntegrations())
+	svc.loadIntegrations(env.WorkDir).
+		fillAvailableServices().
+		fillAvailablePipeTypes()
+
+	svc.mx.RLock()
+	for _, integration := range svc.availableIntegrations {
+		svc.auth.SetAuthorizationType(integration.ID, integration.AuthType)
+	}
+	svc.mx.RUnlock()
+
 	return svc
 }
 
-func (svc *Service) postUsers(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) loadIntegrations(workDir string) *Service {
+	svc.mx.Lock()
+	defer svc.mx.Unlock()
+	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "integrations.json"))
+	if err != nil {
+		log.Fatalf("Could not read integrations.json, reason: %v", err)
+	}
+	if err := json.Unmarshal(b, &svc.availableIntegrations); err != nil {
+		log.Fatalf("Could not parse integrations.json, reason: %v", err)
+	}
+	return svc
+}
+
+func (svc *Service) getIntegrations() []*Integration {
+	svc.mx.RLock()
+	defer svc.mx.RUnlock()
+	return svc.availableIntegrations
+}
+
+func (svc *Service) fillAvailableServices() *Service {
+	ids := make([]string, len(svc.availableIntegrations))
+	for i := range svc.availableIntegrations {
+		ids = append(ids, svc.availableIntegrations[i].ID)
+	}
+	svc.availableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
+	return svc
+}
+
+func (svc *Service) postUsers(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -102,8 +154,9 @@ func (svc *Service) postUsers(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) postClients(p *environment.PipeConfig) error {
-	service, err := svc.auth.IntegrationFor(p)
+func (svc *Service) postClients(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -138,8 +191,9 @@ func (svc *Service) postClients(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) postProjects(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) postProjects(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -171,8 +225,9 @@ func (svc *Service) postProjects(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) postTodoLists(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) postTodoLists(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -211,8 +266,9 @@ func (svc *Service) postTodoLists(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) postTasks(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) postTasks(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -251,7 +307,7 @@ func (svc *Service) postTasks(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) postTimeEntries(p *environment.PipeConfig, service integrations.Integration) error {
+func (svc *Service) postTimeEntries(p *Pipe, service integrations.ExternalService) error {
 	var err error
 	var entriesCon *connection.Connection
 	var usersCon, tasksCon, projectsCon *connection.ReversedConnection
@@ -317,15 +373,16 @@ func (svc *Service) postTimeEntries(p *environment.PipeConfig, service integrati
 }
 
 // ==========================  fetchSomething ==================================
-func (svc *Service) fetchUsers(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) fetchUsers(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
 	users, err := s.Users()
 	response := toggl.UsersResponse{Users: users}
 	defer func() {
-		s, err := svc.auth.IntegrationFor(p)
+		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 		if err != nil {
 			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
 			return
@@ -345,15 +402,16 @@ func (svc *Service) fetchUsers(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) fetchClients(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) fetchClients(p *Pipe) error {
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
 	clients, err := s.Clients()
 	response := toggl.ClientsResponse{Clients: clients}
 	defer func() {
-		s, err := svc.auth.IntegrationFor(p)
+		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 		if err != nil {
 			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
 			return
@@ -381,10 +439,12 @@ func (svc *Service) fetchClients(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) fetchProjects(p *environment.PipeConfig) error {
+func (svc *Service) fetchProjects(p *Pipe) error {
 	response := toggl.ProjectsResponse{}
+	service := Create(p.ServiceID, p.WorkspaceID)
+
 	defer func() {
-		s, err := svc.auth.IntegrationFor(p)
+		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 		if err != nil {
 			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
 			return
@@ -407,7 +467,7 @@ func (svc *Service) fetchProjects(p *environment.PipeConfig) error {
 		return err
 	}
 
-	service, err := svc.auth.IntegrationFor(p)
+	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -438,10 +498,12 @@ func (svc *Service) fetchProjects(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) fetchTodoLists(p *environment.PipeConfig) error {
+func (svc *Service) fetchTodoLists(p *Pipe) error {
 	response := toggl.TasksResponse{}
+	service := Create(p.ServiceID, p.WorkspaceID)
+
 	defer func() {
-		s, err := svc.auth.IntegrationFor(p)
+		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 		if err != nil {
 			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
 			return
@@ -464,7 +526,7 @@ func (svc *Service) fetchTodoLists(p *environment.PipeConfig) error {
 		return err
 	}
 
-	service, err := svc.auth.IntegrationFor(p)
+	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -498,10 +560,11 @@ func (svc *Service) fetchTodoLists(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) fetchTasks(p *environment.PipeConfig) error {
+func (svc *Service) fetchTasks(p *Pipe) error {
 	response := toggl.TasksResponse{}
+	service := Create(p.ServiceID, p.WorkspaceID)
 	defer func() {
-		s, err := svc.auth.IntegrationFor(p)
+		s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 		if err != nil {
 			log.Printf("could not get integration for pipe: %v, reason: %v", p.ID, err)
 			return
@@ -524,7 +587,7 @@ func (svc *Service) fetchTasks(p *environment.PipeConfig) error {
 		return err
 	}
 
-	service, err := svc.auth.IntegrationFor(p)
+	service, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -557,7 +620,7 @@ func (svc *Service) fetchTasks(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) fetchTimeEntries(p *environment.PipeConfig) error {
+func (svc *Service) fetchTimeEntries(p *Pipe) error {
 	return nil
 }
 
@@ -565,7 +628,7 @@ func (svc *Service) fetchTimeEntries(p *environment.PipeConfig) error {
 
 // ==========================  getSomething ====================================
 
-func (svc *Service) GetUsers(s integrations.Integration) (*toggl.UsersResponse, error) {
+func (svc *Service) GetUsers(s integrations.ExternalService) (*toggl.UsersResponse, error) {
 	b, err := svc.pipes.getObject(s, usersPipeID)
 	if err != nil || b == nil {
 		return nil, err
@@ -579,7 +642,7 @@ func (svc *Service) GetUsers(s integrations.Integration) (*toggl.UsersResponse, 
 	return &usersResponse, nil
 }
 
-func (svc *Service) getClients(s integrations.Integration) (*toggl.ClientsResponse, error) {
+func (svc *Service) getClients(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
 	b, err := svc.pipes.getObject(s, clientsPipeID)
 	if err != nil || b == nil {
 		return nil, err
@@ -593,7 +656,7 @@ func (svc *Service) getClients(s integrations.Integration) (*toggl.ClientsRespon
 	return &clientsResponse, nil
 }
 
-func (svc *Service) getProjects(s integrations.Integration) (*toggl.ProjectsResponse, error) {
+func (svc *Service) getProjects(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
 	b, err := svc.pipes.getObject(s, projectsPipeID)
 	if err != nil || b == nil {
 		return nil, err
@@ -608,7 +671,7 @@ func (svc *Service) getProjects(s integrations.Integration) (*toggl.ProjectsResp
 	return &projectsResponse, nil
 }
 
-func (svc *Service) getTasks(s integrations.Integration, objType string) (*toggl.TasksResponse, error) {
+func (svc *Service) getTasks(s integrations.ExternalService, objType string) (*toggl.TasksResponse, error) {
 	b, err := svc.pipes.getObject(s, objType)
 	if err != nil || b == nil {
 		return nil, err
@@ -624,7 +687,7 @@ func (svc *Service) getTasks(s integrations.Integration, objType string) (*toggl
 
 // =============================================================================
 
-func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]environment.IntegrationConfig, error) {
+func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]Integration, error) {
 	authorizations, err := svc.auth.LoadAuthorizations(workspaceID)
 	if err != nil {
 		return nil, err
@@ -638,15 +701,15 @@ func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]environment.Integr
 		return nil, err
 	}
 
-	var igr []environment.IntegrationConfig
-	for _, current := range svc.env.GetIntegrations() {
+	var igr []Integration
+	for _, current := range svc.getIntegrations() {
 		var integration = current
 		integration.AuthURL = svc.env.OAuth2URL(integration.ID)
 		integration.Authorized = authorizations[integration.ID]
-		var pipes []*environment.PipeConfig
+		var pipes []*Pipe
 		for i := range integration.Pipes {
 			var pipe = *integration.Pipes[i]
-			key := environment.PipesKey(integration.ID, pipe.ID)
+			key := PipesKey(integration.ID, pipe.ID)
 			existingPipe := workspacePipes[key]
 			if existingPipe != nil {
 				pipe.Automatic = existingPipe.Automatic
@@ -662,7 +725,7 @@ func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]environment.Integr
 	return igr, nil
 }
 
-func (svc *Service) endSync(p *environment.PipeConfig, saveStatus bool, err error) error {
+func (svc *Service) endSync(p *Pipe, saveStatus bool, err error) error {
 	if !saveStatus {
 		return err
 	}
@@ -670,7 +733,7 @@ func (svc *Service) endSync(p *environment.PipeConfig, saveStatus bool, err erro
 	if err != nil {
 		// If it is JSON marshalling error suppress it for status
 		if _, ok := err.(*json.UnmarshalTypeError); ok {
-			err = environment.ErrJSONParsing
+			err = ErrJSONParsing
 		}
 		p.PipeStatus.AddError(err)
 	}
@@ -690,7 +753,7 @@ func (svc *Service) endSync(p *environment.PipeConfig, saveStatus bool, err erro
 	return nil
 }
 
-func (svc *Service) FetchObjects(p *environment.PipeConfig, saveStatus bool) (err error) {
+func (svc *Service) FetchObjects(p *Pipe, saveStatus bool) (err error) {
 	switch p.ID {
 	case "users":
 		err = svc.fetchUsers(p)
@@ -708,7 +771,7 @@ func (svc *Service) FetchObjects(p *environment.PipeConfig, saveStatus bool) (er
 	return svc.endSync(p, saveStatus, err)
 }
 
-func (svc *Service) postObjects(p *environment.PipeConfig, saveStatus bool) (err error) {
+func (svc *Service) postObjects(p *Pipe, saveStatus bool) (err error) {
 	switch p.ID {
 	case "users":
 		err = svc.postUsers(p)
@@ -719,8 +782,9 @@ func (svc *Service) postObjects(p *environment.PipeConfig, saveStatus bool) (err
 	case "todos", "tasks":
 		err = svc.postTasks(p)
 	case "timeentries":
-		var service integrations.Integration
-		service, err = svc.auth.IntegrationFor(p)
+		var service integrations.ExternalService
+		s := Create(p.ServiceID, p.WorkspaceID)
+		service, err = svc.auth.IntegrationFor(s, p.ServiceParams)
 		if err != nil {
 			break
 		}
@@ -731,13 +795,13 @@ func (svc *Service) postObjects(p *environment.PipeConfig, saveStatus bool) (err
 	return svc.endSync(p, saveStatus, err)
 }
 
-func (svc *Service) newStatus(p *environment.PipeConfig) error {
+func (svc *Service) newStatus(p *Pipe) error {
 	svc.pipes.loadLastSync(p)
-	p.PipeStatus = environment.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, svc.env.GetPipesAPIHost())
+	p.PipeStatus = NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, svc.env.GetPipesAPIHost())
 	return svc.pipes.savePipeStatus(p.PipeStatus)
 }
 
-func (svc *Service) Run(p *environment.PipeConfig) {
+func (svc *Service) Run(p *Pipe) {
 	var err error
 	defer func() {
 		err := svc.endSync(p, true, err)
@@ -757,7 +821,8 @@ func (svc *Service) Run(p *environment.PipeConfig) {
 		return
 	}
 
-	auth, err := svc.auth.LoadAuthFor(p)
+	s := Create(p.ServiceID, p.WorkspaceID)
+	auth, err := svc.auth.LoadAuthFor(s)
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
 			"pipe": {
@@ -798,8 +863,10 @@ func (svc *Service) Run(p *environment.PipeConfig) {
 	}
 }
 
-func (svc *Service) ClearPipeConnections(p *environment.PipeConfig) error {
-	s, err := svc.auth.IntegrationFor(p)
+func (svc *Service) ClearPipeConnections(p *Pipe) error {
+
+	service := Create(p.ServiceID, p.WorkspaceID)
+	s, err := svc.auth.IntegrationFor(service, p.ServiceParams)
 	if err != nil {
 		return err
 	}
@@ -819,11 +886,11 @@ func (svc *Service) ClearPipeConnections(p *environment.PipeConfig) error {
 	return nil
 }
 
-func (svc *Service) GetPipesFromQueue() ([]*environment.PipeConfig, error) {
+func (svc *Service) GetPipesFromQueue() ([]*Pipe, error) {
 	return svc.pipes.GetPipesFromQueue()
 }
 
-func (svc *Service) SetQueuedPipeSynced(pipe *environment.PipeConfig) error {
+func (svc *Service) SetQueuedPipeSynced(pipe *Pipe) error {
 	return svc.pipes.SetQueuedPipeSynced(pipe)
 }
 
@@ -831,7 +898,7 @@ func (svc *Service) QueueAutomaticPipes() error {
 	return svc.pipes.QueueAutomaticPipes()
 }
 
-func (svc *Service) QueuePipeAsFirst(pipe *environment.PipeConfig) error {
+func (svc *Service) QueuePipeAsFirst(pipe *Pipe) error {
 	return svc.pipes.QueuePipeAsFirst(pipe)
 }
 
@@ -843,14 +910,9 @@ func (svc *Service) AvailableServiceType(serviceID string) bool {
 	return svc.availableServiceType.MatchString(serviceID)
 }
 
-func (svc *Service) fillAvailablePipeTypes() {
+func (svc *Service) fillAvailablePipeTypes() *Service {
+	svc.mx.Lock()
+	defer svc.mx.Unlock()
 	svc.availablePipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
-}
-
-func (svc *Service) fillAvailableServices(integrations []*environment.IntegrationConfig) {
-	ids := make([]string, len(integrations))
-	for i := range integrations {
-		ids = append(ids, integrations[i].ID)
-	}
-	svc.availableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
+	return svc
 }

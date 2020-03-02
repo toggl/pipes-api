@@ -41,7 +41,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		integrations[i].Pipes = nil
 	}
 
-	want := []environment.IntegrationConfig{
+	want := []Integration{
 		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
 		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
 		{ID: "teamweek", Name: "Toggl Plan", Link: "https://support.toggl.com/en/articles/2212490-integration-with-toggl-plan-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
@@ -86,7 +86,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
 	}
 
-	want := [][]*environment.PipeConfig{
+	want := [][]*Pipe{
 		{ // Basecamp
 			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
 			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},

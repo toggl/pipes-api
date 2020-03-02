@@ -1,4 +1,4 @@
-package environment
+package pipes
 
 import (
 	"errors"
@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-type PipeConfig struct {
-	ID              string            `json:"id"`
-	Name            string            `json:"name"`
-	Description     string            `json:"description,omitempty"`
-	Automatic       bool              `json:"automatic,omitempty"`
-	AutomaticOption bool              `json:"automatic_option"`
-	Configured      bool              `json:"configured"`
-	Premium         bool              `json:"premium"`
-	ServiceParams   []byte            `json:"service_params,omitempty"`
-	PipeStatus      *PipeStatusConfig `json:"pipe_status,omitempty"`
+type Pipe struct {
+	ID              string  `json:"id"`
+	Name            string  `json:"name"`
+	Description     string  `json:"description,omitempty"`
+	Automatic       bool    `json:"automatic,omitempty"`
+	AutomaticOption bool    `json:"automatic_option"`
+	Configured      bool    `json:"configured"`
+	Premium         bool    `json:"premium"`
+	ServiceParams   []byte  `json:"service_params,omitempty"`
+	PipeStatus      *Status `json:"pipe_status,omitempty"`
 
 	WorkspaceID int        `json:"-"`
 	ServiceID   string     `json:"-"`
@@ -24,8 +24,8 @@ type PipeConfig struct {
 	LastSync    *time.Time `json:"-"`
 }
 
-func NewPipe(workspaceID int, serviceID, pipeID string) *PipeConfig {
-	return &PipeConfig{
+func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
+	return &Pipe{
 		ID:          pipeID,
 		Key:         PipesKey(serviceID, pipeID),
 		ServiceID:   serviceID,
@@ -33,7 +33,7 @@ func NewPipe(workspaceID int, serviceID, pipeID string) *PipeConfig {
 	}
 }
 
-func (p *PipeConfig) ValidateServiceConfig(payload []byte) string {
+func (p *Pipe) ValidateServiceConfig(payload []byte) string {
 	service := Create(p.ServiceID, p.WorkspaceID)
 	err := service.SetParams(payload)
 	if err != nil {
@@ -43,7 +43,7 @@ func (p *PipeConfig) ValidateServiceConfig(payload []byte) string {
 	return ""
 }
 
-func (p *PipeConfig) ValidatePayload(payload []byte) string {
+func (p *Pipe) ValidatePayload(payload []byte) string {
 	if p.ID == "users" && len(payload) == 0 {
 		return "Missing request payload"
 	}

@@ -96,4 +96,4 @@ func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
 	return 0, nil
 }
 
-var _ integrations.Integration = (*Service)(nil)
+var _ integrations.ExternalService = (*Service)(nil)
