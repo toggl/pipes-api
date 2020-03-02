@@ -8,7 +8,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations/basecamp"
 	"github.com/toggl/pipes-api/pkg/integrations/freshbooks"
 	"github.com/toggl/pipes-api/pkg/integrations/github"
-	"github.com/toggl/pipes-api/pkg/integrations/mock"
 	"github.com/toggl/pipes-api/pkg/integrations/teamweek"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -94,8 +93,6 @@ func Create(serviceID string, workspaceID int) ExternalService {
 		return &asana.Service{WorkspaceID: workspaceID}
 	case github.ServiceName:
 		return &github.Service{WorkspaceID: workspaceID}
-	case mock.ServiceName:
-		return &mock.Service{WorkspaceID: workspaceID}
 	default:
 		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
 	}
@@ -106,4 +103,3 @@ var _ ExternalService = (*freshbooks.Service)(nil)
 var _ ExternalService = (*teamweek.Service)(nil)
 var _ ExternalService = (*asana.Service)(nil)
 var _ ExternalService = (*github.Service)(nil)
-var _ ExternalService = (*mock.Service)(nil)
