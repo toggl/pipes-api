@@ -59,7 +59,7 @@ func (cs *Storage) LoadReversed(workspaceID int, key string) (*ReversedConnectio
 	if err != nil {
 		return nil, err
 	}
-	reversed := &ReversedConnection{make(map[int]string)}
+	reversed := NewReversedConnection()
 	for key, value := range connection.Data {
 		reversed.Data[value] = key
 	}

@@ -560,19 +560,23 @@ func (svc *Service) postTasks(p *Pipe) error {
 }
 
 func (svc *Service) postTimeEntries(p *Pipe, service ExternalService) error {
-	var err error
-	var entriesCon *connection.Connection
-	var usersCon, tasksCon, projectsCon *connection.ReversedConnection
-	if usersCon, err = svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(toggl.UsersPipeID)); err != nil {
+	usersCon, err := svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(toggl.UsersPipeID))
+	if err != nil {
 		return err
 	}
-	if tasksCon, err = svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(toggl.TasksPipeID)); err != nil {
+
+	tasksCon, err := svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(toggl.TasksPipeID))
+	if err != nil {
 		return err
 	}
-	if projectsCon, err = svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(toggl.ProjectsPipeID)); err != nil {
+
+	projectsCon, err := svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(toggl.ProjectsPipeID))
+	if err != nil {
 		return err
 	}
-	if entriesCon, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(toggl.TimeEntriesPipeID)); err != nil {
+
+	entriesCon, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(toggl.TimeEntriesPipeID))
+	if err != nil {
 		return err
 	}
 
@@ -588,9 +592,9 @@ func (svc *Service) postTimeEntries(p *Pipe, service ExternalService) error {
 
 	for _, entry := range timeEntries {
 		entry.ForeignID = strconv.Itoa(entriesCon.Data[strconv.Itoa(entry.ID)])
-		entry.ForeignTaskID = strconv.Itoa(tasksCon.GetInt(entry.TaskID))
-		entry.ForeignUserID = strconv.Itoa(usersCon.GetInt(entry.UserID))
-		entry.ForeignProjectID = strconv.Itoa(projectsCon.GetInt(entry.ProjectID))
+		entry.ForeignTaskID = strconv.Itoa(tasksCon.GetForeignID(entry.TaskID))
+		entry.ForeignUserID = strconv.Itoa(usersCon.GetForeignID(entry.UserID))
+		entry.ForeignProjectID = strconv.Itoa(projectsCon.GetForeignID(entry.ProjectID))
 
 		entryID, err := service.ExportTimeEntry(&entry)
 		if err != nil {
