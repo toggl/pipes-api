@@ -72,23 +72,17 @@ func (cs *Storage) load(workspaceID int, key string) (*Connection, error) {
 		return nil, err
 	}
 	defer rows.Close()
+
 	connection := NewConnection(workspaceID, key)
 	if rows.Next() {
-		if err := cs.scan(rows, connection); err != nil {
+		var b []byte
+		if err := rows.Scan(&connection.Key, &b); err != nil {
+			return nil, err
+		}
+		err := json.Unmarshal(b, connection)
+		if err != nil {
 			return nil, err
 		}
 	}
 	return connection, nil
-}
-
-func (cs *Storage) scan(rows *sql.Rows, c *Connection) error {
-	var b []byte
-	if err := rows.Scan(&c.Key, &b); err != nil {
-		return err
-	}
-	err := json.Unmarshal(b, c)
-	if err != nil {
-		return err
-	}
-	return nil
 }

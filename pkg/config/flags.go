@@ -13,12 +13,11 @@ const (
 )
 
 type Flags struct {
-	Port             int
-	WorkDir          string
-	BugsnagAPIKey    string
-	Environment      string
-	DbConnString     string
-	TestDBConnString string
+	Port          int
+	WorkDir       string
+	BugsnagAPIKey string
+	Environment   string
+	DbConnString  string
 }
 
 func ParseFlags(flags *Flags) {
@@ -29,7 +28,6 @@ func ParseFlags(flags *Flags) {
 	fs.StringVar(&flags.BugsnagAPIKey, "bugsnag_key", "", "Bugsnag API Key")
 	fs.StringVar(&flags.Environment, "EnvType", EnvTypeDevelopment, "env")
 	fs.StringVar(&flags.DbConnString, "db_conn_string", "dbname=pipes_development user=pipes_user host=localhost sslmode=disable port=5432", "DB Connection String")
-	fs.StringVar(&flags.TestDBConnString, "test_db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "test DB Connection String")
 
 	fs.Parse(os.Args[1:])
 }

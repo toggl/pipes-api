@@ -20,7 +20,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
 	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
-	db, err := sql.Open("postgres", flags.TestDBConnString)
+	db, err := sql.Open("postgres", flags.DbConnString)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,7 +71,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
 	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
 
-	db, err := sql.Open("postgres", flags.TestDBConnString)
+	db, err := sql.Open("postgres", flags.DbConnString)
 	if err != nil {
 		log.Fatal(err)
 	}
