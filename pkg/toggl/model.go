@@ -21,12 +21,16 @@ type User struct {
 	Email          string `json:"email"`
 	Name           string `json:"name"`
 	SendInvitation bool   `json:"send_invitation,omitempty"`
-	ForeignID      string `json:"foreign_id,omitempty"`
+
+	// ForeignID is a meta information which won't be saved into DB on "toggl_api" side.
+	ForeignID string `json:"foreign_id,omitempty"`
 }
 
 type Client struct {
-	ID        int    `json:"id,omitempty"`
-	Name      string `json:"name"`
+	ID   int    `json:"id,omitempty"`
+	Name string `json:"name"`
+
+	// ForeignID is a meta information which won't be saved into DB on "toggl_api" side.
 	ForeignID string `json:"foreign_id,omitempty"`
 }
 
@@ -50,6 +54,7 @@ type Project struct {
 	Billable bool   `json:"billable,omitempty"`
 	ClientID int    `json:"cid,omitempty"`
 
+	// ForeignID is a meta information which won't be saved into DB on "toggl_api" side.
 	ForeignID       string `json:"foreign_id,omitempty"`
 	ForeignClientID string `json:"-"`
 }
@@ -60,6 +65,7 @@ type Task struct {
 	Active    bool   `json:"active"`
 	ProjectID int    `json:"pid"`
 
+	// ForeignID is a meta information which won't be saved into DB on "toggl_api" side.
 	ForeignID        string `json:"foreign_id,omitempty"`
 	ForeignProjectID string `json:"-"`
 }
@@ -75,7 +81,8 @@ type TimeEntry struct {
 	DurationInSeconds int    `json:"duration"`
 	Description       string `json:"description,omitempty"`
 
-	ForeignID        string `json:"-"`
+	// ForeignID is a meta information which won't be saved into DB on "toggl_api" side.
+	ForeignID        string `json:"foreign_id,omitempty"`
 	ForeignTaskID    string `json:"-"`
 	ForeignUserID    string `json:"-"`
 	ForeignProjectID string `json:"-"`
