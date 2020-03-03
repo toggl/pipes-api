@@ -3,6 +3,8 @@ package connection
 import (
 	"database/sql"
 	"encoding/json"
+
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -28,6 +30,7 @@ const (
     UNION
     SELECT * FROM existing_connection
   `
+	truncateConnectionSQL = `TRUNCATE TABLE connections`
 )
 
 type Storage struct {
