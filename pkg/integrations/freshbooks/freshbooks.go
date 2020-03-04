@@ -12,7 +12,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-const ServiceName = "freshbooks"
+const ServiceID = "freshbooks"
 
 type Service struct {
 	WorkspaceID int
@@ -20,8 +20,8 @@ type Service struct {
 	token       oauthplain.Token
 }
 
-func (s *Service) Name() string {
-	return ServiceName
+func (s *Service) ID() string {
+	return ServiceID
 }
 
 func (s *Service) GetWorkspaceID() int {

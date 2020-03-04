@@ -27,8 +27,8 @@ type (
 	// ExternalService interface for external integrations
 	// Example implementation: github.go
 	ExternalService interface {
-		// Name of the service
-		Name() string
+		// ID of the service
+		ID() string
 
 		// WorkspaceID helper function, should just return workspaceID
 		GetWorkspaceID() int
@@ -83,15 +83,15 @@ type (
 
 func Create(serviceID string, workspaceID int) ExternalService {
 	switch serviceID {
-	case basecamp.ServiceName:
+	case basecamp.ServiceID:
 		return &basecamp.Service{WorkspaceID: workspaceID}
-	case freshbooks.ServiceName:
+	case freshbooks.ServiceID:
 		return &freshbooks.Service{WorkspaceID: workspaceID}
-	case teamweek.ServiceName:
+	case teamweek.ServiceID:
 		return &teamweek.Service{WorkspaceID: workspaceID}
-	case asana.ServiceName:
+	case asana.ServiceID:
 		return &asana.Service{WorkspaceID: workspaceID}
-	case github.ServiceName:
+	case github.ServiceID:
 		return &github.Service{WorkspaceID: workspaceID}
 	default:
 		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))

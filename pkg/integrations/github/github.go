@@ -13,15 +13,15 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-const ServiceName = "github"
+const ServiceID = "github"
 
 type Service struct {
 	WorkspaceID int
 	token       oauth.Token
 }
 
-func (s *Service) Name() string {
-	return ServiceName
+func (s *Service) ID() string {
+	return ServiceID
 }
 
 func (s *Service) GetWorkspaceID() int {

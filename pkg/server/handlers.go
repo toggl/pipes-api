@@ -226,7 +226,7 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.Create(serviceID, workspaceID)
-	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.Name())
+	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -234,7 +234,7 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 		return internalServerError(err.Error())
 	}
 
-	if err := c.authStore.Destroy(service.GetWorkspaceID(), service.Name()); err != nil {
+	if err := c.authStore.Destroy(service.GetWorkspaceID(), service.ID()); err != nil {
 		return internalServerError(err.Error())
 	}
 	if err := c.pipesStore.DeletePipeByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
@@ -250,7 +250,7 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.Create(serviceID, workspaceID)
-	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.Name())
+	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
@@ -290,7 +290,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.Create(serviceID, workspaceID)
-	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.Name())
+	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}

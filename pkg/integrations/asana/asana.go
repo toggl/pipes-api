@@ -15,7 +15,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-const ServiceName = "asana"
+const ServiceID = "asana"
 
 var asanaPerPageLimit uint32 = 100
 
@@ -29,8 +29,8 @@ type AsanaParams struct {
 	AccountID int64 `json:"account_id"`
 }
 
-func (s *Service) Name() string {
-	return ServiceName
+func (s *Service) ID() string {
+	return ServiceID
 }
 
 func (s *Service) GetWorkspaceID() int {

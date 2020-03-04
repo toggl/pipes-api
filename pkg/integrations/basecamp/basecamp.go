@@ -13,7 +13,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-const ServiceName = "basecamp"
+const ServiceID = "basecamp"
 
 type Service struct {
 	WorkspaceID int
@@ -26,8 +26,8 @@ type BasecampParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) Name() string {
-	return ServiceName
+func (s *Service) ID() string {
+	return ServiceID
 }
 
 func (s *Service) GetWorkspaceID() int {
