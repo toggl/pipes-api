@@ -1,7 +1,6 @@
 package integrations
 
 import (
-	"errors"
 	"fmt"
 	"time"
 )
@@ -33,16 +32,6 @@ func NewPipe(workspaceID int, serviceID, pipeID string) *Pipe {
 	}
 }
 
-func (p *Pipe) ValidateServiceConfig(payload []byte) string {
-	service := Create(p.ServiceID, p.WorkspaceID)
-	err := service.SetParams(payload)
-	if err != nil {
-		return err.Error()
-	}
-	p.ServiceParams = payload
-	return ""
-}
-
 func (p *Pipe) ValidatePayload(payload []byte) string {
 	if p.ID == "users" && len(payload) == 0 {
 		return "Missing request payload"
@@ -54,8 +43,3 @@ func (p *Pipe) ValidatePayload(payload []byte) string {
 func PipesKey(serviceID, pipeID string) string {
 	return fmt.Sprintf("%s:%s", serviceID, pipeID)
 }
-
-var (
-	// ErrJSONParsing hides json marshalling errors from users
-	ErrJSONParsing = errors.New("Failed to parse response from service, please contact support")
-)

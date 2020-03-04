@@ -89,10 +89,13 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 	}
 
 	pipe := integrations.NewPipe(workspaceID, serviceID, pipeID)
-	errorMsg := pipe.ValidateServiceConfig(req.body)
-	if errorMsg != "" {
-		return badRequest(errorMsg)
+
+	service := integrations.NewExternalService(serviceID, workspaceID)
+	err := service.SetParams(req.body)
+	if err != nil {
+		return badRequest(err)
 	}
+	pipe.ServiceParams = req.body
 
 	if err := c.pipesStore.Save(pipe); err != nil {
 		return internalServerError(err.Error())
@@ -225,7 +228,7 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := integrations.Create(serviceID, workspaceID)
+	service := integrations.NewExternalService(serviceID, workspaceID)
 	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return internalServerError(err.Error())
@@ -249,7 +252,7 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := integrations.Create(serviceID, workspaceID)
+	service := integrations.NewExternalService(serviceID, workspaceID)
 	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
@@ -289,7 +292,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := integrations.Create(serviceID, workspaceID)
+	service := integrations.NewExternalService(serviceID, workspaceID)
 	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)

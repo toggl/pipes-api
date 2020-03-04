@@ -20,6 +20,9 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
+// ErrJSONParsing hides json marshalling errors from users
+var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
+
 type OauthProvider interface {
 	GetOAuth2URL(integrationID string) string
 }
@@ -155,7 +158,7 @@ func (svc *Service) Run(p *Pipe) {
 		return
 	}
 
-	s := Create(p.ServiceID, p.WorkspaceID)
+	s := NewExternalService(p.ServiceID, p.WorkspaceID)
 	auth, err := svc.auth.Load(s.GetWorkspaceID(), s.ID())
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -225,7 +228,7 @@ func (svc *Service) Run(p *Pipe) {
 
 func (svc *Service) ClearPipeConnections(p *Pipe) error {
 
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -318,7 +321,7 @@ func (svc *Service) fillAvailableServices() *Service {
 }
 
 func (svc *Service) postUsers(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -377,7 +380,7 @@ func (svc *Service) postUsers(p *Pipe) error {
 }
 
 func (svc *Service) postClients(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -421,7 +424,7 @@ func (svc *Service) postClients(p *Pipe) error {
 }
 
 func (svc *Service) postProjects(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -463,7 +466,7 @@ func (svc *Service) postProjects(p *Pipe) error {
 }
 
 func (svc *Service) postTodoLists(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -512,7 +515,7 @@ func (svc *Service) postTodoLists(p *Pipe) error {
 }
 
 func (svc *Service) postTasks(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -630,7 +633,7 @@ func (svc *Service) postTimeEntries(p *Pipe, service ExternalService) error {
 
 // ==========================  fetchSomething ==================================
 func (svc *Service) fetchUsers(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -676,7 +679,7 @@ func (svc *Service) fetchUsers(p *Pipe) error {
 }
 
 func (svc *Service) fetchClients(p *Pipe) error {
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -730,7 +733,7 @@ func (svc *Service) fetchClients(p *Pipe) error {
 
 func (svc *Service) fetchProjects(p *Pipe) error {
 	response := toggl.ProjectsResponse{}
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 
 	defer func() {
 		if err := service.SetParams(p.ServiceParams); err != nil {
@@ -806,7 +809,7 @@ func (svc *Service) fetchProjects(p *Pipe) error {
 
 func (svc *Service) fetchTodoLists(p *Pipe) error {
 	response := toggl.TasksResponse{}
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 
 	defer func() {
 		if err := service.SetParams(p.ServiceParams); err != nil {
@@ -884,7 +887,7 @@ func (svc *Service) fetchTodoLists(p *Pipe) error {
 
 func (svc *Service) fetchTasks(p *Pipe) error {
 	response := toggl.TasksResponse{}
-	service := Create(p.ServiceID, p.WorkspaceID)
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
 	defer func() {
 		if err := service.SetParams(p.ServiceParams); err != nil {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
@@ -1046,7 +1049,7 @@ func (svc *Service) postObjects(p *Pipe, saveStatus bool) (err error) {
 	case "todos", "tasks":
 		err = svc.postTasks(p)
 	case "timeentries":
-		service := Create(p.ServiceID, p.WorkspaceID)
+		service := NewExternalService(p.ServiceID, p.WorkspaceID)
 		if err := service.SetParams(p.ServiceParams); err != nil {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			break

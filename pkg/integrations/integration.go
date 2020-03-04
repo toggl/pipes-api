@@ -23,66 +23,64 @@ type Integration struct {
 	Pipes      []*Pipe `json:"pipes"`
 }
 
-type (
-	// ExternalService interface for external integrations
-	// Example implementation: github.go
-	ExternalService interface {
-		// ID of the service
-		ID() string
+// ExternalService interface for external integrations
+// Example implementation: github.go
+type ExternalService interface {
+	// ID of the service
+	ID() string
 
-		// WorkspaceID helper function, should just return workspaceID
-		GetWorkspaceID() int
+	// WorkspaceID helper function, should just return workspaceID
+	GetWorkspaceID() int
 
-		// setSince takes the provided time.Time
-		// and adds it to ExternalService struct. This can be used
-		// to fetch just the modified data from external services.
-		SetSince(*time.Time)
+	// setSince takes the provided time.Time
+	// and adds it to ExternalService struct. This can be used
+	// to fetch just the modified data from external services.
+	SetSince(*time.Time)
 
-		// setParams takes the necessary ExternalService params
-		// (for example the selected account id) as JSON
-		// and adds them to ExternalService struct.
-		SetParams([]byte) error
+	// setParams takes the necessary ExternalService params
+	// (for example the selected account id) as JSON
+	// and adds them to ExternalService struct.
+	SetParams([]byte) error
 
-		// SetAuthData adds the provided oauth token to ExternalService struct
-		SetAuthData([]byte) error
+	// SetAuthData adds the provided oauth token to ExternalService struct
+	SetAuthData([]byte) error
 
-		// keyFor should provide unique key for object type
-		// Example: asana:account:XXXX:projects
-		KeyFor(string) string
+	// keyFor should provide unique key for object type
+	// Example: asana:account:XXXX:projects
+	KeyFor(string) string
 
-		// Accounts maps foreign account to Account models
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L9-L12
-		Accounts() ([]*toggl.Account, error)
+	// Accounts maps foreign account to Account models
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L9-L12
+	Accounts() ([]*toggl.Account, error)
 
-		// Users maps foreign users to User models
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L14-L19
-		Users() ([]*toggl.User, error)
+	// Users maps foreign users to User models
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L14-L19
+	Users() ([]*toggl.User, error)
 
-		// Clients maps foreign clients to Client models
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L21-L25
-		Clients() ([]*toggl.Client, error)
+	// Clients maps foreign clients to Client models
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L21-L25
+	Clients() ([]*toggl.Client, error)
 
-		// Projects maps foreign projects to Project models
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L27-L36
-		Projects() ([]*toggl.Project, error)
+	// Projects maps foreign projects to Project models
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L27-L36
+	Projects() ([]*toggl.Project, error)
 
-		// Tasks maps foreign tasks to Task models
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L38-L45
-		Tasks() ([]*toggl.Task, error)
+	// Tasks maps foreign tasks to Task models
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L38-L45
+	Tasks() ([]*toggl.Task, error)
 
-		// TodoLists maps foreign todo lists to Task models
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L38-45
-		TodoLists() ([]*toggl.Task, error)
+	// TodoLists maps foreign todo lists to Task models
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L38-45
+	TodoLists() ([]*toggl.Task, error)
 
-		// Exports time entry model to foreign service
-		// should return foreign id of saved time entry
-		// https://github.com/toggl/pipes-api/blob/master/model.go#L47-L61
-		ExportTimeEntry(*toggl.TimeEntry) (int, error)
-	}
-)
+	// Exports time entry model to foreign service
+	// should return foreign id of saved time entry
+	// https://github.com/toggl/pipes-api/blob/master/model.go#L47-L61
+	ExportTimeEntry(*toggl.TimeEntry) (int, error)
+}
 
-func Create(serviceID string, workspaceID int) ExternalService {
-	switch serviceID {
+func NewExternalService(externalServiceID string, workspaceID int) ExternalService {
+	switch externalServiceID {
 	case basecamp.ServiceID:
 		return &basecamp.Service{WorkspaceID: workspaceID}
 	case freshbooks.ServiceID:
@@ -94,7 +92,7 @@ func Create(serviceID string, workspaceID int) ExternalService {
 	case github.ServiceID:
 		return &github.Service{WorkspaceID: workspaceID}
 	default:
-		panic(fmt.Sprintf("getService: Unrecognized serviceID - %s", serviceID))
+		panic(fmt.Sprintf("getService: Unrecognized externalServiceID - %s", externalServiceID))
 	}
 }
 
