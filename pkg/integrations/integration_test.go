@@ -13,6 +13,8 @@ import (
 )
 
 func TestWorkspaceIntegrations(t *testing.T) {
+	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
+
 	flags := config.Flags{}
 	config.ParseFlags(&flags)
 
@@ -63,6 +65,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 }
 
 func TestWorkspaceIntegrationPipes(t *testing.T) {
+	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
 
 	flags := config.Flags{}
 	config.ParseFlags(&flags)

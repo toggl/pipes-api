@@ -12,8 +12,6 @@ const (
 	StatusSuccess = "success"
 )
 
-const startStatus = StatusRunning
-
 type Status struct {
 	Status        string   `json:"status,omitempty"`
 	Message       string   `json:"message,omitempty"`
@@ -29,14 +27,14 @@ type Status struct {
 	PipesApiHost string `json:"-"`
 }
 
-func NewPipeStatus(workspaceID int, serviceID, pipeID, pipesApiHost string) *Status {
+func NewPipeStatus(workspaceID int, externalServiceID, pipeID, pipesApiHost string) *Status {
 	return &Status{
-		Status:       startStatus,
+		Status:       StatusRunning,
 		SyncDate:     time.Now().Format(time.RFC3339),
 		WorkspaceID:  workspaceID,
-		ServiceID:    serviceID,
+		ServiceID:    externalServiceID,
 		PipeID:       pipeID,
-		Key:          PipesKey(serviceID, pipeID),
+		Key:          PipesKey(externalServiceID, pipeID),
 		PipesApiHost: pipesApiHost,
 	}
 }

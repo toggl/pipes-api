@@ -19,6 +19,7 @@ var (
 )
 
 func TestNewClient(t *testing.T) {
+	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
 	expectedKey := "basecamp:users"
 	p := NewPipe(workspaceID, serviceID, pipeID)
 
@@ -28,6 +29,8 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
+	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
+
 	flags := config.Flags{}
 	config.ParseFlags(&flags)
 
@@ -120,118 +123,3 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 		t.Error("should return pipe with workspace from retrievedWorkspace")
 	}
 }
-
-// TODO: Remove old test
-//func TestGetProjects(t *testing.T) {
-//	flags := config.Flags{}
-//	config.ParseFlags(&flags)
-//
-//	cfg := config.Load(flags.Environment, flags.WorkDir)
-//	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
-//	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
-//
-//	db, err := sql.Open("postgres", flags.TestDBConnString)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//
-//	defer db.Close()
-//
-//	api := toggl.NewApiClient(togglApiHost)
-//	authStore := authorization.NewStorage(db, cfg)
-//	connStore := connection.NewStorage(db)
-//
-//	pipesStorage := NewStorage(db)
-//	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
-//
-//	p := NewPipe(1, github.ServiceName, "projects")
-//
-//	err = pipeService.fetchProjects(p)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	service := Create(p.ServiceID, p.WorkspaceID)
-//	if err := service.SetParams(p.ServiceParams); err != nil {
-//		t.Error(err)
-//	}
-//	auth, err := pipeService.auth.Load(service.GetWorkspaceID(), service.ID())
-//	if err != nil {
-//		t.Error(err)
-//	}
-//	if err := service.SetAuthData(auth.Data); err != nil {
-//		t.Error(err)
-//	}
-//
-//	b, err := pipesStorage.getObject(service, "projects")
-//	if err != nil {
-//		t.Error(err)
-//	}
-//	var pr toggl.ProjectsResponse
-//	err = json.Unmarshal(b, &pr)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//	if len(pr.Projects) != 4 {
-//		t.Errorf("Expected 4 projects but got %d", len(pr.Projects))
-//	}
-//	if pr.Projects[0].Name != strings.TrimSpace(mock.P1Name) {
-//		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P1Name), pr.Projects[0].Name)
-//	}
-//	if pr.Projects[1].Name != strings.TrimSpace(mock.P2Name) {
-//		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P2Name), pr.Projects[1].Name)
-//	}
-//	if pr.Projects[2].Name != strings.TrimSpace(mock.P3Name) {
-//		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P3Name), pr.Projects[2].Name)
-//	}
-//	if pr.Projects[3].Name != strings.TrimSpace(mock.P4Name) {
-//		t.Errorf("Expected name '%s' but got '%s'", strings.TrimSpace(mock.P4Name), pr.Projects[3].Name)
-//	}
-//}
-
-// TODO: Remove old test
-//func TestPipeEndSyncJSONParsingFail(t *testing.T) {
-//	flags := config.Flags{}
-//	config.ParseFlags(&flags)
-//
-//	cfg := config.Load(flags.Environment, flags.WorkDir)
-//	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
-//	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
-//
-//	db, err := sql.Open("postgres", flags.TestDBConnString)
-//	if err != nil {
-//		log.Fatal(err)
-//	}
-//	defer db.Close()
-//
-//	api := toggl.NewApiClient(togglApiHost)
-//
-//	authStore := authorization.NewStorage(db, cfg)
-//	connStore := connection.NewStorage(db)
-//
-//	pipesStorage := NewStorage(db)
-//	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
-//
-//	p := NewPipe(workspaceID, github.ServiceName, projectsPipeID)
-//
-//	jsonUnmarshalError := &json.UnmarshalTypeError{
-//		Value:  "asd",
-//		Type:   reflect.TypeOf(1),
-//		Struct: "Project",
-//		Field:  "id",
-//	}
-//	if err := pipeService.newStatus(p); err != nil {
-//		t.Fatalf("Unexpected error %v", err)
-//	}
-//
-//	if err := pipeService.endSync(p, true, jsonUnmarshalError); err != nil {
-//		t.Fatalf("Unexpected error %v", err)
-//	}
-//
-//	if p.PipeStatus.Message != ErrJSONParsing.Error() {
-//		t.Fatalf(
-//			"FailPipe expected to get wrapper error %s, but get %s",
-//			ErrJSONParsing.Error(), p.PipeStatus.Message,
-//		)
-//	}
-//}
