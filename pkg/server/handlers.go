@@ -226,7 +226,7 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.Create(serviceID, workspaceID)
-	auth, err := c.authStore.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -250,7 +250,7 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.Create(serviceID, workspaceID)
-	auth, err := c.authStore.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}
@@ -290,7 +290,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 		return badRequest("Missing or invalid service")
 	}
 	service := integrations.Create(serviceID, workspaceID)
-	auth, err := c.authStore.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
 	}

@@ -155,7 +155,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 //	if err := service.SetParams(p.ServiceParams); err != nil {
 //		t.Error(err)
 //	}
-//	auth, err := pipeService.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+//	auth, err := pipeService.auth.Load(service.GetWorkspaceID(), service.Name())
 //	if err != nil {
 //		t.Error(err)
 //	}

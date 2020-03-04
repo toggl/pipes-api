@@ -80,7 +80,7 @@ func (svc *Service) GetUsers(s ExternalService) (*toggl.UsersResponse, error) {
 }
 
 func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]Integration, error) {
-	authorizations, err := svc.auth.LoadAuthorizations(workspaceID)
+	authorizations, err := svc.auth.LoadWorkspaceAuthorizations(workspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +156,7 @@ func (svc *Service) Run(p *Pipe) {
 	}
 
 	s := Create(p.ServiceID, p.WorkspaceID)
-	auth, err := svc.auth.LoadAuth(s.GetWorkspaceID(), s.Name())
+	auth, err := svc.auth.Load(s.GetWorkspaceID(), s.Name())
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
 			"pipe": {
@@ -229,7 +229,7 @@ func (svc *Service) ClearPipeConnections(p *Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -323,7 +323,7 @@ func (svc *Service) postUsers(p *Pipe) error {
 		return err
 	}
 
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -381,7 +381,7 @@ func (svc *Service) postClients(p *Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -426,7 +426,7 @@ func (svc *Service) postProjects(p *Pipe) error {
 		return err
 	}
 
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -468,7 +468,7 @@ func (svc *Service) postTodoLists(p *Pipe) error {
 		return err
 	}
 
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -516,7 +516,7 @@ func (svc *Service) postTasks(p *Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -635,7 +635,7 @@ func (svc *Service) fetchUsers(p *Pipe) error {
 		return err
 	}
 
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -650,7 +650,7 @@ func (svc *Service) fetchUsers(p *Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 		if err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
@@ -680,7 +680,7 @@ func (svc *Service) fetchClients(p *Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -695,7 +695,7 @@ func (svc *Service) fetchClients(p *Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 		if err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
@@ -737,7 +737,7 @@ func (svc *Service) fetchProjects(p *Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 		if err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
@@ -769,7 +769,7 @@ func (svc *Service) fetchProjects(p *Pipe) error {
 		return err
 	}
 
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -813,7 +813,7 @@ func (svc *Service) fetchTodoLists(p *Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 		if err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
@@ -844,7 +844,7 @@ func (svc *Service) fetchTodoLists(p *Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -891,7 +891,7 @@ func (svc *Service) fetchTasks(p *Pipe) error {
 			return
 		}
 
-		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 		if err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
@@ -923,7 +923,7 @@ func (svc *Service) fetchTasks(p *Pipe) error {
 		return err
 	}
 
-	auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 	if err != nil {
 		return err
 	}
@@ -1051,7 +1051,7 @@ func (svc *Service) postObjects(p *Pipe, saveStatus bool) (err error) {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			break
 		}
-		auth, err := svc.auth.LoadAuth(service.GetWorkspaceID(), service.Name())
+		auth, err := svc.auth.Load(service.GetWorkspaceID(), service.Name())
 		if err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			break
