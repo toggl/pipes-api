@@ -1,15 +1,17 @@
-package toggl
+package client
 
 import (
 	"encoding/json"
+
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 const (
 	maxPayloadSizeBytes = 800 * 1000
 )
 
-func AdjustRequestSize(tasks []*Task, split int) ([]*TaskRequest, error) {
-	var trs []*TaskRequest
+func AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error) {
+	var trs []*toggl.TaskRequest
 	var size int
 	size = len(tasks) / split
 	for i := 0; i < split; i++ {
@@ -19,7 +21,7 @@ func AdjustRequestSize(tasks []*Task, split int) ([]*TaskRequest, error) {
 			endIndex = len(tasks)
 		}
 		if endIndex > startIndex {
-			t := TaskRequest{
+			t := toggl.TaskRequest{
 				Tasks: tasks[startIndex:endIndex],
 			}
 			trs = append(trs, &t)

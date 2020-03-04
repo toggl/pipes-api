@@ -53,11 +53,11 @@ func (c *Controller) GetIntegrations(req Request) Response {
 
 func (c *Controller) GetIntegrationPipe(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	pipeID := mux.Vars(req.r)["pipe"]
+	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
 	if !c.ptResolver.AvailablePipeType(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
@@ -80,18 +80,18 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 
 func (c *Controller) PostPipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	pipeID := mux.Vars(req.r)["pipe"]
+	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
 	if !c.ptResolver.AvailablePipeType(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
 
 	p := pipe.NewPipe(workspaceID, serviceID, pipeID)
 
-	service := integrations.NewExternalService(serviceID, workspaceID)
+	service := pipe.NewExternalService(serviceID, workspaceID)
 	err := service.SetParams(req.body)
 	if err != nil {
 		return badRequest(err)
@@ -106,11 +106,11 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 
 func (c *Controller) PutPipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	pipeID := mux.Vars(req.r)["pipe"]
+	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
 	if !c.ptResolver.AvailablePipeType(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
@@ -135,11 +135,11 @@ func (c *Controller) PutPipeSetup(req Request) Response {
 
 func (c *Controller) DeletePipeSetup(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	pipeID := mux.Vars(req.r)["pipe"]
+	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
 	if !c.ptResolver.AvailablePipeType(pipeID) {
 		return badRequest("Missing or invalid pipe")
 	}
@@ -157,7 +157,7 @@ func (c *Controller) DeletePipeSetup(req Request) Response {
 }
 
 func (c *Controller) GetAuthURL(req Request) Response {
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	accountName := req.r.FormValue("account_name")
 	callbackURL := req.r.FormValue("callback_url")
 
@@ -190,7 +190,7 @@ func (c *Controller) GetAuthURL(req Request) Response {
 
 func (c *Controller) PostAuthorization(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
@@ -225,11 +225,11 @@ func (c *Controller) PostAuthorization(req Request) Response {
 
 func (c *Controller) DeleteAuthorization(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := integrations.NewExternalService(serviceID, workspaceID)
+	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return internalServerError(err.Error())
@@ -249,11 +249,11 @@ func (c *Controller) DeleteAuthorization(req Request) Response {
 
 func (c *Controller) GetServiceAccounts(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := integrations.NewExternalService(serviceID, workspaceID)
+	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
@@ -289,11 +289,11 @@ func (c *Controller) GetServiceAccounts(req Request) Response {
 func (c *Controller) GetServiceUsers(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 
-	serviceID := mux.Vars(req.r)["service"]
+	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
 	if !c.stResolver.AvailableServiceType(serviceID) {
 		return badRequest("Missing or invalid service")
 	}
-	service := integrations.NewExternalService(serviceID, workspaceID)
+	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth, err := c.authStore.Load(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return badRequest("No authorizations for " + serviceID)
@@ -302,8 +302,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 		return internalServerError(err.Error())
 	}
 
-	pipeID := "users"
-	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
+	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, integrations.UsersPipe)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -316,7 +315,7 @@ func (c *Controller) GetServiceUsers(req Request) Response {
 
 	forceImport := req.r.FormValue("force")
 	if forceImport == "true" {
-		if err := c.pipesStore.ClearImportFor(service, pipeID); err != nil {
+		if err := c.pipesStore.ClearImportFor(service, integrations.UsersPipe); err != nil {
 			return internalServerError(err.Error())
 		}
 	}

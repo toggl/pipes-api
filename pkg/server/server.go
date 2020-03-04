@@ -1,9 +1,11 @@
 package server
 
+import "github.com/toggl/pipes-api/pkg/integrations"
+
 type ServiceTypeResolver interface {
-	AvailableServiceType(serviceID string) bool
+	AvailableServiceType(serviceID integrations.ExternalServiceID) bool
 }
 
 type PipeTypeResolver interface {
-	AvailablePipeType(pipeID string) bool
+	AvailablePipeType(pipeID integrations.PipeID) bool
 }

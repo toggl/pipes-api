@@ -1,14 +1,16 @@
-package toggl
+package client
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-func generateTasks(nr int) []*Task {
-	var ts []*Task
+func generateTasks(nr int) []*toggl.Task {
+	var ts []*toggl.Task
 	for i := 0; i < nr; i++ {
-		t := Task{ID: i, Name: `Name`, Active: i%2 == 0, ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
+		t := toggl.Task{ID: i, Name: `Name`, Active: i%2 == 0, ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
 		ts = append(ts, &t)
 	}
 	return ts

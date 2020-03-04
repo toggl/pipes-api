@@ -10,6 +10,8 @@ import (
 
 	"code.google.com/p/goauth2/oauth"
 	"github.com/tambet/oauthplain"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 type Config struct {
@@ -56,17 +58,17 @@ func (c *Config) GetTogglAPIHost() string {
 	return c.Urls.TogglAPIHost[c.EnvType]
 }
 
-func (c *Config) GetOAuth2URL(externalServiceID string) string {
+func (c *Config) GetOAuth2URL(externalServiceID integrations.ExternalServiceID) string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	config, ok := c.oAuth2Configs[externalServiceID+"_"+c.EnvType]
+	config, ok := c.oAuth2Configs[string(externalServiceID)+"_"+c.EnvType]
 	if !ok {
 		return ""
 	}
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (c *Config) OAuth1Exchange(externalServiceID string, payload map[string]interface{}) ([]byte, error) {
+func (c *Config) OAuth1Exchange(externalServiceID integrations.ExternalServiceID, payload map[string]interface{}) ([]byte, error) {
 	accountName := payload["account_name"].(string)
 	if accountName == "" {
 		return nil, errors.New("missing account_name")
@@ -81,7 +83,7 @@ func (c *Config) OAuth1Exchange(externalServiceID string, payload map[string]int
 	}
 
 	c.mx.RLock()
-	config, res := c.oAuth1Configs[externalServiceID]
+	config, res := c.oAuth1Configs[string(externalServiceID)]
 	if !res {
 		c.mx.RUnlock()
 		return nil, errors.New("service OAuth config not found")
@@ -107,14 +109,14 @@ func (c *Config) OAuth1Exchange(externalServiceID string, payload map[string]int
 	return b, nil
 }
 
-func (c *Config) OAuth2Exchange(externalServiceID string, payload map[string]interface{}) ([]byte, error) {
+func (c *Config) OAuth2Exchange(externalServiceID integrations.ExternalServiceID, payload map[string]interface{}) ([]byte, error) {
 	code := payload["code"].(string)
 	if code == "" {
 		return nil, errors.New("missing code")
 	}
 
 	c.mx.RLock()
-	config, res := c.oAuth2Configs[externalServiceID+"_"+c.EnvType]
+	config, res := c.oAuth2Configs[string(externalServiceID)+"_"+c.EnvType]
 	if !res {
 		c.mx.RUnlock()
 		return nil, errors.New("service OAuth config not found")
@@ -133,17 +135,17 @@ func (c *Config) OAuth2Exchange(externalServiceID string, payload map[string]int
 	return b, nil
 }
 
-func (c *Config) GetOAuth1Configs(externalServiceID string) (*oauthplain.Config, bool) {
+func (c *Config) GetOAuth1Configs(externalServiceID integrations.ExternalServiceID) (*oauthplain.Config, bool) {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	v, found := c.oAuth1Configs[externalServiceID]
+	v, found := c.oAuth1Configs[string(externalServiceID)]
 	return v, found
 }
 
-func (c *Config) GetOAuth2Configs(externalServiceID string) (*oauth.Config, bool) {
+func (c *Config) GetOAuth2Configs(externalServiceID integrations.ExternalServiceID) (*oauth.Config, bool) {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	v, found := c.oAuth2Configs[externalServiceID+"_"+c.EnvType]
+	v, found := c.oAuth2Configs[string(externalServiceID)+"_"+c.EnvType]
 	return v, found
 }
 

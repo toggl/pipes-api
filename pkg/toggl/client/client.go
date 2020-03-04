@@ -1,4 +1,4 @@
-package toggl
+package client
 
 import (
 	"bytes"
@@ -12,24 +12,27 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 var (
 	ErrApiNotHealthy = errors.New("toggl api is not healthy, got status code")
 )
 
-type ApiClient struct {
+type TogglApiClient struct {
 	togglApiUrl string
 
 	autoToken string
 	mx        sync.Mutex
 }
 
-func NewApiClient(url string) *ApiClient {
-	return &ApiClient{togglApiUrl: url}
+func NewTogglApiClient(url string) *TogglApiClient {
+	return &TogglApiClient{togglApiUrl: url}
 }
 
-func (c *ApiClient) WithAuthToken(authToken string) *ApiClient {
+func (c *TogglApiClient) WithAuthToken(authToken string) *TogglApiClient {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
@@ -37,7 +40,7 @@ func (c *ApiClient) WithAuthToken(authToken string) *ApiClient {
 	return c
 }
 
-func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
+func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	c.WithAuthToken(token)
 
 	url := fmt.Sprintf("%s/api/pipes/workspace", c.togglApiUrl)
@@ -62,7 +65,7 @@ func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 		return 0, fmt.Errorf("GET workspace failed %d", resp.StatusCode)
 	}
 
-	var response WorkspaceResponse
+	var response toggl.WorkspaceResponse
 	if err := json.Unmarshal(b, &response); err != nil {
 		return 0, err
 	}
@@ -70,13 +73,13 @@ func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (c *ApiClient) PostClients(clientsPipeID string, clients interface{}) (*ClientsImport, error) {
+func (c *TogglApiClient) PostClients(clientsPipeID integrations.PipeID, clients interface{}) (*toggl.ClientsImport, error) {
 	b, err := c.postPipesAPI(clientsPipeID, clients)
 	if err != nil {
 		return nil, err
 	}
 
-	clientsImport := new(ClientsImport)
+	clientsImport := new(toggl.ClientsImport)
 	if err := json.Unmarshal(b, clientsImport); err != nil {
 		return nil, err
 	}
@@ -84,13 +87,13 @@ func (c *ApiClient) PostClients(clientsPipeID string, clients interface{}) (*Cli
 	return clientsImport, nil
 }
 
-func (c *ApiClient) PostProjects(projectsPipeID string, projects interface{}) (*ProjectsImport, error) {
+func (c *TogglApiClient) PostProjects(projectsPipeID integrations.PipeID, projects interface{}) (*toggl.ProjectsImport, error) {
 	b, err := c.postPipesAPI(projectsPipeID, projects)
 	if err != nil {
 		return nil, err
 	}
 
-	projectsImport := new(ProjectsImport)
+	projectsImport := new(toggl.ProjectsImport)
 	if err := json.Unmarshal(b, projectsImport); err != nil {
 		return nil, err
 	}
@@ -98,13 +101,13 @@ func (c *ApiClient) PostProjects(projectsPipeID string, projects interface{}) (*
 	return projectsImport, nil
 }
 
-func (c *ApiClient) PostTasks(tasksPipeID string, tasks interface{}) (*TasksImport, error) {
+func (c *TogglApiClient) PostTasks(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
 	}
 
-	var tasksImport *TasksImport
+	var tasksImport *toggl.TasksImport
 	if err := json.Unmarshal(b, &tasksImport); err != nil {
 		return nil, err
 	}
@@ -112,13 +115,13 @@ func (c *ApiClient) PostTasks(tasksPipeID string, tasks interface{}) (*TasksImpo
 	return tasksImport, nil
 }
 
-func (c *ApiClient) PostTodoLists(tasksPipeID string, tasks interface{}) (*TasksImport, error) {
+func (c *TogglApiClient) PostTodoLists(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
 	}
 
-	var tasksImport *TasksImport
+	var tasksImport *toggl.TasksImport
 	if err := json.Unmarshal(b, &tasksImport); err != nil {
 		return nil, err
 	}
@@ -126,20 +129,20 @@ func (c *ApiClient) PostTodoLists(tasksPipeID string, tasks interface{}) (*Tasks
 	return tasksImport, nil
 }
 
-func (c *ApiClient) PostUsers(usersPipeID string, users interface{}) (*UsersImport, error) {
+func (c *TogglApiClient) PostUsers(usersPipeID integrations.PipeID, users interface{}) (*toggl.UsersImport, error) {
 	b, err := c.postPipesAPI(usersPipeID, users)
 	if err != nil {
 		return nil, err
 	}
 
-	var usersImport *UsersImport
+	var usersImport *toggl.UsersImport
 	if err := json.Unmarshal(b, &usersImport); err != nil {
 		return nil, err
 	}
 	return usersImport, nil
 }
 
-func (c *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error) {
+func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]toggl.TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
 		c.togglApiUrl, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
@@ -163,14 +166,14 @@ func (c *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []in
 	if http.StatusOK != resp.StatusCode {
 		return nil, fmt.Errorf("GET time_entries failed %d", resp.StatusCode)
 	}
-	var timeEntries []TimeEntry
+	var timeEntries []toggl.TimeEntry
 	if err := json.Unmarshal(b, &timeEntries); err != nil {
 		return nil, err
 	}
 	return timeEntries, nil
 }
 
-func (c *ApiClient) Ping() error {
+func (c *TogglApiClient) Ping() error {
 	var client = &http.Client{Timeout: 3 * time.Second}
 
 	url := fmt.Sprintf("%s/api/v9/status", c.togglApiUrl)
@@ -184,7 +187,7 @@ func (c *ApiClient) Ping() error {
 	return nil
 }
 
-func (c *ApiClient) postPipesAPI(pipeID string, payload interface{}) ([]byte, error) {
+func (c *TogglApiClient) postPipesAPI(pipeID integrations.PipeID, payload interface{}) ([]byte, error) {
 	start := time.Now()
 	url := fmt.Sprintf("%s/api/pipes/%s", c.togglApiUrl, pipeID)
 	b, err := json.Marshal(payload)

@@ -10,10 +10,9 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/toggl/go-teamweek"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
-
-const ServiceID = "teamweek"
 
 type Service struct {
 	WorkspaceID int
@@ -25,15 +24,15 @@ type TeamweekParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() string {
-	return ServiceID
+func (s *Service) ID() integrations.ExternalServiceID {
+	return integrations.TeamWeek
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType string) string {
+func (s *Service) KeyFor(objectType integrations.PipeID) string {
 	if s.TeamweekParams == nil {
 		return fmt.Sprintf("teamweek:account:%s", objectType)
 	}

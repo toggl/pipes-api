@@ -12,10 +12,9 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/range-labs/go-asana/asana"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
-
-const ServiceID = "asana"
 
 var asanaPerPageLimit uint32 = 100
 
@@ -29,15 +28,15 @@ type AsanaParams struct {
 	AccountID int64 `json:"account_id"`
 }
 
-func (s *Service) ID() string {
-	return ServiceID
+func (s *Service) ID() integrations.ExternalServiceID {
+	return integrations.Asana
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType string) string {
+func (s *Service) KeyFor(objectType integrations.PipeID) string {
 	if s.AsanaParams == nil {
 		return fmt.Sprintf("asana:account:%s", objectType)
 	}

@@ -116,8 +116,8 @@ func (ps *Storage) IsDown() bool {
 	return false
 }
 
-func (ps *Storage) LoadPipe(workspaceID int, serviceID, pipeID string) (*Pipe, error) {
-	key := PipesKey(serviceID, pipeID)
+func (ps *Storage) LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error) {
+	key := PipesKey(sid, pid)
 	return ps.loadPipeWithKey(workspaceID, key)
 }
 
@@ -215,8 +215,8 @@ func (ps *Storage) DeletePipeConnections(workspaceID int, pipeConnectionKey, pip
 	return
 }
 
-func (ps *Storage) LoadPipeStatus(workspaceID int, serviceID, pipeID string) (*Status, error) {
-	key := PipesKey(serviceID, pipeID)
+func (ps *Storage) LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error) {
+	key := PipesKey(sid, pid)
 	rows, err := ps.db.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -234,8 +234,8 @@ func (ps *Storage) LoadPipeStatus(workspaceID int, serviceID, pipeID string) (*S
 		return nil, err
 	}
 	pipeStatus.WorkspaceID = workspaceID
-	pipeStatus.ServiceID = serviceID
-	pipeStatus.PipeID = pipeID
+	pipeStatus.ServiceID = sid
+	pipeStatus.PipeID = pid
 	return &pipeStatus, nil
 }
 
@@ -244,7 +244,7 @@ func (ps *Storage) QueueAutomaticPipes() error {
 	return err
 }
 
-func (ps *Storage) DeletePipeByWorkspaceIDServiceID(workspaceID int, serviceID string) error {
+func (ps *Storage) DeletePipeByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
@@ -305,7 +305,7 @@ func (ps *Storage) FetchAccounts(s integrations.ExternalService) error {
 	return nil
 }
 
-func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID string) error {
+func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID integrations.PipeID) error {
 	_, err := ps.db.Exec(`
 	    DELETE FROM imports
 	    WHERE workspace_id = $1 AND Key = $2
@@ -359,7 +359,7 @@ func (ps *Storage) load(rows *sql.Rows, p *Pipe) error {
 	}
 	p.Key = key
 	p.WorkspaceID = wid
-	p.ServiceID = strings.Split(key, ":")[0]
+	p.ServiceID = integrations.ExternalServiceID(strings.Split(key, ":")[0])
 	return nil
 }
 
@@ -421,14 +421,14 @@ func (ps *Storage) savePipeStatus(p *Status) error {
 	return nil
 }
 
-func (ps *Storage) getObject(s integrations.ExternalService, pipeID string) ([]byte, error) {
+func (ps *Storage) getObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
 	var result []byte
 	rows, err := ps.db.Query(`
 		SELECT data FROM imports
 		WHERE workspace_id = $1 AND Key = $2
 		ORDER by created_at DESC
 		LIMIT 1
-	`, s.GetWorkspaceID(), s.KeyFor(pipeID))
+	`, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
 		return nil, err
 	}

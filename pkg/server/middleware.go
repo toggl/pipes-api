@@ -5,6 +5,8 @@ import (
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 type WorkspaceFinder interface {
@@ -27,12 +29,12 @@ func NewMiddleware(wsFinder WorkspaceFinder, str ServiceTypeResolver, ptr PipeTy
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		serviceID := mux.Vars(r)["service"]
+		serviceID := integrations.ExternalServiceID(mux.Vars(r)["service"])
 		if !mw.stResolver.AvailableServiceType(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
-		pipeID := mux.Vars(r)["pipe"]
+		pipeID := integrations.PipeID(mux.Vars(r)["pipe"])
 		if !mw.ptResolver.AvailablePipeType(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return

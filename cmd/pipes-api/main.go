@@ -16,7 +16,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/server"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
 func main() {
@@ -47,7 +47,7 @@ func main() {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(togglApiHost)
+	api := client.NewTogglApiClient(togglApiHost)
 
 	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)

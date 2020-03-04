@@ -10,10 +10,9 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/toggl/go-basecamp"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
-
-const ServiceID = "basecamp"
 
 type Service struct {
 	WorkspaceID int
@@ -26,15 +25,15 @@ type BasecampParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() string {
-	return ServiceID
+func (s *Service) ID() integrations.ExternalServiceID {
+	return integrations.BaseCamp
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType string) string {
+func (s *Service) KeyFor(objectType integrations.PipeID) string {
 	if s.BasecampParams == nil {
 		return fmt.Sprintf("basecamp:account:%s", objectType)
 	}

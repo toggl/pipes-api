@@ -1,19 +1,23 @@
 package authorization
 
-import "code.google.com/p/goauth2/oauth"
+import (
+	"code.google.com/p/goauth2/oauth"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
+)
 
 type stubOauthProvider struct {
 	NotFound     bool
 	RefreshError bool
 }
 
-func (sp *stubOauthProvider) GetOAuth2Configs(externalServiceID string) (*oauth.Config, bool) {
+func (sp *stubOauthProvider) GetOAuth2Configs(id integrations.ExternalServiceID) (*oauth.Config, bool) {
 	if sp.NotFound {
 		return nil, false
 	}
 
 	return &oauth.Config{
-		ClientId:       externalServiceID,
+		ClientId:       string(id),
 		ClientSecret:   "",
 		Scope:          "",
 		AuthURL:        "http://localhost/",

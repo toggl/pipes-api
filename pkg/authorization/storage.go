@@ -9,6 +9,8 @@ import (
 	_ "github.com/lib/pq"
 
 	"code.google.com/p/goauth2/oauth"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 const (
@@ -43,7 +45,7 @@ const (
 )
 
 type OauthProvider interface {
-	GetOAuth2Configs(externalServiceID string) (*oauth.Config, bool)
+	GetOAuth2Configs(externalServiceID integrations.ExternalServiceID) (*oauth.Config, bool)
 	Refresh(*oauth.Config, *oauth.Token) error
 }
 
@@ -53,7 +55,7 @@ type Storage struct {
 
 	// Stores available authorization types for each service
 	// Map format: map[externalServiceID]authType
-	availableAuthTypes map[string]string
+	availableAuthTypes map[integrations.ExternalServiceID]string
 	mx                 sync.RWMutex
 }
 
@@ -61,17 +63,17 @@ func NewStorage(db *sql.DB, oauth OauthProvider) *Storage {
 	return &Storage{
 		db:                 db,
 		oauth:              oauth,
-		availableAuthTypes: map[string]string{},
+		availableAuthTypes: map[integrations.ExternalServiceID]string{},
 	}
 }
 
-func (as *Storage) GetAvailableAuthorizations(externalServiceID string) string {
+func (as *Storage) GetAvailableAuthorizations(externalServiceID integrations.ExternalServiceID) string {
 	as.mx.RLock()
 	defer as.mx.RUnlock()
 	return as.availableAuthTypes[externalServiceID]
 }
 
-func (as *Storage) SetAuthorizationType(externalServiceID, authType string) {
+func (as *Storage) SetAuthorizationType(externalServiceID integrations.ExternalServiceID, authType string) {
 	as.mx.Lock()
 	defer as.mx.Unlock()
 	as.availableAuthTypes[externalServiceID] = authType
@@ -85,7 +87,7 @@ func (as *Storage) Save(a *Authorization) error {
 	return nil
 }
 
-func (as *Storage) Load(workspaceID int, externalServiceID string) (*Authorization, error) {
+func (as *Storage) Load(workspaceID int, externalServiceID integrations.ExternalServiceID) (*Authorization, error) {
 	rows, err := as.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return nil, err
@@ -102,7 +104,7 @@ func (as *Storage) Load(workspaceID int, externalServiceID string) (*Authorizati
 	return &a, nil
 }
 
-func (as *Storage) Destroy(workspaceID int, externalServiceID string) error {
+func (as *Storage) Destroy(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
 	_, err := as.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
@@ -138,15 +140,15 @@ func (as *Storage) Refresh(a *Authorization) error {
 
 // LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
 // Map format: map[externalServiceID]isAuthorized
-func (as *Storage) LoadWorkspaceAuthorizations(workspaceID int) (map[string]bool, error) {
-	authorizations := make(map[string]bool)
+func (as *Storage) LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error) {
+	authorizations := make(map[integrations.ExternalServiceID]bool)
 	rows, err := as.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return authorizations, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var service string
+		var service integrations.ExternalServiceID
 		if err := rows.Scan(&service); err != nil {
 			return authorizations, err
 		}

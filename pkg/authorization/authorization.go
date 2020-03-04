@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 
 	"code.google.com/p/goauth2/oauth"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 const (
@@ -13,15 +15,15 @@ const (
 
 type Authorization struct {
 	WorkspaceID    int
-	ServiceID      string
+	ServiceID      integrations.ExternalServiceID
 	WorkspaceToken string
 	Data           []byte
 }
 
-func New(workspaceID int, externalServiceID string) *Authorization {
+func New(workspaceID int, id integrations.ExternalServiceID) *Authorization {
 	return &Authorization{
 		WorkspaceID: workspaceID,
-		ServiceID:   externalServiceID,
+		ServiceID:   id,
 		Data:        []byte("{}"),
 	}
 }

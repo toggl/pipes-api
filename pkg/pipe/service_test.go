@@ -10,13 +10,14 @@ import (
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
 var (
-	workspaceID = 1
-	pipeID      = "users"
-	serviceID   = "basecamp"
+	workspaceID                                = 1
+	pipeID      integrations.PipeID            = "users"
+	serviceID   integrations.ExternalServiceID = "basecamp"
 )
 
 func TestNewClient(t *testing.T) {
@@ -45,7 +46,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(togglApiHost)
+	api := client.NewTogglApiClient(togglApiHost)
 
 	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
@@ -53,7 +54,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	pipesStorage := NewStorage(db)
 	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
 
-	createAndEnqueuePipeFn := func(workspaceID int, serviceID, pipeID string, priority int) *Pipe {
+	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *Pipe {
 		pipe := NewPipe(workspaceID, serviceID, pipeID)
 		pipe.Automatic = true
 		pipe.Configured = true
@@ -141,7 +142,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(togglApiHost)
+	api := client.NewTogglApiClient(togglApiHost)
 	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 
@@ -193,7 +194,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := toggl.NewApiClient(togglApiHost)
+	api := client.NewTogglApiClient(togglApiHost)
 	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
 

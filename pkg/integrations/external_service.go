@@ -1,14 +1,8 @@
 package integrations
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/toggl/pipes-api/pkg/integrations/asana"
-	"github.com/toggl/pipes-api/pkg/integrations/basecamp"
-	"github.com/toggl/pipes-api/pkg/integrations/freshbooks"
-	"github.com/toggl/pipes-api/pkg/integrations/github"
-	"github.com/toggl/pipes-api/pkg/integrations/teamweek"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -16,7 +10,7 @@ import (
 // Example implementation: github.go
 type ExternalService interface {
 	// ID of the service
-	ID() string
+	ID() ExternalServiceID
 
 	// WorkspaceID helper function, should just return workspaceID
 	GetWorkspaceID() int
@@ -36,7 +30,7 @@ type ExternalService interface {
 
 	// keyFor should provide unique key for object type
 	// Example: asana:account:XXXX:projects
-	KeyFor(string) string
+	KeyFor(PipeID) string
 
 	// Accounts maps foreign account to Account models
 	// https://github.com/toggl/pipes-api/blob/master/model.go#L9-L12
@@ -68,25 +62,23 @@ type ExternalService interface {
 	ExportTimeEntry(*toggl.TimeEntry) (int, error)
 }
 
-func NewExternalService(externalServiceID string, workspaceID int) ExternalService {
-	switch externalServiceID {
-	case basecamp.ServiceID:
-		return &basecamp.Service{WorkspaceID: workspaceID}
-	case freshbooks.ServiceID:
-		return &freshbooks.Service{WorkspaceID: workspaceID}
-	case teamweek.ServiceID:
-		return &teamweek.Service{WorkspaceID: workspaceID}
-	case asana.ServiceID:
-		return &asana.Service{WorkspaceID: workspaceID}
-	case github.ServiceID:
-		return &github.Service{WorkspaceID: workspaceID}
-	default:
-		panic(fmt.Sprintf("getService: Unrecognized externalServiceID - %s", externalServiceID))
-	}
-}
+type ExternalServiceID string
 
-var _ ExternalService = (*basecamp.Service)(nil)
-var _ ExternalService = (*freshbooks.Service)(nil)
-var _ ExternalService = (*teamweek.Service)(nil)
-var _ ExternalService = (*asana.Service)(nil)
-var _ ExternalService = (*github.Service)(nil)
+const (
+	BaseCamp   ExternalServiceID = "basecamp"
+	FreshBooks ExternalServiceID = "freshbooks"
+	TeamWeek   ExternalServiceID = "teamweek"
+	Asana      ExternalServiceID = "asana"
+	GitHub     ExternalServiceID = "github"
+)
+
+type PipeID string
+
+const (
+	UsersPipe       PipeID = "users"
+	ClientsPipe     PipeID = "clients"
+	ProjectsPipe    PipeID = "projects"
+	TasksPipe       PipeID = "tasks"
+	TodoPipe        PipeID = "todolists"
+	TimeEntriesPipe PipeID = "time_entries"
+)

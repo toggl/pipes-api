@@ -13,6 +13,8 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
+
+	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
 type (
@@ -92,7 +94,7 @@ func currentWorkspaceID(r *http.Request) int {
 	return 0
 }
 
-func currentServicePipeID(r *http.Request) (string, string) {
+func currentServicePipeID(r *http.Request) (integrations.ExternalServiceID, integrations.PipeID) {
 	var serviceID, pipeID string
 	if v, ok := context.GetOk(r, serviceIDKey); ok {
 		serviceID = v.(string)
@@ -100,7 +102,7 @@ func currentServicePipeID(r *http.Request) (string, string) {
 	if v, ok := context.GetOk(r, pipeIDKey); ok {
 		pipeID = v.(string)
 	}
-	return serviceID, pipeID
+	return integrations.ExternalServiceID(serviceID), integrations.PipeID(pipeID)
 }
 
 func currentWorkspaceToken(r *http.Request) string {
