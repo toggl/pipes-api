@@ -58,8 +58,8 @@ func main() {
 	autosync.NewService(pipesService).Start()
 
 	router := server.NewRouter(corsWhitelist).AttachHandlers(
-		server.NewController(cfg, pipesService, pipesStore, authStore),
-		server.NewMiddleware(api, pipesService, pipesService),
+		server.NewController(pipesService),
+		server.NewMiddleware(api, pipesService),
 	)
 	server.Start(envFlags.Port, router)
 }

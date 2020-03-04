@@ -13,29 +13,32 @@ type WorkspaceFinder interface {
 	GetWorkspaceIdByToken(authToken string) (int, error)
 }
 
-type Middleware struct {
-	stResolver ServiceTypeResolver
-	ptResolver PipeTypeResolver
-	wsFinder   WorkspaceFinder
+type TypeResolver interface {
+	ServiceTypeResolver
+	PipeTypeResolver
 }
 
-func NewMiddleware(wsFinder WorkspaceFinder, str ServiceTypeResolver, ptr PipeTypeResolver) *Middleware {
+type Middleware struct {
+	tResolver TypeResolver
+	wsFinder  WorkspaceFinder
+}
+
+func NewMiddleware(wsFinder WorkspaceFinder, tr TypeResolver) *Middleware {
 	return &Middleware{
-		stResolver: str,
-		ptResolver: ptr,
-		wsFinder:   wsFinder,
+		tResolver: tr,
+		wsFinder:  wsFinder,
 	}
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := integrations.ExternalServiceID(mux.Vars(r)["service"])
-		if !mw.stResolver.AvailableServiceType(serviceID) {
+		if !mw.tResolver.AvailableServiceType(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := integrations.PipeID(mux.Vars(r)["pipe"])
-		if !mw.ptResolver.AvailablePipeType(pipeID) {
+		if !mw.tResolver.AvailablePipeType(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}

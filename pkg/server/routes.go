@@ -30,23 +30,22 @@ func NewRouter(corsWhiteList []string) *Router {
 func (router *Router) AttachHandlers(c *Controller, mw *Middleware) *Router {
 
 	v1 := router.Routes.PathPrefix("/api/v1").Subrouter()
-	v1.HandleFunc("/status", handleRequest(c.GetStatus)).Methods("GET")
-	v1.HandleFunc("/integrations", mw.withAuth(handleRequest(c.GetIntegrations))).Methods("GET")
+	v1.HandleFunc("/status", handleRequest(c.GetStatusHandler)).Methods("GET")
+	v1.HandleFunc("/integrations", mw.withAuth(handleRequest(c.GetIntegrationsHandler))).Methods("GET")
 
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}", mw.withAuth(handleRequest(c.GetIntegrationPipe))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.PutPipeSetup))).Methods("PUT")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.PostPipeSetup))).Methods("POST")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.DeletePipeSetup))).Methods("DELETE")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", mw.withService(mw.withAuth(handleRequest(c.GetServicePipeLog)))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", mw.withService(mw.withAuth(handleRequest(c.PostServicePipeClearConnections)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}", mw.withAuth(handleRequest(c.GetIntegrationPipeHandler))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.PutPipeSetupHandler))).Methods("PUT")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.PostPipeSetupHandler))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.DeletePipeSetupHandler))).Methods("DELETE")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", mw.withService(mw.withAuth(handleRequest(c.GetServicePipeLogHandler)))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", mw.withService(mw.withAuth(handleRequest(c.PostServicePipeClearConnectionsHandler)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/users", mw.withAuth(handleRequest(c.GetServiceUsersHandler))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/run", mw.withService(mw.withAuth(handleRequest(c.PostPipeRunHandler)))).Methods("POST")
 
-	v1.HandleFunc("/integrations/{service}/accounts", mw.withAuth(handleRequest(c.GetServiceAccounts))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/auth_url", mw.withAuth(handleRequest(c.GetAuthURL))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/authorizations", mw.withAuth(handleRequest(c.PostAuthorization))).Methods("POST")
-	v1.HandleFunc("/integrations/{service}/authorizations", mw.withAuth(handleRequest(c.DeleteAuthorization))).Methods("DELETE")
-
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/users", mw.withAuth(handleRequest(c.GetServiceUsers))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/run", mw.withService(mw.withAuth(handleRequest(c.PostPipeRun)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/accounts", mw.withAuth(handleRequest(c.GetServiceAccountsHandler))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/auth_url", mw.withAuth(handleRequest(c.GetAuthURLHandler))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/authorizations", mw.withAuth(handleRequest(c.PostAuthorizationHandler))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/authorizations", mw.withAuth(handleRequest(c.DeleteAuthorizationHandler))).Methods("DELETE")
 
 	return router
 }

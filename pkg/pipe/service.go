@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/bugsnag/bugsnag-go"
+	"github.com/tambet/oauthplain"
 
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/connection"
@@ -24,7 +25,31 @@ import (
 
 type OauthProvider interface {
 	GetOAuth2URL(integrations.ExternalServiceID) string
+	GetOAuth1Configs(integrations.ExternalServiceID) (*oauthplain.Config, bool)
+	OAuth2Exchange(integrations.ExternalServiceID, map[string]interface{}) ([]byte, error)
+	OAuth1Exchange(integrations.ExternalServiceID, map[string]interface{}) ([]byte, error)
 }
+
+type SetParamsError struct{ Err error }
+
+func (e SetParamsError) Error() string { return e.Err.Error() }
+func (e SetParamsError) Unwrap() error { return e.Err }
+
+type LoadError struct{ Err error }
+
+func (e LoadError) Error() string { return e.Err.Error() }
+func (e LoadError) Unwrap() error { return e.Err }
+
+type RefreshError struct{ Err error }
+
+func (e RefreshError) Error() string { return e.Err.Error() }
+func (e RefreshError) Unwrap() error { return e.Err }
+
+var ErrPipeNotConfigured = errors.New("pipe is not configured")
+
+// mutex to prevent multiple of postPipeRun on same workspace run at same time
+var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
+var postPipeRunLock sync.Mutex
 
 type Service struct {
 	api   *client.TogglApiClient
@@ -79,6 +104,290 @@ func (svc *Service) GetUsers(s integrations.ExternalService) (*toggl.UsersRespon
 		return nil, err
 	}
 	return &usersResponse, nil
+}
+
+func (svc *Service) GetIntegrationPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (*Pipe, error) {
+	p, err := svc.pipes.LoadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return nil, err
+	}
+	if p == nil {
+		p = NewPipe(workspaceID, serviceID, pipeID)
+	}
+
+	p.PipeStatus, err = svc.pipes.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func (svc *Service) CreatePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error {
+	p := NewPipe(workspaceID, serviceID, pipeID)
+
+	service := NewExternalService(serviceID, workspaceID)
+	err := service.SetParams(params)
+	if err != nil {
+		return SetParamsError{err}
+	}
+	p.ServiceParams = params
+
+	if err := svc.pipes.Save(p); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *Service) UpdatePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error {
+	pipe, err := svc.pipes.LoadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return err
+	}
+	if pipe == nil {
+		return ErrPipeNotConfigured
+	}
+	if err := json.Unmarshal(params, &pipe); err != nil {
+		return err
+	}
+	if err := svc.pipes.Save(pipe); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *Service) DeletePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) error {
+	pipe, err := svc.pipes.LoadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return err
+	}
+	if pipe == nil {
+		return ErrPipeNotConfigured
+	}
+	if err := svc.pipes.Destroy(pipe, workspaceID); err != nil {
+		return err
+	}
+	return nil
+}
+
+var ErrNoContent = errors.New("no content")
+
+func (svc *Service) GetServicePipeLog(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (string, error) {
+	pipeStatus, err := svc.pipes.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return "", err
+	}
+	if pipeStatus == nil {
+		return "", ErrNoContent
+	}
+	return pipeStatus.GenerateLog(), nil
+}
+
+func (svc *Service) ClearPipeConnections(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) error {
+	p, err := svc.pipes.LoadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return ErrPipeNotConfigured
+	}
+	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	if err := service.SetParams(p.ServiceParams); err != nil {
+		return err
+	}
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return err
+	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+	pipeStatus, err := svc.pipes.LoadPipeStatus(p.WorkspaceID, p.ServiceID, p.ID)
+	if err != nil {
+		return err
+	}
+
+	err = svc.pipes.DeletePipeConnections(p.WorkspaceID, service.KeyFor(p.ID), pipeStatus.Key)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error {
+	// make sure no race condition on fetching workspace lock
+	postPipeRunLock.Lock()
+	workspaceLock, exists := postPipeRunWorkspaceLock[workspaceID]
+	if !exists {
+		workspaceLock = &sync.Mutex{}
+		postPipeRunWorkspaceLock[workspaceID] = workspaceLock
+	}
+	postPipeRunLock.Unlock()
+
+	p, err := svc.pipes.LoadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return ErrPipeNotConfigured
+	}
+	if msg := p.ValidatePayload(params); msg != "" {
+		return SetParamsError{errors.New(msg)}
+	}
+
+	if p.ID == integrations.UsersPipe {
+		go func() {
+			workspaceLock.Lock()
+			svc.Run(p)
+			workspaceLock.Unlock()
+		}()
+		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
+	} else {
+		if err := svc.QueuePipeAsFirst(p); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error) {
+	service := NewExternalService(serviceID, workspaceID)
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return nil, LoadError{err}
+	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return nil, err
+	}
+
+	pipe, err := svc.pipes.LoadPipe(workspaceID, serviceID, integrations.UsersPipe)
+	if err != nil {
+		return nil, err
+	}
+	if pipe == nil {
+		return nil, ErrPipeNotConfigured
+	}
+	if err := service.SetParams(pipe.ServiceParams); err != nil {
+		return nil, SetParamsError{err}
+	}
+
+	if forceImport {
+		if err := svc.pipes.ClearImportFor(service, integrations.UsersPipe); err != nil {
+			return nil, err
+		}
+	}
+
+	usersResponse, err := svc.GetUsers(service)
+	if err != nil {
+		return nil, err
+	}
+
+	if usersResponse == nil {
+		if forceImport {
+			go func() {
+				if err := svc.FetchObjects(pipe, false); err != nil {
+					log.Print(err.Error())
+				}
+			}()
+		}
+		return nil, ErrNoContent
+	}
+	return usersResponse, nil
+}
+
+func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error) {
+	service := NewExternalService(serviceID, workspaceID)
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return nil, LoadError{err}
+	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return nil, err
+	}
+
+	if err := svc.auth.Refresh(auth); err != nil {
+		return nil, RefreshError{errors.New("oAuth refresh failed!")}
+	}
+	if forceImport {
+		if err := svc.pipes.ClearImportFor(service, "accounts"); err != nil { // TODO: Why "accounts". We have no accounts pipes. ???
+			return nil, err
+		}
+	}
+
+	accountsResponse, err := svc.pipes.GetAccounts(service)
+	if err != nil {
+		return nil, err
+	}
+
+	if accountsResponse == nil {
+		go func() {
+			if err := svc.pipes.FetchAccounts(service); err != nil {
+				log.Print(err.Error())
+			}
+		}()
+		return nil, ErrNoContent
+	}
+	return accountsResponse, nil
+}
+
+func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, accountName, callbackURL string) (string, error) {
+	config, found := svc.oauth.GetOAuth1Configs(serviceID)
+	if !found {
+		return "", LoadError{errors.New("env OAuth config not found")}
+	}
+	transport := &oauthplain.Transport{
+		Config: config.UpdateURLs(accountName),
+	}
+	token, err := transport.AuthCodeURL(callbackURL)
+	if err != nil {
+		return "", err
+	}
+	return token.AuthorizeUrl, nil
+}
+
+func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, currentWorkspaceToken string, params []byte) error {
+	var payload map[string]interface{}
+	err := json.Unmarshal(params, &payload)
+	if err != nil {
+		return err
+	}
+
+	auth := authorization.New(workspaceID, serviceID)
+	auth.WorkspaceToken = currentWorkspaceToken
+
+	switch svc.auth.GetAvailableAuthorizations(serviceID) {
+	case authorization.TypeOauth1:
+		auth.Data, err = svc.oauth.OAuth1Exchange(serviceID, payload)
+	case authorization.TypeOauth2:
+		auth.Data, err = svc.oauth.OAuth2Exchange(serviceID, payload)
+	}
+	if err != nil {
+		return err
+	}
+
+	if err := svc.auth.Save(auth); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (svc *Service) DeleteAuthorization(workspaceID int, serviceID integrations.ExternalServiceID) error {
+	service := NewExternalService(serviceID, workspaceID)
+	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return err
+	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return err
+	}
+
+	if err := svc.auth.Destroy(service.GetWorkspaceID(), service.ID()); err != nil {
+		return err
+	}
+	if err := svc.pipes.DeletePipeByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]Integration, error) {
@@ -223,35 +532,6 @@ func (svc *Service) Run(p *Pipe) {
 		})
 		return
 	}
-}
-
-func (svc *Service) ClearPipeConnections(p *Pipe) error {
-
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	auth, err := svc.auth.Load(service.GetWorkspaceID(), service.ID())
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
-		return err
-	}
-
-	key := service.KeyFor(p.ID)
-
-	pipeStatus, err := svc.pipes.LoadPipeStatus(p.WorkspaceID, p.ServiceID, p.ID)
-	if err != nil {
-		return err
-	}
-
-	err = svc.pipes.DeletePipeConnections(p.WorkspaceID, key, pipeStatus.Key)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (svc *Service) Ready() []error {
