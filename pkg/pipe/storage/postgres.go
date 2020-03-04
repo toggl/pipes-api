@@ -157,31 +157,31 @@ const (
 	truncateConnectionSQL = `TRUNCATE TABLE connections`
 )
 
-type Storage struct {
+type PostgresStorage struct {
 	db *sql.DB
 }
 
-func NewStorage(db *sql.DB) *Storage {
-	svc := &Storage{
+func NewPostgresStorage(db *sql.DB) *PostgresStorage {
+	svc := &PostgresStorage{
 		db: db,
 	}
 
 	return svc
 }
 
-func (ps *Storage) IsDown() bool {
+func (ps *PostgresStorage) IsDown() bool {
 	if _, err := ps.db.Exec("SELECT 1"); err != nil {
 		return true
 	}
 	return false
 }
 
-func (ps *Storage) LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Pipe, error) {
+func (ps *PostgresStorage) LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Pipe, error) {
 	key := pipe.PipesKey(sid, pid)
 	return ps.loadPipeWithKey(workspaceID, key)
 }
 
-func (ps *Storage) GetPipesFromQueue() ([]*pipe.Pipe, error) {
+func (ps *PostgresStorage) GetPipesFromQueue() ([]*pipe.Pipe, error) {
 	var pipes []*pipe.Pipe
 	rows, err := ps.db.Query(selectPipesFromQueueSQL)
 	if err != nil {
@@ -211,12 +211,12 @@ func (ps *Storage) GetPipesFromQueue() ([]*pipe.Pipe, error) {
 	return pipes, nil
 }
 
-func (ps *Storage) SetQueuedPipeSynced(pipe *pipe.Pipe) error {
+func (ps *PostgresStorage) SetQueuedPipeSynced(pipe *pipe.Pipe) error {
 	_, err := ps.db.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key)
 	return err
 }
 
-func (ps *Storage) Save(p *pipe.Pipe) error {
+func (ps *PostgresStorage) Save(p *pipe.Pipe) error {
 	p.Configured = true
 	b, err := json.Marshal(p)
 	if err != nil {
@@ -229,7 +229,7 @@ func (ps *Storage) Save(p *pipe.Pipe) error {
 	return nil
 }
 
-func (ps *Storage) Destroy(p *pipe.Pipe, workspaceID int) error {
+func (ps *PostgresStorage) Destroy(p *pipe.Pipe, workspaceID int) error {
 	tx, err := ps.db.Begin()
 	if err != nil {
 		return err
@@ -251,7 +251,7 @@ func (ps *Storage) Destroy(p *pipe.Pipe, workspaceID int) error {
 	return tx.Commit()
 }
 
-func (ps *Storage) DeletePipeConnections(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
+func (ps *PostgresStorage) DeletePipeConnections(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
 	tx, err := ps.db.Begin()
 	if err != nil {
 		return
@@ -275,7 +275,7 @@ func (ps *Storage) DeletePipeConnections(workspaceID int, pipeConnectionKey, pip
 	return
 }
 
-func (ps *Storage) LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Status, error) {
+func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Status, error) {
 	key := pipe.PipesKey(sid, pid)
 	rows, err := ps.db.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
@@ -299,22 +299,22 @@ func (ps *Storage) LoadPipeStatus(workspaceID int, sid integrations.ExternalServ
 	return &pipeStatus, nil
 }
 
-func (ps *Storage) QueueAutomaticPipes() error {
+func (ps *PostgresStorage) QueueAutomaticPipes() error {
 	_, err := ps.db.Exec(queueAutomaticPipesSQL)
 	return err
 }
 
-func (ps *Storage) DeletePipeByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
+func (ps *PostgresStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
 
-func (ps *Storage) QueuePipeAsFirst(pipe *pipe.Pipe) error {
+func (ps *PostgresStorage) QueuePipeAsFirst(pipe *pipe.Pipe) error {
 	_, err := ps.db.Exec(queuePipeAsFirstSQL, pipe.WorkspaceID, pipe.Key)
 	return err
 }
 
-func (ps *Storage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+func (ps *PostgresStorage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
 	var result []byte
 	rows, err := ps.db.Query(`
 		SELECT data FROM imports
@@ -341,7 +341,7 @@ func (ps *Storage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsR
 	return &accountsResponse, nil
 }
 
-func (ps *Storage) FetchAccounts(s integrations.ExternalService) error {
+func (ps *PostgresStorage) FetchAccounts(s integrations.ExternalService) error {
 	var response toggl.AccountsResponse
 	accounts, err := s.Accounts()
 	response.Accounts = accounts
@@ -365,7 +365,7 @@ func (ps *Storage) FetchAccounts(s integrations.ExternalService) error {
 	return nil
 }
 
-func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID integrations.PipeID) error {
+func (ps *PostgresStorage) ClearImportFor(s integrations.ExternalService, pipeID integrations.PipeID) error {
 	_, err := ps.db.Exec(`
 	    DELETE FROM imports
 	    WHERE workspace_id = $1 AND Key = $2
@@ -373,7 +373,7 @@ func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID integra
 	return err
 }
 
-func (ps *Storage) SaveAuthorization(a *pipe.Authorization) error {
+func (ps *PostgresStorage) SaveAuthorization(a *pipe.Authorization) error {
 	_, err := ps.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
@@ -381,7 +381,7 @@ func (ps *Storage) SaveAuthorization(a *pipe.Authorization) error {
 	return nil
 }
 
-func (ps *Storage) LoadAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) (*pipe.Authorization, error) {
+func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) (*pipe.Authorization, error) {
 	rows, err := ps.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return nil, err
@@ -398,14 +398,14 @@ func (ps *Storage) LoadAuthorization(workspaceID int, externalServiceID integrat
 	return &a, nil
 }
 
-func (ps *Storage) DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
+func (ps *PostgresStorage) DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
 
 // LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
 // Map format: map[externalServiceID]isAuthorized
-func (ps *Storage) LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error) {
+func (ps *PostgresStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error) {
 	authorizations := make(map[integrations.ExternalServiceID]bool)
 	rows, err := ps.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
@@ -422,7 +422,7 @@ func (ps *Storage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration
 	return authorizations, nil
 }
 
-func (ps *Storage) SaveConnection(c *pipe.Connection) error {
+func (ps *PostgresStorage) SaveConnection(c *pipe.Connection) error {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -434,11 +434,11 @@ func (ps *Storage) SaveConnection(c *pipe.Connection) error {
 	return nil
 }
 
-func (ps *Storage) LoadConnection(workspaceID int, key string) (*pipe.Connection, error) {
+func (ps *PostgresStorage) LoadConnection(workspaceID int, key string) (*pipe.Connection, error) {
 	return ps.loadConnection(workspaceID, key)
 }
 
-func (ps *Storage) LoadReversedConnection(workspaceID int, key string) (*pipe.ReversedConnection, error) {
+func (ps *PostgresStorage) LoadReversedConnection(workspaceID int, key string) (*pipe.ReversedConnection, error) {
 	connection, err := ps.loadConnection(workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -450,7 +450,7 @@ func (ps *Storage) LoadReversedConnection(workspaceID int, key string) (*pipe.Re
 	return reversed, nil
 }
 
-func (ps *Storage) loadConnection(workspaceID int, key string) (*pipe.Connection, error) {
+func (ps *PostgresStorage) loadConnection(workspaceID int, key string) (*pipe.Connection, error) {
 	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -471,7 +471,7 @@ func (ps *Storage) loadConnection(workspaceID int, key string) (*pipe.Connection
 	return connection, nil
 }
 
-func (ps *Storage) loadPipeWithKey(workspaceID int, key string) (*pipe.Pipe, error) {
+func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string) (*pipe.Pipe, error) {
 	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -487,7 +487,7 @@ func (ps *Storage) loadPipeWithKey(workspaceID int, key string) (*pipe.Pipe, err
 	return &pipe, nil
 }
 
-func (ps *Storage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, error) {
+func (ps *PostgresStorage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, error) {
 	pipes := make(map[string]*pipe.Pipe)
 	rows, err := ps.db.Query(selectPipesSQL, workspaceID)
 	if err != nil {
@@ -504,7 +504,7 @@ func (ps *Storage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, error) {
 	return pipes, nil
 }
 
-func (ps *Storage) load(rows *sql.Rows, p *pipe.Pipe) error {
+func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
 	var wid int
 	var b []byte
 	var key string
@@ -521,7 +521,7 @@ func (ps *Storage) load(rows *sql.Rows, p *pipe.Pipe) error {
 	return nil
 }
 
-func (ps *Storage) LoadLastSync(p *pipe.Pipe) {
+func (ps *PostgresStorage) LoadLastSync(p *pipe.Pipe) {
 	err := ps.db.QueryRow(lastSyncSQL, p.WorkspaceID, p.Key).Scan(&p.LastSync)
 	if err != nil {
 		var err error
@@ -536,7 +536,7 @@ func (ps *Storage) LoadLastSync(p *pipe.Pipe) {
 	}
 }
 
-func (ps *Storage) LoadPipeStatuses(workspaceID int) (map[string]*pipe.Status, error) {
+func (ps *PostgresStorage) LoadPipeStatuses(workspaceID int) (map[string]*pipe.Status, error) {
 	pipeStatuses := make(map[string]*pipe.Status)
 	rows, err := ps.db.Query(selectPipeStatusSQL, workspaceID)
 	if err != nil {
@@ -560,7 +560,7 @@ func (ps *Storage) LoadPipeStatuses(workspaceID int) (map[string]*pipe.Status, e
 	return pipeStatuses, nil
 }
 
-func (ps *Storage) SavePipeStatus(p *pipe.Status) error {
+func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
 	if p.Status == "success" {
 		if len(p.ObjectCounts) > 0 {
 			p.Message = fmt.Sprintf("%s successfully imported/exported", strings.Join(p.ObjectCounts, ", "))
@@ -579,7 +579,7 @@ func (ps *Storage) SavePipeStatus(p *pipe.Status) error {
 	return nil
 }
 
-func (ps *Storage) GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
+func (ps *PostgresStorage) GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
 	var result []byte
 	rows, err := ps.db.Query(`
 		SELECT data FROM imports
@@ -600,7 +600,7 @@ func (ps *Storage) GetObject(s integrations.ExternalService, pid integrations.Pi
 	return result, nil
 }
 
-func (ps *Storage) SaveObject(workspaceID int, objKey string, obj interface{}) error {
+func (ps *PostgresStorage) SaveObject(workspaceID int, objKey string, obj interface{}) error {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		bugsnag.Notify(err)

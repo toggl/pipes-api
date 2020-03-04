@@ -56,7 +56,7 @@ func (ts *StorageTestSuite) SetupTest() {
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
-	s := NewStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 	c := pipe.NewConnection(1, "test1")
 
 	err := s.SaveConnection(c)
@@ -72,7 +72,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed()
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewStorage(cdb)
+	s := NewPostgresStorage(cdb)
 	c := pipe.NewConnection(2, "test2")
 
 	err = s.SaveConnection(c)
@@ -84,7 +84,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed()
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
-	s := NewStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 	c := pipe.NewConnection(3, "test3")
 	c.Data["1-test"] = 10
 	c.Data["2-test"] = 20
@@ -102,7 +102,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
-	s := NewStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 	a := pipe.NewAuthorization(1, "github")
 
 	err := s.SaveAuthorization(a)
@@ -118,7 +118,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewStorage(cdb)
+	s := NewPostgresStorage(cdb)
 
 	a := pipe.NewAuthorization(2, "asana")
 	err = s.SaveAuthorization(a)
@@ -130,7 +130,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
-	s := NewStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 
 	a := pipe.NewAuthorization(1, "github")
 
@@ -142,7 +142,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_O
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
-	s := NewStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 
 	a1 := pipe.NewAuthorization(1, "github")
 	a2 := pipe.NewAuthorization(1, "asana")

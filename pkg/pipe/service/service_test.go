@@ -55,7 +55,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	pipesStorage := storage.NewStorage(db)
+	pipesStorage := storage.NewPostgresStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *pipe.Pipe {
@@ -150,7 +150,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	pipesStorage := storage.NewStorage(db)
+	pipesStorage := storage.NewPostgresStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
@@ -201,7 +201,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	pipesStorage := storage.NewStorage(db)
+	pipesStorage := storage.NewPostgresStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
@@ -265,7 +265,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
 
-	s := storage.NewStorage(ts.db)
+	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
@@ -295,7 +295,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
-	s := storage.NewStorage(ts.db)
+	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
@@ -312,7 +312,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
-	s := storage.NewStorage(ts.db)
+	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
@@ -337,7 +337,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
-	s := storage.NewStorage(ts.db)
+	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 

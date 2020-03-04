@@ -14,9 +14,9 @@ import (
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/oauth"
+	"github.com/toggl/pipes-api/pkg/pipe/server"
 	"github.com/toggl/pipes-api/pkg/pipe/service"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
-	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
@@ -50,7 +50,7 @@ func main() {
 
 	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 
-	pipesStore := storage.NewStorage(db)
+	pipesStore := storage.NewPostgresStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
 	pipesService := service.NewService(oauthProvider, pipesStore, api, cfg.PipesAPIHost, integrationsConfigPath)

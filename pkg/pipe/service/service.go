@@ -41,7 +41,7 @@ type Service struct {
 	api   *client.TogglApiClient
 	oauth OAuthProvider
 
-	store *storage.Storage
+	store *storage.PostgresStorage
 
 	availablePipeType    *regexp.Regexp
 	availableServiceType *regexp.Regexp
@@ -56,7 +56,7 @@ type Service struct {
 
 func NewService(
 	oauth OAuthProvider,
-	store *storage.Storage,
+	store *storage.PostgresStorage,
 	api *client.TogglApiClient,
 	pipesApiHost,
 	integrationsConfigPath string) *Service {
