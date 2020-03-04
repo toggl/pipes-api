@@ -8,17 +8,17 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/service"
 )
 
 type Controller struct {
 	stResolver ServiceTypeResolver
 	ptResolver PipeTypeResolver
 
-	pipesSvc *pipe.Service
+	pipesSvc *service.Service
 }
 
-func NewController(pipes *pipe.Service) *Controller {
+func NewController(pipes *service.Service) *Controller {
 	return &Controller{
 		pipesSvc: pipes,
 
@@ -57,7 +57,7 @@ func (c *Controller) PostPipeSetupHandler(req Request) Response {
 	}
 	err = c.pipesSvc.CreatePipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
-		if errors.As(err, &pipe.SetParamsError{}) {
+		if errors.As(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -77,7 +77,7 @@ func (c *Controller) PutPipeSetupHandler(req Request) Response {
 
 	err = c.pipesSvc.UpdatePipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
-		if errors.Is(err, pipe.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -93,7 +93,7 @@ func (c *Controller) DeletePipeSetupHandler(req Request) Response {
 	}
 	err = c.pipesSvc.DeletePipe(workspaceID, serviceID, pipeID)
 	if err != nil {
-		if errors.Is(err, pipe.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -117,7 +117,7 @@ func (c *Controller) GetAuthURLHandler(req Request) Response {
 
 	url, err := c.pipesSvc.GetAuthURL(serviceID, accountName, callbackURL)
 	if err != nil {
-		if errors.Is(err, &pipe.LoadError{}) {
+		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -173,10 +173,10 @@ func (c *Controller) GetServiceAccountsHandler(req Request) Response {
 
 	accountsResponse, err := c.pipesSvc.GetServiceAccounts(workspaceID, serviceID, fi)
 	if err != nil {
-		if errors.Is(err, &pipe.LoadError{}) {
+		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
 		}
-		if errors.Is(err, &pipe.RefreshError{}) {
+		if errors.Is(err, &service.RefreshError{}) {
 			return badRequest(err.Error())
 		}
 
@@ -201,19 +201,19 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 
 	usersResponse, err := c.pipesSvc.GetServiceUsers(workspaceID, serviceID, fi)
 	if err != nil {
-		if errors.Is(err, pipe.ErrNoContent) {
+		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
 		}
 
-		if errors.Is(err, &pipe.LoadError{}) {
+		if errors.Is(err, &service.LoadError{}) {
 			return badRequest("No authorizations for " + serviceID)
 		}
 
-		if errors.Is(err, pipe.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 
-		if errors.Is(err, &pipe.SetParamsError{}) {
+		if errors.Is(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -226,7 +226,7 @@ func (c *Controller) GetServicePipeLogHandler(req Request) Response {
 	serviceID, pipeID := currentServicePipeID(req.r)
 	pipesLog, err := c.pipesSvc.GetServicePipeLog(workspaceID, serviceID, pipeID)
 	if err != nil {
-		if errors.Is(err, pipe.ErrNoContent) {
+		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
 		}
 		return internalServerError("Unable to get log from DB")
@@ -240,7 +240,7 @@ func (c *Controller) PostServicePipeClearConnectionsHandler(req Request) Respons
 
 	err := c.pipesSvc.ClearPipeConnections(workspaceID, serviceID, pipeID)
 	if err != nil {
-		if errors.Is(err, pipe.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 		return internalServerError("Unable to get clear connections: " + err.Error())
@@ -255,10 +255,10 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 
 	err := c.pipesSvc.RunPipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
-		if errors.Is(err, pipe.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
-		if errors.Is(err, &pipe.SetParamsError{}) {
+		if errors.Is(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())

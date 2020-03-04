@@ -1,4 +1,4 @@
-package pipe
+package service
 
 import "errors"
 

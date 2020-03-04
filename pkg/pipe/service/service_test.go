@@ -1,4 +1,4 @@
-package pipe
+package service
 
 import (
 	"database/sql"
@@ -15,6 +15,8 @@ import (
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
+	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
@@ -27,7 +29,7 @@ var (
 func TestNewClient(t *testing.T) {
 	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
 	expectedKey := "basecamp:users"
-	p := NewPipe(workspaceID, serviceID, pipeID)
+	p := pipe.NewPipe(workspaceID, serviceID, pipeID)
 
 	if p.Key != expectedKey {
 		t.Errorf("NewPipe Key = %v, want %v", p.Key, expectedKey)
@@ -53,11 +55,11 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	pipesStorage := NewStorage(db)
+	pipesStorage := storage.NewStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
-	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *Pipe {
-		pipe := NewPipe(workspaceID, serviceID, pipeID)
+	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *pipe.Pipe {
+		pipe := pipe.NewPipe(workspaceID, serviceID, pipeID)
 		pipe.Automatic = true
 		pipe.Configured = true
 		data, err := json.Marshal(pipe)
@@ -148,7 +150,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	pipesStorage := NewStorage(db)
+	pipesStorage := storage.NewStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
@@ -161,7 +163,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		integrations[i].Pipes = nil
 	}
 
-	want := []Integration{
+	want := []pipe.Integration{
 		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-store/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
 		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-store/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
 		{ID: "teamweek", Name: "Toggl Plan", Link: "https://support.toggl.com/en/articles/2212490-integration-with-toggl-plan-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
@@ -199,7 +201,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	pipesStorage := NewStorage(db)
+	pipesStorage := storage.NewStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
@@ -208,7 +210,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
 	}
 
-	want := [][]*Pipe{
+	want := [][]*pipe.Pipe{
 		{ // Basecamp
 			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
 			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
@@ -263,15 +265,15 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
 
-	s := NewStorage(ts.db)
+	s := storage.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "https://localhost", integrationsConfigPath)
 
-	svc.setAuthorizationType("github", TypeOauth2)
+	svc.setAuthorizationType("github", pipe.TypeOauth2)
 
-	a1 := NewAuthorization(1, "github")
+	a1 := pipe.NewAuthorization(1, "github")
 	t := goauth2.Token{
 		AccessToken:  "123",
 		RefreshToken: "456",
@@ -293,15 +295,15 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
-	s := NewStorage(ts.db)
+	s := storage.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "", "")
 
-	svc.setAuthorizationType("github", TypeOauth1)
+	svc.setAuthorizationType("github", pipe.TypeOauth1)
 
-	a1 := NewAuthorization(1, "asana")
+	a1 := pipe.NewAuthorization(1, "asana")
 
 	err := svc.refreshAuthorization(a1)
 	ts.NoError(err)
@@ -310,14 +312,14 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
-	s := NewStorage(ts.db)
+	s := storage.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "", "")
-	svc.setAuthorizationType("github", TypeOauth2)
+	svc.setAuthorizationType("github", pipe.TypeOauth2)
 
-	a1 := NewAuthorization(1, "github")
+	a1 := pipe.NewAuthorization(1, "github")
 	t := goauth2.Token{
 		AccessToken:  "123",
 		RefreshToken: "456",
@@ -335,7 +337,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
-	s := NewStorage(ts.db)
+	s := storage.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
@@ -344,14 +346,14 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	res := svc.getAvailableAuthorizations("github")
 	ts.Equal("", res)
 
-	svc.setAuthorizationType("github", TypeOauth2)
-	svc.setAuthorizationType("asana", TypeOauth1)
+	svc.setAuthorizationType("github", pipe.TypeOauth2)
+	svc.setAuthorizationType("asana", pipe.TypeOauth1)
 
 	res = svc.getAvailableAuthorizations("github")
-	ts.Equal(TypeOauth2, res)
+	ts.Equal(pipe.TypeOauth2, res)
 
 	res = svc.getAvailableAuthorizations("asana")
-	ts.Equal(TypeOauth1, res)
+	ts.Equal(pipe.TypeOauth1, res)
 }
 
 // In order for 'go test' to run this suite, we need to create

@@ -1,4 +1,4 @@
-package pipe
+package storage
 
 import (
 	"database/sql"
@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
 var (
@@ -55,7 +57,7 @@ func (ts *StorageTestSuite) SetupTest() {
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
 	s := NewStorage(ts.db)
-	c := NewConnection(1, "test1")
+	c := pipe.NewConnection(1, "test1")
 
 	err := s.SaveConnection(c)
 	ts.NoError(err)
@@ -71,7 +73,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed()
 	cdb.Close()
 
 	s := NewStorage(cdb)
-	c := NewConnection(2, "test2")
+	c := pipe.NewConnection(2, "test2")
 
 	err = s.SaveConnection(c)
 	ts.Error(err)
@@ -83,7 +85,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed()
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
 	s := NewStorage(ts.db)
-	c := NewConnection(3, "test3")
+	c := pipe.NewConnection(3, "test3")
 	c.Data["1-test"] = 10
 	c.Data["2-test"] = 20
 
@@ -101,7 +103,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 	s := NewStorage(ts.db)
-	a := NewAuthorization(1, "github")
+	a := pipe.NewAuthorization(1, "github")
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
@@ -118,7 +120,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 
 	s := NewStorage(cdb)
 
-	a := NewAuthorization(2, "asana")
+	a := pipe.NewAuthorization(2, "asana")
 	err = s.SaveAuthorization(a)
 	ts.Error(err)
 
@@ -130,7 +132,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := NewStorage(ts.db)
 
-	a := NewAuthorization(1, "github")
+	a := pipe.NewAuthorization(1, "github")
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
@@ -142,8 +144,8 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_O
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := NewStorage(ts.db)
 
-	a1 := NewAuthorization(1, "github")
-	a2 := NewAuthorization(1, "asana")
+	a1 := pipe.NewAuthorization(1, "github")
+	a2 := pipe.NewAuthorization(1, "asana")
 
 	err := s.SaveAuthorization(a1)
 	ts.NoError(err)
