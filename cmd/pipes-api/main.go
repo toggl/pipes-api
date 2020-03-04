@@ -14,7 +14,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -51,9 +51,9 @@ func main() {
 
 	authStore := authorization.NewStorage(db, cfg)
 	connStore := connection.NewStorage(db)
-	pipesStore := integrations.NewStorage(db)
+	pipesStore := pipe.NewStorage(db)
 
-	pipesService := integrations.NewService(cfg, authStore, pipesStore, connStore, api, pipesApiHost, cfg.WorkDir)
+	pipesService := pipe.NewService(cfg, authStore, pipesStore, connStore, api, pipesApiHost, cfg.WorkDir)
 
 	autosync.NewService(pipesService).Start()
 

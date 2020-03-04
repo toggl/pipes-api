@@ -9,14 +9,14 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
 type PipesQueue interface {
 	QueueAutomaticPipes() error
-	GetPipesFromQueue() ([]*integrations.Pipe, error)
-	SetQueuedPipeSynced(*integrations.Pipe) error
-	Run(*integrations.Pipe)
+	GetPipesFromQueue() ([]*pipe.Pipe, error)
+	SetQueuedPipeSynced(*pipe.Pipe) error
+	Run(*pipe.Pipe)
 }
 
 var wg sync.WaitGroup

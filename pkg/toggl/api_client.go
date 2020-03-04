@@ -14,15 +14,6 @@ import (
 	"time"
 )
 
-const (
-	UsersPipeID       = "users"
-	ClientsPipeID     = "clients"
-	ProjectsPipeID    = "projects"
-	TasksPipeID       = "tasks"
-	TodoPipeID        = "todolists"
-	TimeEntriesPipeID = "time_entries"
-)
-
 var (
 	ErrApiNotHealthy = errors.New("toggl api is not healthy, got status code")
 )

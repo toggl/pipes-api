@@ -13,6 +13,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
 // mutex to prevent multiple of postPipeRun on same workspace run at same time
@@ -23,13 +24,13 @@ type Controller struct {
 	stResolver ServiceTypeResolver
 	ptResolver PipeTypeResolver
 
-	pipesSvc   *integrations.Service
-	pipesStore *integrations.Storage
+	pipesSvc   *pipe.Service
+	pipesStore *pipe.Storage
 	authStore  *authorization.Storage
 	env        *config.Config
 }
 
-func NewController(env *config.Config, pipes *integrations.Service, pipesStore *integrations.Storage, authStore *authorization.Storage) *Controller {
+func NewController(env *config.Config, pipes *pipe.Service, pipesStore *pipe.Storage, authStore *authorization.Storage) *Controller {
 	return &Controller{
 		pipesSvc:   pipes,
 		pipesStore: pipesStore,
@@ -61,20 +62,20 @@ func (c *Controller) GetIntegrationPipe(req Request) Response {
 		return badRequest("Missing or invalid pipe")
 	}
 
-	pipe, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
+	p, err := c.pipesStore.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
-	if pipe == nil {
-		pipe = integrations.NewPipe(workspaceID, serviceID, pipeID)
+	if p == nil {
+		p = pipe.NewPipe(workspaceID, serviceID, pipeID)
 	}
 
-	pipe.PipeStatus, err = c.pipesStore.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	p.PipeStatus, err = c.pipesStore.LoadPipeStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
 
-	return ok(pipe)
+	return ok(p)
 }
 
 func (c *Controller) PostPipeSetup(req Request) Response {
@@ -88,16 +89,16 @@ func (c *Controller) PostPipeSetup(req Request) Response {
 		return badRequest("Missing or invalid pipe")
 	}
 
-	pipe := integrations.NewPipe(workspaceID, serviceID, pipeID)
+	p := pipe.NewPipe(workspaceID, serviceID, pipeID)
 
 	service := integrations.NewExternalService(serviceID, workspaceID)
 	err := service.SetParams(req.body)
 	if err != nil {
 		return badRequest(err)
 	}
-	pipe.ServiceParams = req.body
+	p.ServiceParams = req.body
 
-	if err := c.pipesStore.Save(pipe); err != nil {
+	if err := c.pipesStore.Save(p); err != nil {
 		return internalServerError(err.Error())
 	}
 	return ok(nil)
