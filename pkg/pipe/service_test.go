@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/config"
-	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
@@ -54,10 +53,8 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	connStore := connection.NewStorage(db)
-
 	pipesStorage := NewStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, connStore, api, cfg.PipesAPIHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *Pipe {
 		pipe := NewPipe(workspaceID, serviceID, pipeID)
@@ -151,10 +148,8 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	connStore := connection.NewStorage(db)
-
 	pipesStorage := NewStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, connStore, api, cfg.PipesAPIHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -204,10 +199,8 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	connStore := connection.NewStorage(db)
-
 	pipesStorage := NewStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, connStore, api, cfg.PipesAPIHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -271,11 +264,10 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
 
 	s := NewStorage(ts.db)
-	cs := connection.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &stubOauthProvider{}
 
-	svc := NewService(sb, s, cs, api, "https://localhost", integrationsConfigPath)
+	svc := NewService(sb, s, api, "https://localhost", integrationsConfigPath)
 
 	svc.setAuthorizationType("github", TypeOauth2)
 
@@ -302,11 +294,10 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
 	s := NewStorage(ts.db)
-	cs := connection.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &stubOauthProvider{}
 
-	svc := NewService(sb, s, cs, api, "", "")
+	svc := NewService(sb, s, api, "", "")
 
 	svc.setAuthorizationType("github", TypeOauth1)
 
@@ -320,11 +311,10 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
 	s := NewStorage(ts.db)
-	cs := connection.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &stubOauthProvider{}
 
-	svc := NewService(sb, s, cs, api, "", "")
+	svc := NewService(sb, s, api, "", "")
 	svc.setAuthorizationType("github", TypeOauth2)
 
 	a1 := NewAuthorization(1, "github")
@@ -346,11 +336,10 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 
 	s := NewStorage(ts.db)
-	cs := connection.NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &stubOauthProvider{}
 
-	svc := NewService(sb, s, cs, api, "", "")
+	svc := NewService(sb, s, api, "", "")
 
 	res := svc.getAvailableAuthorizations("github")
 	ts.Equal("", res)

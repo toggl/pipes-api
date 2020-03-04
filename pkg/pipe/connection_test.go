@@ -1,4 +1,4 @@
-package connection
+package pipe
 
 import (
 	"testing"

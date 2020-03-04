@@ -49,9 +49,57 @@ func (ts *StorageTestSuite) TearDownSuite() {
 func (ts *StorageTestSuite) SetupTest() {
 	_, err := ts.db.Exec(truncateAuthorizationSQL)
 	ts.NoError(err)
+	_, err = ts.db.Exec(truncateConnectionSQL)
+	ts.NoError(err)
 }
 
-func (ts *StorageTestSuite) TestStorage_Save_Load_Ok() {
+func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
+	s := NewStorage(ts.db)
+	c := NewConnection(1, "test1")
+
+	err := s.SaveConnection(c)
+	ts.NoError(err)
+
+	cFromDb, err := s.LoadConnection(1, "test1")
+	ts.NoError(err)
+	ts.Equal(c, cFromDb)
+}
+
+func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed() {
+	cdb, err := sql.Open("postgres", getDbConnString())
+	require.NoError(ts.T(), err)
+	cdb.Close()
+
+	s := NewStorage(cdb)
+	c := NewConnection(2, "test2")
+
+	err = s.SaveConnection(c)
+	ts.Error(err)
+
+	con, err := s.LoadConnection(2, "test2")
+	ts.Error(err)
+	ts.Nil(con)
+}
+
+func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
+	s := NewStorage(ts.db)
+	c := NewConnection(3, "test3")
+	c.Data["1-test"] = 10
+	c.Data["2-test"] = 20
+
+	err := s.SaveConnection(c)
+	ts.NoError(err)
+
+	cFromDb, err := s.LoadReversedConnection(3, "test3")
+	ts.NoError(err)
+	ts.Contains(cFromDb.GetKeys(), 10)
+	ts.Contains(cFromDb.GetKeys(), 20)
+
+	ts.Equal(1, cFromDb.GetForeignID(10))
+	ts.Equal(2, cFromDb.GetForeignID(20))
+}
+
+func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 	s := NewStorage(ts.db)
 	a := NewAuthorization(1, "github")
 
@@ -63,7 +111,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Load_Ok() {
 	ts.Equal(a, aFromDb)
 }
 
-func (ts *StorageTestSuite) TestStorage_Save_Load_DbClosed() {
+func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbClosed() {
 	cdb, err := sql.Open("postgres", getDbConnString())
 	require.NoError(ts.T(), err)
 	cdb.Close()
@@ -79,7 +127,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Load_DbClosed() {
 	ts.Nil(con)
 }
 
-func (ts *StorageTestSuite) TestStorage_Save_Destroy_Ok() {
+func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := NewStorage(ts.db)
 
 	a := NewAuthorization(1, "github")
@@ -91,7 +139,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Destroy_Ok() {
 	ts.NoError(err)
 }
 
-func (ts *StorageTestSuite) TestStorage_Save_LoadWorkspaceAuthorizations_Ok() {
+func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := NewStorage(ts.db)
 
 	a1 := NewAuthorization(1, "github")

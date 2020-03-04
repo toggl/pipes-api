@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/lib/pq"
+
 	"github.com/bugsnag/bugsnag-go"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
@@ -126,6 +128,32 @@ const (
 		AND service = $2
 	`
 	truncateAuthorizationSQL = `TRUNCATE TABLE authorizations`
+)
+
+const (
+	selectConnectionSQL = `SELECT Key, data
+    FROM connections WHERE
+    workspace_id = $1
+    AND Key = $2
+    LIMIT 1
+  `
+	insertConnectionSQL = `
+    WITH existing_connection AS (
+      UPDATE connections SET data = $3
+      WHERE workspace_id = $1 AND Key = $2
+      RETURNING Key
+    ),
+    inserted_connection AS (
+      INSERT INTO connections(workspace_id, Key, data)
+      SELECT $1, $2, $3
+      WHERE NOT EXISTS (SELECT 1 FROM existing_connection)
+      RETURNING Key
+    )
+    SELECT * FROM inserted_connection
+    UNION
+    SELECT * FROM existing_connection
+  `
+	truncateConnectionSQL = `TRUNCATE TABLE connections`
 )
 
 type Storage struct {
@@ -391,6 +419,55 @@ func (ps *Storage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration
 		authorizations[service] = true
 	}
 	return authorizations, nil
+}
+
+func (ps *Storage) SaveConnection(c *Connection) error {
+	b, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+	_, err = ps.db.Exec(insertConnectionSQL, c.WorkspaceID, c.Key, b)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ps *Storage) LoadConnection(workspaceID int, key string) (*Connection, error) {
+	return ps.loadConnection(workspaceID, key)
+}
+
+func (ps *Storage) LoadReversedConnection(workspaceID int, key string) (*ReversedConnection, error) {
+	connection, err := ps.loadConnection(workspaceID, key)
+	if err != nil {
+		return nil, err
+	}
+	reversed := NewReversedConnection()
+	for key, value := range connection.Data {
+		reversed.Data[value] = key
+	}
+	return reversed, nil
+}
+
+func (ps *Storage) loadConnection(workspaceID int, key string) (*Connection, error) {
+	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	connection := NewConnection(workspaceID, key)
+	if rows.Next() {
+		var b []byte
+		if err := rows.Scan(&connection.Key, &b); err != nil {
+			return nil, err
+		}
+		err := json.Unmarshal(b, connection)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return connection, nil
 }
 
 func (ps *Storage) loadPipeWithKey(workspaceID int, key string) (*Pipe, error) {

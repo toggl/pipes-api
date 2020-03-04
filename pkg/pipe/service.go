@@ -16,7 +16,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/tambet/oauthplain"
 
-	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/toggl"
@@ -40,7 +39,6 @@ type Service struct {
 	api   *client.TogglApiClient
 	oauth OAuthProvider
 
-	conn  *connection.Storage
 	store *Storage
 
 	availablePipeType    *regexp.Regexp
@@ -57,7 +55,6 @@ type Service struct {
 func NewService(
 	oauth OAuthProvider,
 	store *Storage,
-	conn *connection.Storage,
 	api *client.TogglApiClient,
 	pipesApiHost,
 	integrationsConfigPath string) *Service {
@@ -66,7 +63,6 @@ func NewService(
 		api:   api,
 		oauth: oauth,
 		store: store,
-		conn:  conn,
 
 		pipesApiHost:          pipesApiHost,
 		availableIntegrations: []*Integration{},
@@ -694,14 +690,14 @@ func (svc *Service) postUsers(p *Pipe) error {
 	if err != nil {
 		return err
 	}
-	var connection *connection.Connection
-	if connection, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe)); err != nil {
+	var connection *Connection
+	if connection, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe)); err != nil {
 		return err
 	}
 	for _, user := range usersImport.WorkspaceUsers {
 		connection.Data[user.ForeignID] = user.ID
 	}
-	if err := svc.conn.Save(connection); err != nil {
+	if err := svc.store.SaveConnection(connection); err != nil {
 		return err
 	}
 
@@ -739,14 +735,14 @@ func (svc *Service) postClients(p *Pipe) error {
 	if err != nil {
 		return err
 	}
-	var connection *connection.Connection
-	if connection, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe)); err != nil {
+	var connection *Connection
+	if connection, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe)); err != nil {
 		return err
 	}
 	for _, client := range clientsImport.Clients {
 		connection.Data[client.ForeignID] = client.ID
 	}
-	if err := svc.conn.Save(connection); err != nil {
+	if err := svc.store.SaveConnection(connection); err != nil {
 		return err
 	}
 	p.PipeStatus.Complete(integrations.ClientsPipe, clientsImport.Notifications, clientsImport.Count())
@@ -781,14 +777,14 @@ func (svc *Service) postProjects(p *Pipe) error {
 	if err != nil {
 		return err
 	}
-	var connection *connection.Connection
-	if connection, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	var connection *Connection
+	if connection, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
 		return err
 	}
 	for _, project := range projectsImport.Projects {
 		connection.Data[project.ForeignID] = project.ID
 	}
-	if err := svc.conn.Save(connection); err != nil {
+	if err := svc.store.SaveConnection(connection); err != nil {
 		return err
 	}
 	p.PipeStatus.Complete(integrations.ProjectsPipe, projectsImport.Notifications, projectsImport.Count())
@@ -827,14 +823,14 @@ func (svc *Service) postTodoLists(p *Pipe) error {
 		if err != nil {
 			return err
 		}
-		connection, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.TodoPipe))
+		connection, err := svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.TodoPipe))
 		if err != nil {
 			return err
 		}
 		for _, task := range tasksImport.Tasks {
 			connection.Data[task.ForeignID] = task.ID
 		}
-		if err := svc.conn.Save(connection); err != nil {
+		if err := svc.store.SaveConnection(connection); err != nil {
 			return err
 		}
 		notifications = append(notifications, tasksImport.Notifications...)
@@ -875,14 +871,14 @@ func (svc *Service) postTasks(p *Pipe) error {
 		if err != nil {
 			return err
 		}
-		con, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe))
+		con, err := svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe))
 		if err != nil {
 			return err
 		}
 		for _, task := range tasksImport.Tasks {
 			con.Data[task.ForeignID] = task.ID
 		}
-		if err := svc.conn.Save(con); err != nil {
+		if err := svc.store.SaveConnection(con); err != nil {
 			return err
 		}
 		notifications = append(notifications, tasksImport.Notifications...)
@@ -893,22 +889,22 @@ func (svc *Service) postTasks(p *Pipe) error {
 }
 
 func (svc *Service) postTimeEntries(p *Pipe, service integrations.ExternalService) error {
-	usersCon, err := svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe))
+	usersCon, err := svc.store.LoadReversedConnection(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe))
 	if err != nil {
 		return err
 	}
 
-	tasksCon, err := svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe))
+	tasksCon, err := svc.store.LoadReversedConnection(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe))
 	if err != nil {
 		return err
 	}
 
-	projectsCon, err := svc.conn.LoadReversed(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe))
+	projectsCon, err := svc.store.LoadReversedConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe))
 	if err != nil {
 		return err
 	}
 
-	entriesCon, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.TimeEntriesPipe))
+	entriesCon, err := svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.TimeEntriesPipe))
 	if err != nil {
 		return err
 	}
@@ -954,7 +950,7 @@ func (svc *Service) postTimeEntries(p *Pipe, service integrations.ExternalServic
 		}
 	}
 
-	if err := svc.conn.Save(entriesCon); err != nil {
+	if err := svc.store.SaveConnection(entriesCon); err != nil {
 		return err
 	}
 	p.PipeStatus.Complete("timeentries", []string{}, len(timeEntries))
@@ -1067,7 +1063,7 @@ func (svc *Service) fetchClients(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	connections, err := svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe))
+	connections, err := svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe))
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -1136,12 +1132,12 @@ func (svc *Service) fetchProjects(p *Pipe) error {
 
 	response.Projects = trimSpacesFromName(projects)
 
-	var clientConnections, projectConnections *connection.Connection
-	if clientConnections, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe)); err != nil {
+	var clientConnections, projectConnections *Connection
+	if clientConnections, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if projectConnections, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if projectConnections, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1209,13 +1205,13 @@ func (svc *Service) fetchTodoLists(p *Pipe) error {
 		return err
 	}
 
-	var projectConnections, taskConnections *connection.Connection
+	var projectConnections, taskConnections *Connection
 
-	if projectConnections, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if projectConnections, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.TodoPipe)); err != nil {
+	if taskConnections, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.TodoPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1287,13 +1283,13 @@ func (svc *Service) fetchTasks(p *Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	var projectConnections, taskConnections *connection.Connection
+	var projectConnections, taskConnections *Connection
 
-	if projectConnections, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if projectConnections, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskConnections, err = svc.conn.Load(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe)); err != nil {
+	if taskConnections, err = svc.store.LoadConnection(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
