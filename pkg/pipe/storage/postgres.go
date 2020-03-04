@@ -450,43 +450,6 @@ func (ps *PostgresStorage) LoadReversedConnection(workspaceID int, key string) (
 	return reversed, nil
 }
 
-func (ps *PostgresStorage) loadConnection(workspaceID int, key string) (*pipe.Connection, error) {
-	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	connection := pipe.NewConnection(workspaceID, key)
-	if rows.Next() {
-		var b []byte
-		if err := rows.Scan(&connection.Key, &b); err != nil {
-			return nil, err
-		}
-		err := json.Unmarshal(b, connection)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return connection, nil
-}
-
-func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string) (*pipe.Pipe, error) {
-	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return nil, rows.Err()
-	}
-	var pipe pipe.Pipe
-	if err := ps.load(rows, &pipe); err != nil {
-		return nil, err
-	}
-	return &pipe, nil
-}
-
 func (ps *PostgresStorage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, error) {
 	pipes := make(map[string]*pipe.Pipe)
 	rows, err := ps.db.Query(selectPipesSQL, workspaceID)
@@ -502,23 +465,6 @@ func (ps *PostgresStorage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, er
 		pipes[pipe.Key] = &pipe
 	}
 	return pipes, nil
-}
-
-func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
-	var wid int
-	var b []byte
-	var key string
-	if err := rows.Scan(&wid, &key, &b); err != nil {
-		return err
-	}
-	err := json.Unmarshal(b, p)
-	if err != nil {
-		return err
-	}
-	p.Key = key
-	p.WorkspaceID = wid
-	p.ServiceID = integrations.ExternalServiceID(strings.Split(key, ":")[0])
-	return nil
 }
 
 func (ps *PostgresStorage) LoadLastSync(p *pipe.Pipe) {
@@ -615,5 +561,59 @@ func (ps *PostgresStorage) SaveObject(workspaceID int, objKey string, obj interf
 		bugsnag.Notify(err)
 		return err
 	}
+	return nil
+}
+
+func (ps *PostgresStorage) loadConnection(workspaceID int, key string) (*pipe.Connection, error) {
+	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	connection := pipe.NewConnection(workspaceID, key)
+	if rows.Next() {
+		var b []byte
+		if err := rows.Scan(&connection.Key, &b); err != nil {
+			return nil, err
+		}
+		err := json.Unmarshal(b, connection)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return connection, nil
+}
+
+func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string) (*pipe.Pipe, error) {
+	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, rows.Err()
+	}
+	var pipe pipe.Pipe
+	if err := ps.load(rows, &pipe); err != nil {
+		return nil, err
+	}
+	return &pipe, nil
+}
+
+func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
+	var wid int
+	var b []byte
+	var key string
+	if err := rows.Scan(&wid, &key, &b); err != nil {
+		return err
+	}
+	err := json.Unmarshal(b, p)
+	if err != nil {
+		return err
+	}
+	p.Key = key
+	p.WorkspaceID = wid
+	p.ServiceID = integrations.ExternalServiceID(strings.Split(key, ":")[0])
 	return nil
 }

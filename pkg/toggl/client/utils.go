@@ -10,7 +10,7 @@ const (
 	maxPayloadSizeBytes = 800 * 1000
 )
 
-func AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error) {
+func (c *TogglApiClient) AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error) {
 	var trs []*toggl.TaskRequest
 	var size int
 	size = len(tasks) / split
@@ -33,7 +33,7 @@ func AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, er
 			return nil, err
 		}
 		if len(j) > maxPayloadSizeBytes {
-			return AdjustRequestSize(tasks, split+1)
+			return c.AdjustRequestSize(tasks, split+1)
 		}
 	}
 	return trs, nil

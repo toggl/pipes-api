@@ -32,12 +32,11 @@ func NewTogglApiClient(url string) *TogglApiClient {
 	return &TogglApiClient{togglApiUrl: url}
 }
 
-func (c *TogglApiClient) WithAuthToken(authToken string) *TogglApiClient {
+func (c *TogglApiClient) WithAuthToken(authToken string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
 	c.autoToken = authToken
-	return c
 }
 
 func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {

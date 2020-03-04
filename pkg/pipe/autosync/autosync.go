@@ -12,13 +12,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
-type PipesQueue interface {
-	QueueAutomaticPipes() error
-	GetPipesFromQueue() ([]*pipe.Pipe, error)
-	SetQueuedPipeSynced(*pipe.Pipe) error
-	Run(*pipe.Pipe)
-}
-
 var wg sync.WaitGroup
 
 const (
@@ -28,10 +21,10 @@ const (
 )
 
 type Service struct {
-	pipesQueue PipesQueue
+	pipesQueue pipe.QueueRunner
 }
 
-func NewService(p PipesQueue) *Service {
+func NewService(p pipe.QueueRunner) *Service {
 	return &Service{
 		pipesQueue: p,
 	}

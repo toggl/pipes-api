@@ -10,7 +10,67 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations/freshbooks"
 	"github.com/toggl/pipes-api/pkg/integrations/github"
 	"github.com/toggl/pipes-api/pkg/integrations/teamweek"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
+
+type QueueRunner interface {
+	Queue
+	Run(*Pipe)
+}
+
+type Queue interface {
+	QueueAutomaticPipes() error
+	GetPipesFromQueue() ([]*Pipe, error)
+	SetQueuedPipeSynced(*Pipe) error
+}
+
+type Storage interface {
+	Queue
+
+	IsDown() bool
+	QueuePipeAsFirst(pipe *Pipe) error
+
+	GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
+	FetchAccounts(s integrations.ExternalService) error
+	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
+
+	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
+	LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error)
+	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
+	LoadConnection(workspaceID int, key string) (*Connection, error)
+	LoadReversedConnection(workspaceID int, key string) (*ReversedConnection, error)
+	LoadPipes(workspaceID int) (map[string]*Pipe, error)
+	LoadLastSync(p *Pipe)
+	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
+	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
+
+	DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
+	DeletePipeConnections(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
+
+	Destroy(p *Pipe, workspaceID int) error
+	DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
+
+	Save(p *Pipe) error
+	SaveConnection(c *Connection) error
+	SavePipeStatus(p *Status) error
+	SaveAuthorization(a *Authorization) error
+
+	GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error)
+	SaveObject(workspaceID int, objKey string, obj interface{}) error
+}
+
+type TogglClient interface {
+	WithAuthToken(authToken string)
+	GetWorkspaceIdByToken(token string) (int, error)
+	PostClients(clientsPipeID integrations.PipeID, clients interface{}) (*toggl.ClientsImport, error)
+	PostProjects(projectsPipeID integrations.PipeID, projects interface{}) (*toggl.ProjectsImport, error)
+	PostTasks(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error)
+	PostTodoLists(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error)
+	PostUsers(usersPipeID integrations.PipeID, users interface{}) (*toggl.UsersImport, error)
+	GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]toggl.TimeEntry, error)
+	AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error)
+	Ping() error
+}
 
 type Integration struct {
 	ID         integrations.ExternalServiceID `json:"id"`

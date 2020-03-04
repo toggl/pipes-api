@@ -19,33 +19,20 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
-	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl"
-	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
-
-type OAuthProvider interface {
-	OAuth2URL(integrations.ExternalServiceID) string
-	OAuth1Configs(integrations.ExternalServiceID) (*oauthplain.Config, bool)
-	OAuth1Exchange(integrations.ExternalServiceID, oauth.ParamsV1) ([]byte, error)
-	OAuth2Exchange(integrations.ExternalServiceID, string) ([]byte, error)
-	OAuth2Configs(integrations.ExternalServiceID) (*goauth2.Config, bool)
-	OAuth2Refresh(*goauth2.Config, *goauth2.Token) error
-}
 
 // mutex to prevent multiple of postPipeRun on same workspace run at same time
 var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Service struct {
-	api   *client.TogglApiClient
-	oauth OAuthProvider
+	oauth oauth.Provider
+	toggl pipe.TogglClient
+	store pipe.Storage
 
-	store *storage.PostgresStorage
-
-	availablePipeType    *regexp.Regexp
-	availableServiceType *regexp.Regexp
-
+	availablePipeType     *regexp.Regexp
+	availableServiceType  *regexp.Regexp
 	availableIntegrations []*pipe.Integration
 	// Stores available authorization types for each service
 	// Map format: map[externalServiceID]authType
@@ -55,14 +42,14 @@ type Service struct {
 }
 
 func NewService(
-	oauth OAuthProvider,
-	store *storage.PostgresStorage,
-	api *client.TogglApiClient,
+	oauth oauth.Provider,
+	store pipe.Storage,
+	toggl pipe.TogglClient,
 	pipesApiHost,
 	integrationsConfigPath string) *Service {
 
 	svc := &Service{
-		api:   api,
+		toggl: toggl,
 		oauth: oauth,
 		store: store,
 
@@ -221,7 +208,7 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServ
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
 	} else {
-		if err := svc.QueuePipeAsFirst(p); err != nil {
+		if err := svc.queuePipeAsFirst(p); err != nil {
 			return err
 		}
 	}
@@ -482,7 +469,7 @@ func (svc *Service) Run(p *pipe.Pipe) {
 		})
 		return
 	}
-	svc.api.WithAuthToken(auth.WorkspaceToken)
+	svc.toggl.WithAuthToken(auth.WorkspaceToken)
 
 	if err = svc.fetchObjects(p, false); err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -517,7 +504,7 @@ func (svc *Service) Ready() []error {
 		errs = append(errs, errors.New("database is down"))
 	}
 
-	if err := svc.api.Ping(); err != nil {
+	if err := svc.toggl.Ping(); err != nil {
 		errs = append(errs, err)
 	}
 	return errs
@@ -535,16 +522,16 @@ func (svc *Service) QueueAutomaticPipes() error {
 	return svc.store.QueueAutomaticPipes()
 }
 
-func (svc *Service) QueuePipeAsFirst(pipe *pipe.Pipe) error {
-	return svc.store.QueuePipeAsFirst(pipe)
-}
-
 func (svc *Service) AvailablePipeType(pipeID integrations.PipeID) bool {
 	return svc.availablePipeType.MatchString(string(pipeID))
 }
 
 func (svc *Service) AvailableServiceType(serviceID integrations.ExternalServiceID) bool {
 	return svc.availableServiceType.MatchString(string(serviceID))
+}
+
+func (svc *Service) queuePipeAsFirst(pipe *pipe.Pipe) error {
+	return svc.store.QueuePipeAsFirst(pipe)
 }
 
 func (svc *Service) setAuthorizationType(serviceID integrations.ExternalServiceID, authType string) {
@@ -688,7 +675,7 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		}
 	}
 
-	usersImport, err := svc.api.PostUsers(integrations.UsersPipe, toggl.UsersRequest{Users: users})
+	usersImport, err := svc.toggl.PostUsers(integrations.UsersPipe, toggl.UsersRequest{Users: users})
 	if err != nil {
 		return err
 	}
@@ -733,7 +720,7 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 	if len(clientsResponse.Clients) == 0 {
 		return nil
 	}
-	clientsImport, err := svc.api.PostClients(integrations.ClientsPipe, clients)
+	clientsImport, err := svc.toggl.PostClients(integrations.ClientsPipe, clients)
 	if err != nil {
 		return err
 	}
@@ -775,7 +762,7 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 	projects := toggl.ProjectRequest{
 		Projects: projectsResponse.Projects,
 	}
-	projectsImport, err := svc.api.PostProjects(integrations.ProjectsPipe, projects)
+	projectsImport, err := svc.toggl.PostProjects(integrations.ProjectsPipe, projects)
 	if err != nil {
 		return err
 	}
@@ -814,14 +801,14 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 	if tasksResponse == nil {
 		return errors.New("service tasks not found")
 	}
-	trs, err := client.AdjustRequestSize(tasksResponse.Tasks, 1)
+	trs, err := svc.toggl.AdjustRequestSize(tasksResponse.Tasks, 1)
 	if err != nil {
 		return err
 	}
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		tasksImport, err := svc.api.PostTodoLists(integrations.TasksPipe, tr) // TODO: WTF?? Why toggl.TasksPipe
+		tasksImport, err := svc.toggl.PostTodoLists(integrations.TasksPipe, tr) // TODO: WTF?? Why toggl.TasksPipe
 		if err != nil {
 			return err
 		}
@@ -862,14 +849,14 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 	if tasksResponse == nil {
 		return errors.New("service tasks not found")
 	}
-	trs, err := client.AdjustRequestSize(tasksResponse.Tasks, 1)
+	trs, err := svc.toggl.AdjustRequestSize(tasksResponse.Tasks, 1)
 	if err != nil {
 		return err
 	}
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		tasksImport, err := svc.api.PostTasks(integrations.TasksPipe, tr)
+		tasksImport, err := svc.toggl.PostTasks(integrations.TasksPipe, tr)
 		if err != nil {
 			return err
 		}
@@ -916,7 +903,7 @@ func (svc *Service) postTimeEntries(p *pipe.Pipe, service integrations.ExternalS
 		p.LastSync = &currentTime
 	}
 
-	timeEntries, err := svc.api.GetTimeEntries(*p.LastSync, usersCon.GetKeys(), projectsCon.GetKeys())
+	timeEntries, err := svc.toggl.GetTimeEntries(*p.LastSync, usersCon.GetKeys(), projectsCon.GetKeys())
 	if err != nil {
 		return err
 	}
