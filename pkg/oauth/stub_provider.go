@@ -1,23 +1,22 @@
-package pipe
+package oauth
 
 import (
 	goauth2 "code.google.com/p/goauth2/oauth"
 	"github.com/tambet/oauthplain"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/oauth"
 )
 
-type stubOauthProvider struct {
+type StubProvider struct {
 	NotFound     bool
 	RefreshError bool
 }
 
-func (sp *stubOauthProvider) OAuth2URL(integrations.ExternalServiceID) string {
+func (sp *StubProvider) OAuth2URL(integrations.ExternalServiceID) string {
 	return ""
 }
 
-func (sp *stubOauthProvider) OAuth1Configs(integrations.ExternalServiceID) (*oauthplain.Config, bool) {
+func (sp *StubProvider) OAuth1Configs(integrations.ExternalServiceID) (*oauthplain.Config, bool) {
 	return &oauthplain.Config{
 		ConsumerKey:       "",
 		ConsumerSecret:    "",
@@ -27,15 +26,15 @@ func (sp *stubOauthProvider) OAuth1Configs(integrations.ExternalServiceID) (*oau
 	}, true
 }
 
-func (sp *stubOauthProvider) OAuth1Exchange(integrations.ExternalServiceID, oauth.ParamsV1) ([]byte, error) {
+func (sp *StubProvider) OAuth1Exchange(integrations.ExternalServiceID, ParamsV1) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (sp *stubOauthProvider) OAuth2Exchange(integrations.ExternalServiceID, string) ([]byte, error) {
+func (sp *StubProvider) OAuth2Exchange(integrations.ExternalServiceID, string) ([]byte, error) {
 	return []byte{}, nil
 }
 
-func (sp *stubOauthProvider) OAuth2Configs(id integrations.ExternalServiceID) (*goauth2.Config, bool) {
+func (sp *StubProvider) OAuth2Configs(id integrations.ExternalServiceID) (*goauth2.Config, bool) {
 	return &goauth2.Config{
 		ClientId:       string(id),
 		ClientSecret:   "",
@@ -49,7 +48,7 @@ func (sp *stubOauthProvider) OAuth2Configs(id integrations.ExternalServiceID) (*
 	}, true
 }
 
-func (sp *stubOauthProvider) OAuth2Refresh(*goauth2.Config, *goauth2.Token) error {
+func (sp *StubProvider) OAuth2Refresh(*goauth2.Config, *goauth2.Token) error {
 	if sp.RefreshError {
 		return goauth2.OAuthError{}
 	}

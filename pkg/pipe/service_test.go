@@ -51,7 +51,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 
 	oAuth1ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth1.json")
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
-	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
+	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := NewStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
@@ -146,7 +146,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 
 	oAuth1ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth1.json")
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
-	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
+	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := NewStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
@@ -197,7 +197,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 
 	oAuth1ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth1.json")
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
-	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
+	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := NewStorage(db)
 	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
@@ -265,7 +265,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 
 	s := NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &stubOauthProvider{}
+	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "https://localhost", integrationsConfigPath)
 
@@ -295,7 +295,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	s := NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &stubOauthProvider{}
+	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "", "")
 
@@ -312,7 +312,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 
 	s := NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &stubOauthProvider{}
+	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "", "")
 	svc.setAuthorizationType("github", TypeOauth2)
@@ -337,7 +337,7 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
 	s := NewStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &stubOauthProvider{}
+	sb := &oauth.StubProvider{}
 
 	svc := NewService(sb, s, api, "", "")
 

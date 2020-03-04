@@ -45,7 +45,7 @@ func main() {
 
 	oAuth1ConfigPath := filepath.Join(env.WorkDir, "config", "oauth1.json")
 	oAuth2ConfigPath := filepath.Join(env.WorkDir, "config", "oauth2.json")
-	oauthProvider := oauth.NewProvider(env.Environment, oAuth1ConfigPath, oAuth2ConfigPath)
+	oauthProvider := oauth.NewInMemoryProvider(env.Environment, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 

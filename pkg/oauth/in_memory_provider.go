@@ -19,7 +19,7 @@ type ParamsV1 struct {
 	Verifier    string `json:"oauth_verifier,omitempty"`
 }
 
-type Provider struct {
+type InMemoryProvider struct {
 	envType          string
 	oauth1ConfigPath string
 	oauth2ConfigPath string
@@ -28,8 +28,8 @@ type Provider struct {
 	mx               sync.RWMutex
 }
 
-func NewProvider(envType, oauth1ConfigPath, oauth2ConfigPath string) *Provider {
-	svc := &Provider{
+func NewInMemoryProvider(envType, oauth1ConfigPath, oauth2ConfigPath string) *InMemoryProvider {
+	svc := &InMemoryProvider{
 		envType:          envType,
 		oauth1ConfigPath: oauth1ConfigPath,
 		oauth2ConfigPath: oauth2ConfigPath,
@@ -42,7 +42,7 @@ func NewProvider(envType, oauth1ConfigPath, oauth2ConfigPath string) *Provider {
 	return svc
 }
 
-func (p *Provider) OAuth2URL(sid integrations.ExternalServiceID) string {
+func (p *InMemoryProvider) OAuth2URL(sid integrations.ExternalServiceID) string {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	config, ok := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -52,7 +52,7 @@ func (p *Provider) OAuth2URL(sid integrations.ExternalServiceID) string {
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (p *Provider) OAuth1Exchange(sid integrations.ExternalServiceID, op ParamsV1) ([]byte, error) {
+func (p *InMemoryProvider) OAuth1Exchange(sid integrations.ExternalServiceID, op ParamsV1) ([]byte, error) {
 	if op.AccountName == "" {
 		return nil, errors.New("missing account_name")
 	}
@@ -90,7 +90,7 @@ func (p *Provider) OAuth1Exchange(sid integrations.ExternalServiceID, op ParamsV
 	return b, nil
 }
 
-func (p *Provider) OAuth2Exchange(sid integrations.ExternalServiceID, code string) ([]byte, error) {
+func (p *InMemoryProvider) OAuth2Exchange(sid integrations.ExternalServiceID, code string) ([]byte, error) {
 
 	p.mx.RLock()
 	config, res := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -112,26 +112,26 @@ func (p *Provider) OAuth2Exchange(sid integrations.ExternalServiceID, code strin
 	return b, nil
 }
 
-func (p *Provider) OAuth1Configs(sid integrations.ExternalServiceID) (*oauthplain.Config, bool) {
+func (p *InMemoryProvider) OAuth1Configs(sid integrations.ExternalServiceID) (*oauthplain.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth1Configs[string(sid)]
 	return v, found
 }
 
-func (p *Provider) OAuth2Configs(sid integrations.ExternalServiceID) (*oauth.Config, bool) {
+func (p *InMemoryProvider) OAuth2Configs(sid integrations.ExternalServiceID) (*oauth.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth2Configs[string(sid)+"_"+p.envType]
 	return v, found
 }
 
-func (p *Provider) OAuth2Refresh(cfg *oauth.Config, token *oauth.Token) error {
+func (p *InMemoryProvider) OAuth2Refresh(cfg *oauth.Config, token *oauth.Token) error {
 	transport := &oauth.Transport{Config: cfg, Token: token}
 	return transport.Refresh()
 }
 
-func (p *Provider) loadOauth2Configs() {
+func (p *InMemoryProvider) loadOauth2Configs() {
 	p.mx.Lock()
 	defer p.mx.Unlock()
 
@@ -144,7 +144,7 @@ func (p *Provider) loadOauth2Configs() {
 	}
 }
 
-func (p *Provider) loadOauth1Configs() {
+func (p *InMemoryProvider) loadOauth1Configs() {
 	p.mx.Lock()
 	defer p.mx.Unlock()
 	b, err := ioutil.ReadFile(p.oauth1ConfigPath)
