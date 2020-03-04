@@ -21,18 +21,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-const (
-	UsersPipeID       = "users"
-	ClientsPipeID     = "clients"
-	ProjectsPipeID    = "projects"
-	TasksPipeID       = "tasks"
-	TodoPipeID        = "todolists"
-	TimeEntriesPipeID = "time_entries"
-)
-
-// ErrJSONParsing hides json marshalling errors from users
-var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
-
 type OauthProvider interface {
 	GetOAuth2URL(integrationID string) string
 }

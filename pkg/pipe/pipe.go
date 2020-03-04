@@ -1,9 +1,33 @@
 package pipe
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
+
+const (
+	UsersPipeID       = "users"
+	ClientsPipeID     = "clients"
+	ProjectsPipeID    = "projects"
+	TasksPipeID       = "tasks"
+	TodoPipeID        = "todolists"
+	TimeEntriesPipeID = "time_entries"
+)
+
+// ErrJSONParsing hides json marshalling errors from users
+var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
+
+type Integration struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	Link       string  `json:"link"`
+	Image      string  `json:"image"`
+	AuthURL    string  `json:"auth_url,omitempty"`
+	AuthType   string  `json:"auth_type,omitempty"`
+	Authorized bool    `json:"authorized"`
+	Pipes      []*Pipe `json:"pipes"`
+}
 
 type Pipe struct {
 	ID              string  `json:"id"`
