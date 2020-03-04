@@ -97,6 +97,37 @@ const (
   `
 )
 
+const (
+	selectAuthorizationSQL = `SELECT
+		workspace_id, service, workspace_token, data
+		FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+		LIMIT 1
+  `
+	insertAuthorizationSQL = `WITH existing_auth AS (
+		UPDATE authorizations SET data = $4, workspace_token = $3
+		WHERE workspace_id = $1 AND service = $2
+		RETURNING service
+	),
+	inserted_auth AS (
+		INSERT INTO
+		authorizations(workspace_id, service, workspace_token, data)
+		SELECT $1, $2, $3, $4
+		WHERE NOT EXISTS (SELECT 1 FROM existing_auth)
+		RETURNING service
+	)
+	SELECT * FROM inserted_auth
+	UNION
+	SELECT * FROM existing_auth
+  `
+	deleteAuthorizationSQL = `DELETE FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+	`
+	truncateAuthorizationSQL = `TRUNCATE TABLE authorizations`
+)
+
 type Storage struct {
 	db *sql.DB
 }
@@ -311,6 +342,55 @@ func (ps *Storage) ClearImportFor(s integrations.ExternalService, pipeID integra
 	    WHERE workspace_id = $1 AND Key = $2
 	`, s.GetWorkspaceID(), s.KeyFor(pipeID))
 	return err
+}
+
+func (ps *Storage) SaveAuthorization(a *Authorization) error {
+	_, err := ps.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ps *Storage) LoadAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) (*Authorization, error) {
+	rows, err := ps.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		return nil, rows.Err()
+	}
+	var a Authorization
+	err = rows.Scan(&a.WorkspaceID, &a.ServiceID, &a.WorkspaceToken, &a.Data)
+	if err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+func (ps *Storage) DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
+	_, err := ps.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
+	return err
+}
+
+// LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
+// Map format: map[externalServiceID]isAuthorized
+func (ps *Storage) LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error) {
+	authorizations := make(map[integrations.ExternalServiceID]bool)
+	rows, err := ps.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
+	if err != nil {
+		return authorizations, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var service integrations.ExternalServiceID
+		if err := rows.Scan(&service); err != nil {
+			return authorizations, err
+		}
+		authorizations[service] = true
+	}
+	return authorizations, nil
 }
 
 func (ps *Storage) loadPipeWithKey(workspaceID int, key string) (*Pipe, error) {

@@ -1,4 +1,4 @@
-package authorization
+package pipe
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ type Authorization struct {
 	Data           []byte
 }
 
-func New(workspaceID int, id integrations.ExternalServiceID) *Authorization {
+func NewAuthorization(workspaceID int, id integrations.ExternalServiceID) *Authorization {
 	return &Authorization{
 		WorkspaceID: workspaceID,
 		ServiceID:   id,

@@ -11,7 +11,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	_ "github.com/lib/pq"
 
-	"github.com/toggl/pipes-api/pkg/authorization"
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
@@ -51,12 +50,11 @@ func main() {
 
 	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 
-	authStore := authorization.NewStorage(db, oauthProvider)
 	connStore := connection.NewStorage(db)
 	pipesStore := pipe.NewStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
-	pipesService := pipe.NewService(oauthProvider, authStore, pipesStore, connStore, api, cfg.PipesAPIHost, integrationsConfigPath)
+	pipesService := pipe.NewService(oauthProvider, pipesStore, connStore, api, cfg.PipesAPIHost, integrationsConfigPath)
 
 	autosync.NewService(pipesService).Start()
 

@@ -1,4 +1,4 @@
-package authorization
+package pipe
 
 import (
 	"testing"
@@ -10,8 +10,8 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
-func TestNew(t *testing.T) {
-	a := New(1, integrations.GitHub)
+func TestNewAuthorization(t *testing.T) {
+	a := NewAuthorization(1, integrations.GitHub)
 	assert.Equal(t, 1, a.WorkspaceID)
 	assert.Equal(t, integrations.GitHub, a.ServiceID)
 	assert.NotNil(t, a.Data)
@@ -25,7 +25,7 @@ func TestSetOauth2Token(t *testing.T) {
 		Extra:        nil,
 	}
 
-	a := New(1, "test")
+	a := NewAuthorization(1, "test")
 	err := a.SetOauth2Token(token)
 	assert.NoError(t, err)
 
