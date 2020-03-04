@@ -11,9 +11,9 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	_ "github.com/lib/pq"
 
-	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/oauth"
+	"github.com/toggl/pipes-api/pkg/pipe/autosync"
 	"github.com/toggl/pipes-api/pkg/pipe/server"
 	"github.com/toggl/pipes-api/pkg/pipe/service"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
