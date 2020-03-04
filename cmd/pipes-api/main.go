@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"math/rand"
+	"path/filepath"
 	"runtime"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
+	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
@@ -23,17 +25,13 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().Unix())
 
-	envFlags := config.Flags{}
-	config.ParseFlags(&envFlags)
-
-	cfg := config.Load(envFlags.Environment, envFlags.WorkDir)
-	corsWhitelist := cfg.Urls.CorsWhitelist[cfg.EnvType]
-	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
-	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
+	env := config.Flags{}
+	config.ParseFlags(&env)
+	cfg := config.Load(&env)
 
 	bugsnag.Configure(bugsnag.Configuration{
-		APIKey:       envFlags.BugsnagAPIKey,
-		ReleaseStage: envFlags.Environment,
+		APIKey:       env.BugsnagAPIKey,
+		ReleaseStage: env.Environment,
 		NotifyReleaseStages: []string{
 			config.EnvTypeProduction,
 			config.EnvTypeStaging,
@@ -41,25 +39,30 @@ func main() {
 		// more configuration options
 	})
 
-	db, err := sql.Open("postgres", envFlags.DbConnString)
+	db, err := sql.Open("postgres", env.DbConnString)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	api := client.NewTogglApiClient(togglApiHost)
+	oAuth1ConfigPath := filepath.Join(env.WorkDir, "config", "oauth1.json")
+	oAuth2ConfigPath := filepath.Join(env.WorkDir, "config", "oauth2.json")
+	oauthProvider := oauth.NewProvider(env.Environment, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	authStore := authorization.NewStorage(db, cfg)
+	api := client.NewTogglApiClient(cfg.TogglAPIHost)
+
+	authStore := authorization.NewStorage(db, oauthProvider)
 	connStore := connection.NewStorage(db)
 	pipesStore := pipe.NewStorage(db)
 
-	pipesService := pipe.NewService(cfg, authStore, pipesStore, connStore, api, pipesApiHost, cfg.WorkDir)
+	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
+	pipesService := pipe.NewService(oauthProvider, authStore, pipesStore, connStore, api, cfg.PipesAPIHost, integrationsConfigPath)
 
 	autosync.NewService(pipesService).Start()
 
-	router := server.NewRouter(corsWhitelist).AttachHandlers(
+	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
 		server.NewController(pipesService),
 		server.NewMiddleware(api, pipesService),
 	)
-	server.Start(envFlags.Port, router)
+	server.Start(env.Port, router)
 }

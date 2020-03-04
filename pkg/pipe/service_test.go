@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/connection"
 	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
@@ -35,10 +37,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 
 	flags := config.Flags{}
 	config.ParseFlags(&flags)
-
-	cfg := config.Load(flags.Environment, flags.WorkDir)
-	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
-	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
+	cfg := config.Load(&flags)
 
 	db, err := sql.Open("postgres", flags.DbConnString)
 	if err != nil {
@@ -46,13 +45,17 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := client.NewTogglApiClient(togglApiHost)
+	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 
-	authStore := authorization.NewStorage(db, cfg)
+	oAuth1ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth1.json")
+	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
+	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
+
+	authStore := authorization.NewStorage(db, oauthProvider)
 	connStore := connection.NewStorage(db)
 
 	pipesStorage := NewStorage(db)
-	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, authStore, pipesStorage, connStore, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *Pipe {
 		pipe := NewPipe(workspaceID, serviceID, pipeID)
@@ -132,9 +135,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	flags := config.Flags{}
 	config.ParseFlags(&flags)
 
-	cfg := config.Load(flags.Environment, flags.WorkDir)
-	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
-	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
+	cfg := config.Load(&flags)
 
 	db, err := sql.Open("postgres", flags.DbConnString)
 	if err != nil {
@@ -142,12 +143,17 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := client.NewTogglApiClient(togglApiHost)
-	authStore := authorization.NewStorage(db, cfg)
+	api := client.NewTogglApiClient(cfg.TogglAPIHost)
+
+	oAuth1ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth1.json")
+	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
+	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
+
+	authStore := authorization.NewStorage(db, oauthProvider)
 	connStore := connection.NewStorage(db)
 
 	pipesStorage := NewStorage(db)
-	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, authStore, pipesStorage, connStore, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -183,10 +189,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 
 	flags := config.Flags{}
 	config.ParseFlags(&flags)
-
-	cfg := config.Load(flags.Environment, flags.WorkDir)
-	togglApiHost := cfg.Urls.TogglAPIHost[cfg.EnvType]
-	pipesApiHost := cfg.Urls.PipesAPIHost[cfg.EnvType]
+	cfg := config.Load(&flags)
 
 	db, err := sql.Open("postgres", flags.DbConnString)
 	if err != nil {
@@ -194,12 +197,17 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	}
 	defer db.Close()
 
-	api := client.NewTogglApiClient(togglApiHost)
-	authStore := authorization.NewStorage(db, cfg)
+	api := client.NewTogglApiClient(cfg.TogglAPIHost)
+
+	oAuth1ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth1.json")
+	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
+	oauthProvider := oauth.NewProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
+
+	authStore := authorization.NewStorage(db, oauthProvider)
 	connStore := connection.NewStorage(db)
 
 	pipesStorage := NewStorage(db)
-	pipeService := NewService(cfg, authStore, pipesStorage, connStore, api, pipesApiHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, authStore, pipesStorage, connStore, api, cfg.PipesAPIHost, cfg.WorkDir)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 

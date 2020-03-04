@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -50,7 +49,15 @@ type Service struct {
 	mx                    sync.RWMutex
 }
 
-func NewService(oauth OauthProvider, auth *authorization.Storage, store *Storage, conn *connection.Storage, api *client.TogglApiClient, pipesApiHost, workDir string) *Service {
+func NewService(
+	oauth OauthProvider,
+	auth *authorization.Storage,
+	store *Storage,
+	conn *connection.Storage,
+	api *client.TogglApiClient,
+	pipesApiHost,
+	integrationsConfigPath string) *Service {
+
 	svc := &Service{
 		api:   api,
 		oauth: oauth,
@@ -62,17 +69,17 @@ func NewService(oauth OauthProvider, auth *authorization.Storage, store *Storage
 		availableIntegrations: []*Integration{},
 	}
 
-	svc.loadIntegrations(workDir).
-		fillAvailableServices().
-		fillAvailablePipeTypes()
+	svc.init(integrationsConfigPath)
+	return svc
+}
 
+func (svc *Service) init(integrationsConfigPath string) {
+	svc.loadIntegrations(integrationsConfigPath).fillAvailableServices().fillAvailablePipeTypes()
 	svc.mx.RLock()
 	for _, integration := range svc.availableIntegrations {
 		svc.auth.SetAuthorizationType(integration.ID, integration.AuthType)
 	}
 	svc.mx.RUnlock()
-
-	return svc
 }
 
 func (svc *Service) GetIntegrationPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (*Pipe, error) {
@@ -529,10 +536,10 @@ func (svc *Service) AvailableServiceType(serviceID integrations.ExternalServiceI
 	return svc.availableServiceType.MatchString(string(serviceID))
 }
 
-func (svc *Service) loadIntegrations(workDir string) *Service {
+func (svc *Service) loadIntegrations(integrationsConfigPath string) *Service {
 	svc.mx.Lock()
 	defer svc.mx.Unlock()
-	b, err := ioutil.ReadFile(filepath.Join(workDir, "config", "integrations.json"))
+	b, err := ioutil.ReadFile(integrationsConfigPath)
 	if err != nil {
 		log.Fatalf("Could not read integrations.json, reason: %v", err)
 	}
