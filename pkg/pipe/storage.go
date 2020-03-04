@@ -15,24 +15,24 @@ import (
 
 const (
 	selectPipesSQL = `SELECT workspace_id, Key, data
-    FROM pipes WHERE workspace_id = $1
+    FROM store WHERE workspace_id = $1
   `
 	singlePipesSQL = `SELECT workspace_id, Key, data
-    FROM pipes WHERE workspace_id = $1
+    FROM store WHERE workspace_id = $1
     AND Key = $2 LIMIT 1
   `
-	deletePipeSQL = `DELETE FROM pipes
+	deletePipeSQL = `DELETE FROM store
     WHERE workspace_id = $1
     AND Key LIKE $2
   `
 	insertPipesSQL = `
     WITH existing_pipe AS (
-      UPDATE pipes SET data = $3
+      UPDATE store SET data = $3
       WHERE workspace_id = $1 AND Key = $2
       RETURNING Key
     ),
     inserted_pipe AS (
-      INSERT INTO pipes(workspace_id, Key, data)
+      INSERT INTO store(workspace_id, Key, data)
       SELECT $1, $2, $3
       WHERE NOT EXISTS (SELECT 1 FROM existing_pipe)
       RETURNING Key

@@ -55,7 +55,7 @@ func (p *Status) Complete(objType integrations.PipeID, notifications []string, o
 	if objCount > 0 {
 		p.ObjectCounts = append(p.ObjectCounts, fmt.Sprintf("%d %s", objCount, objType))
 	}
-	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/pipes/%s/log", p.PipesApiHost, p.ServiceID, p.PipeID)
+	p.SyncLog = fmt.Sprintf("%s/api/v1/integrations/%s/store/%s/log", p.PipesApiHost, p.ServiceID, p.PipeID)
 }
 
 func (p *Status) GenerateLog() string {

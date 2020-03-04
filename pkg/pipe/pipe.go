@@ -1,7 +1,6 @@
 package pipe
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -13,9 +12,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations/teamweek"
 )
 
-// ErrJSONParsing hides json marshalling errors from users
-var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
-
 type Integration struct {
 	ID         integrations.ExternalServiceID `json:"id"`
 	Name       string                         `json:"name"`
@@ -24,7 +20,7 @@ type Integration struct {
 	AuthURL    string                         `json:"auth_url,omitempty"`
 	AuthType   string                         `json:"auth_type,omitempty"`
 	Authorized bool                           `json:"authorized"`
-	Pipes      []*Pipe                        `json:"pipes"`
+	Pipes      []*Pipe                        `json:"store"`
 }
 
 type Pipe struct {

@@ -65,7 +65,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 		}
 		_, err = db.Exec(`
 			with created as (
-				insert into pipes(workspace_id, Key, data)
+				insert into store(workspace_id, Key, data)
 				values ($1, $2, $3)
 				returning *
 			)
@@ -83,19 +83,19 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	createAndEnqueuePipeFn(1, "asana", "projects", 0)
 	createAndEnqueuePipeFn(3, "asana", "projects", 100)
 
-	// first fetch should return 3 pipes and unique per workspace
+	// first fetch should return 3 store and unique per workspace
 	pipes, err := pipeService.GetPipesFromQueue()
 	if err != nil {
 		t.Error(err)
 	}
 	if len(pipes) != 3 {
-		t.Error("should return 3 pipes")
+		t.Error("should return 3 store")
 	}
 	if pipes[0].WorkspaceID != 3 {
 		t.Error("first returned pipe should be pipe for workspace 3 because it has highest priority")
 	}
 
-	// make sure returned pipes are unique per workspace
+	// make sure returned store are unique per workspace
 	retrievedWorkspace := map[int]bool{}
 	for _, pipe := range pipes {
 		_, exists := retrievedWorkspace[pipe.WorkspaceID]
@@ -160,11 +160,11 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	}
 
 	want := []Integration{
-		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
-		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
+		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-store/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
+		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-store/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
 		{ID: "teamweek", Name: "Toggl Plan", Link: "https://support.toggl.com/en/articles/2212490-integration-with-toggl-plan-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
-		{ID: "asana", Name: "Asana", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-asana", Image: "/images/logo-asana.png", AuthType: "oauth2"},
-		{ID: "github", Name: "Github", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-github", Image: "/images/logo-github.png", AuthType: "oauth2"},
+		{ID: "asana", Name: "Asana", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-store/integration-with-asana", Image: "/images/logo-asana.png", AuthType: "oauth2"},
+		{ID: "github", Name: "Github", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-store/integration-with-github", Image: "/images/logo-github.png", AuthType: "oauth2"},
 	}
 
 	if len(integrations) != len(want) {
