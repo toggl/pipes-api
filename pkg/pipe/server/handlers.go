@@ -8,23 +8,16 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/pipe/service"
 )
 
 type Controller struct {
-	stResolver ServiceTypeResolver
-	ptResolver PipeTypeResolver
-
-	pipesSvc *service.Service
+	pipesSvc pipe.Service
 }
 
-func NewController(pipes *service.Service) *Controller {
-	return &Controller{
-		pipesSvc: pipes,
-
-		stResolver: pipes,
-		ptResolver: pipes,
-	}
+func NewController(pipes pipe.Service) *Controller {
+	return &Controller{pipesSvc: pipes}
 }
 
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
@@ -284,11 +277,11 @@ func (c *Controller) GetStatusHandler(Request) Response {
 
 func (c *Controller) getIntegrationParams(req Request) (integrations.ExternalServiceID, integrations.PipeID, error) {
 	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
-	if !c.stResolver.AvailableServiceType(serviceID) {
+	if !c.pipesSvc.AvailableServiceType(serviceID) {
 		return "", "", errors.New("missing or invalid service")
 	}
 	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
-	if !c.ptResolver.AvailablePipeType(pipeID) {
+	if !c.pipesSvc.AvailablePipeType(pipeID) {
 		return "", "", errors.New("Missing or invalid pipe")
 	}
 	return serviceID, pipeID, nil
@@ -296,7 +289,7 @@ func (c *Controller) getIntegrationParams(req Request) (integrations.ExternalSer
 
 func (c *Controller) getServiceId(req Request) (integrations.ExternalServiceID, error) {
 	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
-	if !c.stResolver.AvailableServiceType(serviceID) {
+	if !c.pipesSvc.AvailableServiceType(serviceID) {
 		return "", errors.New("missing or invalid service")
 	}
 	return serviceID, nil
