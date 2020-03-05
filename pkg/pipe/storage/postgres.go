@@ -17,26 +17,25 @@ import (
 )
 
 const (
-	// TODO: Looks like there is a problem with SQL queries, because we don't have "store" table.
 	selectPipesSQL = `SELECT workspace_id, Key, data
-    FROM store WHERE workspace_id = $1
+    FROM pipes WHERE workspace_id = $1
   `
 	singlePipesSQL = `SELECT workspace_id, Key, data
-    FROM store WHERE workspace_id = $1
+    FROM pipes WHERE workspace_id = $1
     AND Key = $2 LIMIT 1
   `
-	deletePipeSQL = `DELETE FROM store
+	deletePipeSQL = `DELETE FROM pipes
     WHERE workspace_id = $1
     AND Key LIKE $2
   `
 	insertPipesSQL = `
     WITH existing_pipe AS (
-      UPDATE store SET data = $3
+      UPDATE pipes SET data = $3
       WHERE workspace_id = $1 AND Key = $2
       RETURNING Key
     ),
     inserted_pipe AS (
-      INSERT INTO store(workspace_id, Key, data)
+      INSERT INTO pipes(workspace_id, Key, data)
       SELECT $1, $2, $3
       WHERE NOT EXISTS (SELECT 1 FROM existing_pipe)
       RETURNING Key

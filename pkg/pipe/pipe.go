@@ -20,7 +20,7 @@ type Integration struct {
 	AuthURL    string                         `json:"auth_url,omitempty"`
 	AuthType   string                         `json:"auth_type,omitempty"`
 	Authorized bool                           `json:"authorized"`
-	Pipes      []*Pipe                        `json:"store"`
+	Pipes      []*Pipe                        `json:"pipes"`
 }
 
 type Pipe struct {
