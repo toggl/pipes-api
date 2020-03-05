@@ -1,8 +1,6 @@
 package config
 
 import (
-	"os"
-
 	"github.com/namsral/flag"
 )
 
@@ -20,8 +18,12 @@ type Flags struct {
 	DbConnString  string
 }
 
-func ParseFlags(flags *Flags) {
-	fs := flag.NewFlagSetWithEnvPrefix(os.Args[0], "PIPES_API", flag.ExitOnError)
+func ParseFlags(flags *Flags, args []string) {
+	if len(args) == 0 {
+		panic("Wrong usage, there should be at least 1 argument in args parameter")
+	}
+
+	fs := flag.NewFlagSetWithEnvPrefix(args[0], "PIPES_API", flag.ExitOnError)
 
 	fs.IntVar(&flags.Port, "port", 8100, "port")
 	fs.StringVar(&flags.WorkDir, "workdir", ".", "Workdir of server")
@@ -29,5 +31,5 @@ func ParseFlags(flags *Flags) {
 	fs.StringVar(&flags.Environment, "EnvType", EnvTypeDevelopment, "env")
 	fs.StringVar(&flags.DbConnString, "db_conn_string", "dbname=pipes_development user=pipes_user host=localhost sslmode=disable port=5432", "DB Connection String")
 
-	fs.Parse(os.Args[1:])
+	fs.Parse(args[1:])
 }

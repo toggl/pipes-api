@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"runtime"
 	"time"
@@ -25,7 +26,7 @@ func main() {
 	rand.Seed(time.Now().Unix())
 
 	env := config.Flags{}
-	config.ParseFlags(&env)
+	config.ParseFlags(&env, os.Args)
 	cfg := config.Load(&env)
 
 	bugsnag.Configure(bugsnag.Configuration{

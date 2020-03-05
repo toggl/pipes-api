@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -40,7 +41,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
 
 	flags := config.Flags{}
-	config.ParseFlags(&flags)
+	config.ParseFlags(&flags, os.Args)
 	cfg := config.Load(&flags)
 
 	db, err := sql.Open("postgres", flags.DbConnString)
@@ -134,7 +135,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
 
 	flags := config.Flags{}
-	config.ParseFlags(&flags)
+	config.ParseFlags(&flags, os.Args)
 
 	cfg := config.Load(&flags)
 
@@ -186,7 +187,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
 
 	flags := config.Flags{}
-	config.ParseFlags(&flags)
+	config.ParseFlags(&flags, os.Args)
 	cfg := config.Load(&flags)
 
 	db, err := sql.Open("postgres", flags.DbConnString)
@@ -260,7 +261,7 @@ type ServiceTestSuite struct {
 func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	ts.T().Skipf("TODO: Fix, not working because of configs")
 	flags := config.Flags{}
-	config.ParseFlags(&flags)
+	config.ParseFlags(&flags, os.Args)
 	cfg := config.Load(&flags)
 
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
