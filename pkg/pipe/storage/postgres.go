@@ -17,6 +17,7 @@ import (
 )
 
 const (
+	// TODO: Looks like there is a problem with SQL queries, because we don't have "store" table.
 	selectPipesSQL = `SELECT workspace_id, Key, data
     FROM store WHERE workspace_id = $1
   `
