@@ -8,6 +8,7 @@ import (
 
 // ExternalService interface for external integrations
 // Example implementation: github.go
+//go:generate mockery -name ExternalService -case underscore -inpkg
 type ExternalService interface {
 	// ID of the service
 	ID() ExternalServiceID

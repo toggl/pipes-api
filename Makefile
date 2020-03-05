@@ -19,9 +19,7 @@ inittestdb:
 	psql pipes_test < db/schema.sql
 
 mocks:
-	mockery -dir ./pkg/pipe -output ./pkg/pipe/mocks -case underscore -all
-	mockery -dir ./pkg/oauth -output ./pkg/oauth/mocks -case underscore -all
-	mockery -dir ./pkg/integrations -output ./pkg/integrations/mocks -case underscore -all
+	go generate ./pkg/...
 
 run:
 	mkdir -p bin
