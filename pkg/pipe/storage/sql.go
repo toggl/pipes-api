@@ -45,7 +45,7 @@ const (
 	AND Key = $2
 	AND locked_at IS NOT NULL
 	AND synced_at IS NULL`
-	truncatePipesSQL = `TRUNCATE TABLE pipes`
+	truncatePipesSQL = `DELETE FROM pipes WHERE 1=1`
 )
 
 const (
@@ -144,6 +144,22 @@ const (
 )
 
 const (
+	loadImportsSQL = `
+	SELECT data FROM imports
+	WHERE workspace_id = $1 AND Key = $2
+	ORDER by created_at DESC
+	LIMIT 1
+	`
+	saveImportsSQL = `
+	INSERT INTO imports(workspace_id, Key, data, created_at)
+    VALUES($1, $2, $3, NOW())
+	`
+
+	clearImportsSQL = `
+	    DELETE FROM imports
+	    WHERE workspace_id = $1 AND Key = $2
+	`
+
 	truncateImportsSQL = `TRUNCATE TABLE imports`
 )
 

@@ -175,12 +175,7 @@ func (ps *PostgresStorage) QueuePipeAsFirst(pipe *pipe.Pipe) error {
 
 func (ps *PostgresStorage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
 	var result []byte
-	rows, err := ps.db.Query(`
-		SELECT data FROM imports
-		WHERE workspace_id = $1 AND Key = $2
-		ORDER by created_at DESC
-		LIMIT 1
-	`, s.GetWorkspaceID(), s.KeyFor("accounts"))
+	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor("accounts"))
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +195,7 @@ func (ps *PostgresStorage) GetAccounts(s integrations.ExternalService) (*toggl.A
 	return &accountsResponse, nil
 }
 
-func (ps *PostgresStorage) FetchAccounts(s integrations.ExternalService) error {
+func (ps *PostgresStorage) SaveAccounts(s integrations.ExternalService) error {
 	var response toggl.AccountsResponse
 	accounts, err := s.Accounts()
 	response.Accounts = accounts
@@ -213,10 +208,7 @@ func (ps *PostgresStorage) FetchAccounts(s integrations.ExternalService) error {
 		bugsnag.Notify(err)
 		return err
 	}
-	_, err = ps.db.Exec(`
-    INSERT INTO imports(workspace_id, Key, data, created_at)
-    VALUES($1, $2, $3, NOW())
-  	`, s.GetWorkspaceID(), s.KeyFor("accounts"), b)
+	_, err = ps.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor("accounts"), b)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err
@@ -225,10 +217,7 @@ func (ps *PostgresStorage) FetchAccounts(s integrations.ExternalService) error {
 }
 
 func (ps *PostgresStorage) ClearImportFor(s integrations.ExternalService, pipeID integrations.PipeID) error {
-	_, err := ps.db.Exec(`
-	    DELETE FROM imports
-	    WHERE workspace_id = $1 AND Key = $2
-	`, s.GetWorkspaceID(), s.KeyFor(pipeID))
+	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(pipeID))
 	return err
 }
 
@@ -386,12 +375,7 @@ func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
 
 func (ps *PostgresStorage) GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
 	var result []byte
-	rows, err := ps.db.Query(`
-		SELECT data FROM imports
-		WHERE workspace_id = $1 AND Key = $2
-		ORDER by created_at DESC
-		LIMIT 1
-	`, s.GetWorkspaceID(), s.KeyFor(pid))
+	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
 		return nil, err
 	}
@@ -412,10 +396,7 @@ func (ps *PostgresStorage) SaveObject(workspaceID int, objKey string, obj interf
 		return err
 	}
 
-	_, err = ps.db.Exec(`
-	  INSERT INTO imports(workspace_id, Key, data, created_at)
-    VALUES($1, $2, $3, NOW())
-	`, workspaceID, objKey, b)
+	_, err = ps.db.Exec(saveImportsSQL, workspaceID, objKey, b)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err

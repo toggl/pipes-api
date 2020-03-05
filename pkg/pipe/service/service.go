@@ -286,7 +286,7 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.E
 
 	if accountsResponse == nil {
 		go func() {
-			if err := svc.store.FetchAccounts(service); err != nil {
+			if err := svc.store.SaveAccounts(service); err != nil {
 				log.Print(err.Error())
 			}
 		}()

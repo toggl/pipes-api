@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
@@ -112,12 +113,12 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 	s := NewPostgresStorage(ts.db)
-	a := pipe.NewAuthorization(1, "github")
+	a := pipe.NewAuthorization(1, integrations.GitHub)
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
 
-	aFromDb, err := s.LoadAuthorization(1, "github")
+	aFromDb, err := s.LoadAuthorization(1, integrations.GitHub)
 	ts.NoError(err)
 	ts.Equal(a, aFromDb)
 }
@@ -129,11 +130,11 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 
 	s := NewPostgresStorage(cdb)
 
-	a := pipe.NewAuthorization(2, "asana")
+	a := pipe.NewAuthorization(2, integrations.Asana)
 	err = s.SaveAuthorization(a)
 	ts.Error(err)
 
-	con, err := s.LoadAuthorization(2, "asana")
+	con, err := s.LoadAuthorization(2, integrations.Asana)
 	ts.Error(err)
 	ts.Nil(con)
 }
@@ -141,20 +142,20 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := NewPostgresStorage(ts.db)
 
-	a := pipe.NewAuthorization(1, "github")
+	a := pipe.NewAuthorization(1, integrations.GitHub)
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
 
-	err = s.DestroyAuthorization(1, "github")
+	err = s.DestroyAuthorization(1, integrations.GitHub)
 	ts.NoError(err)
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := NewPostgresStorage(ts.db)
 
-	a1 := pipe.NewAuthorization(1, "github")
-	a2 := pipe.NewAuthorization(1, "asana")
+	a1 := pipe.NewAuthorization(1, integrations.GitHub)
+	a2 := pipe.NewAuthorization(1, integrations.Asana)
 
 	err := s.SaveAuthorization(a1)
 	ts.NoError(err)
@@ -164,9 +165,32 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthoriza
 
 	auth, err := s.LoadWorkspaceAuthorizations(1)
 	ts.NoError(err)
-	ts.Equal(true, auth["github"])
-	ts.Equal(true, auth["asana"])
+	ts.Equal(true, auth[integrations.GitHub])
+	ts.Equal(true, auth[integrations.Asana])
 	ts.Equal(false, auth["unknown"])
+}
+
+func (ts *StorageTestSuite) TestStorage_IsDown() {
+	cdb, err := sql.Open("postgres", getDbConnString())
+	require.NoError(ts.T(), err)
+
+	s := NewPostgresStorage(cdb)
+	ts.False(s.IsDown())
+
+	cdb.Close()
+	ts.True(s.IsDown())
+}
+
+func (ts *StorageTestSuite) TestStorage_Save_Load() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipe(1, integrations.GitHub, integrations.UsersPipe)
+	err := s.Save(p1)
+	ts.NoError(err)
+
+	p2, err := s.LoadPipe(1, integrations.GitHub, integrations.UsersPipe)
+	ts.NoError(err)
+	ts.Equal(p1, p2)
 }
 
 // In order for 'go test' to run this suite, we need to create

@@ -12,7 +12,7 @@ type Storage interface {
 	QueuePipeAsFirst(pipe *Pipe) error
 
 	GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
-	FetchAccounts(s integrations.ExternalService) error
+	SaveAccounts(s integrations.ExternalService) error
 	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
 
 	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
