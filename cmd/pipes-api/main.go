@@ -54,7 +54,8 @@ func main() {
 	pipesStore := storage.NewPostgresStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
-	pipesService := service.NewService(oauthProvider, pipesStore, api, cfg.PipesAPIHost, integrationsConfigPath)
+	pipesService := service.NewService(oauthProvider, pipesStore, api, cfg.PipesAPIHost)
+	pipesService.LoadIntegrationsFromConfig(integrationsConfigPath)
 
 	autosync.NewService(pipesService).Start()
 

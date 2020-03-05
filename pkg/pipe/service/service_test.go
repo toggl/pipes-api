@@ -11,12 +11,14 @@ import (
 	"time"
 
 	goauth2 "code.google.com/p/goauth2/oauth"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/mocks"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
@@ -57,7 +59,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *pipe.Pipe {
 		pipe := pipe.NewPipe(workspaceID, serviceID, pipeID)
@@ -152,7 +154,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -203,7 +205,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost, cfg.WorkDir)
+	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -259,22 +261,18 @@ type ServiceTestSuite struct {
 }
 
 func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
-	ts.T().Skipf("TODO: Fix, not working because of configs")
+
 	flags := config.Flags{}
 	config.ParseFlags(&flags, os.Args)
-	cfg := config.Load(&flags)
 
-	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-
-	s := storage.NewPostgresStorage(ts.db)
+	s := &mocks.Storage{}
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
-	svc := NewService(sb, s, api, "https://localhost", integrationsConfigPath)
-
+	svc := NewService(sb, s, api, "https://localhost")
 	svc.setAuthorizationType("github", pipe.TypeOauth2)
 
-	a1 := pipe.NewAuthorization(1, "github")
+	a1 := pipe.NewAuthorization(1, integrations.GitHub)
 	t := goauth2.Token{
 		AccessToken:  "123",
 		RefreshToken: "456",
@@ -285,42 +283,43 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	ts.NoError(err)
 	a1.Data = b
 
+	s.On("LoadAuthorization", 1, integrations.GitHub).Return(a1, nil)
+	s.On("SaveAuthorization", mock.Anything).Return(nil)
+
 	err = svc.refreshAuthorization(a1)
 	ts.NoError(err)
 
-	aSaved, err := s.LoadAuthorization(1, "github")
+	aSaved, err := s.LoadAuthorization(1, integrations.GitHub)
 	ts.NoError(err)
 	ts.NotEqual([]byte("{}"), aSaved.Data)
 }
 
 func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
-	ts.T().Skipf("TODO: Fix, not working because of configs")
 
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
-	svc := NewService(sb, s, api, "", "")
+	svc := NewService(sb, s, api, "")
 
-	svc.setAuthorizationType("github", pipe.TypeOauth1)
+	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
 
-	a1 := pipe.NewAuthorization(1, "asana")
+	a1 := pipe.NewAuthorization(1, integrations.GitHub)
 
 	err := svc.refreshAuthorization(a1)
 	ts.NoError(err)
 }
 
 func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
-	ts.T().Skipf("TODO: Fix, not working because of configs")
 
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
-	svc := NewService(sb, s, api, "", "")
-	svc.setAuthorizationType("github", pipe.TypeOauth2)
+	svc := NewService(sb, s, api, "https://localhost")
+	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
 
-	a1 := pipe.NewAuthorization(1, "github")
+	a1 := pipe.NewAuthorization(1, integrations.GitHub)
 	t := goauth2.Token{
 		AccessToken:  "123",
 		RefreshToken: "456",
@@ -336,24 +335,23 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 }
 
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
-	ts.T().Skipf("TODO: Fix, not working because of configs")
 
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 
-	svc := NewService(sb, s, api, "", "")
+	svc := NewService(sb, s, api, "https://localhost")
 
 	res := svc.getAvailableAuthorizations("github")
 	ts.Equal("", res)
 
-	svc.setAuthorizationType("github", pipe.TypeOauth2)
-	svc.setAuthorizationType("asana", pipe.TypeOauth1)
+	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
+	svc.setAuthorizationType(integrations.Asana, pipe.TypeOauth1)
 
-	res = svc.getAvailableAuthorizations("github")
+	res = svc.getAvailableAuthorizations(integrations.GitHub)
 	ts.Equal(pipe.TypeOauth2, res)
 
-	res = svc.getAvailableAuthorizations("asana")
+	res = svc.getAvailableAuthorizations(integrations.Asana)
 	ts.Equal(pipe.TypeOauth1, res)
 }
 

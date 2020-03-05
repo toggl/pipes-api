@@ -41,12 +41,7 @@ type Service struct {
 	mx                 sync.RWMutex
 }
 
-func NewService(
-	oauth oauth.Provider,
-	store pipe.Storage,
-	toggl pipe.TogglClient,
-	pipesApiHost,
-	integrationsConfigPath string) *Service {
+func NewService(oauth oauth.Provider, store pipe.Storage, toggl pipe.TogglClient, pipesApiHost string) *Service {
 
 	svc := &Service{
 		toggl: toggl,
@@ -58,11 +53,10 @@ func NewService(
 		availableAuthTypes:    map[integrations.ExternalServiceID]string{},
 	}
 
-	svc.init(integrationsConfigPath)
 	return svc
 }
 
-func (svc *Service) init(integrationsConfigPath string) {
+func (svc *Service) LoadIntegrationsFromConfig(integrationsConfigPath string) {
 	svc.loadIntegrations(integrationsConfigPath).fillAvailableServices().fillAvailablePipeTypes()
 	svc.mx.RLock()
 	for _, integration := range svc.availableIntegrations {
