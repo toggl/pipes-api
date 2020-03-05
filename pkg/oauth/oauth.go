@@ -7,6 +7,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
+//go:generate mockery -name Provider -case underscore -inpkg
 type Provider interface {
 	OAuth2URL(integrations.ExternalServiceID) string
 	OAuth1Configs(integrations.ExternalServiceID) (*oauthplain.Config, bool)

@@ -266,9 +266,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 
 	s := &pipe.MockStorage{}
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &oauth.StubProvider{}
+	op := &oauth.MockProvider{}
 
-	svc := NewService(sb, s, api, "https://localhost")
+	svc := NewService(op, s, api, "https://localhost")
 	svc.setAuthorizationType("github", pipe.TypeOauth2)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub)
@@ -285,6 +285,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	s.On("LoadAuthorization", 1, integrations.GitHub).Return(a1, nil)
 	s.On("SaveAuthorization", mock.Anything).Return(nil)
 
+	op.On("OAuth2Configs", integrations.GitHub).Return(&goauth2.Config{}, true)
+	op.On("OAuth2Refresh", mock.Anything, mock.Anything).Return(nil)
+
 	err = svc.refreshAuthorization(a1)
 	ts.NoError(err)
 
@@ -297,9 +300,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &oauth.StubProvider{}
+	op := &oauth.MockProvider{}
 
-	svc := NewService(sb, s, api, "")
+	svc := NewService(op, s, api, "")
 
 	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
 
@@ -313,9 +316,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &oauth.StubProvider{}
+	op := &oauth.MockProvider{}
 
-	svc := NewService(sb, s, api, "https://localhost")
+	svc := NewService(op, s, api, "https://localhost")
 	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub)
@@ -337,9 +340,9 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	sb := &oauth.StubProvider{}
+	op := &oauth.MockProvider{}
 
-	svc := NewService(sb, s, api, "https://localhost")
+	svc := NewService(op, s, api, "https://localhost")
 
 	res := svc.getAvailableAuthorizations("github")
 	ts.Equal("", res)
