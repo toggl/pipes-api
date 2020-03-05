@@ -18,7 +18,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
-	"github.com/toggl/pipes-api/pkg/pipe/mocks"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
@@ -265,7 +264,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	flags := config.Flags{}
 	config.ParseFlags(&flags, os.Args)
 
-	s := &mocks.Storage{}
+	s := &pipe.MockStorage{}
 	api := client.NewTogglApiClient("https://localhost")
 	sb := &oauth.StubProvider{}
 

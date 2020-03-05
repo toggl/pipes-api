@@ -5,7 +5,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-//go:generate mockery -name Storage -case underscore -output ./mocks
+//go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
 	Queue
 

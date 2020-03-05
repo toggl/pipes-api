@@ -1,12 +1,12 @@
 package pipe
 
-//go:generate mockery -name QueueRunner -case underscore -output ./mocks
+//go:generate mockery -name QueueRunner -case underscore -inpkg
 type QueueRunner interface {
 	Queue
 	Run(*Pipe)
 }
 
-//go:generate mockery -name Queue -case underscore -output ./mocks
+//go:generate mockery -name Queue -case underscore -inpkg
 type Queue interface {
 	QueueAutomaticPipes() error
 	GetPipesFromQueue() ([]*Pipe, error)

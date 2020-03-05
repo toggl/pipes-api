@@ -7,7 +7,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-//go:generate mockery -name TogglClient -case underscore -output ./mocks
+//go:generate mockery -name TogglClient -case underscore -inpkg
 type TogglClient interface {
 	WithAuthToken(authToken string)
 	GetWorkspaceIdByToken(token string) (int, error)
