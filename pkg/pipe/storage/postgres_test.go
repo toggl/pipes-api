@@ -49,10 +49,19 @@ func (ts *StorageTestSuite) TearDownSuite() {
 }
 
 func (ts *StorageTestSuite) SetupTest() {
-	_, err := ts.db.Exec(truncateAuthorizationSQL)
-	ts.NoError(err)
-	_, err = ts.db.Exec(truncateConnectionSQL)
-	ts.NoError(err)
+	_, err1 := ts.db.Exec(truncateAuthorizationSQL)
+	_, err2 := ts.db.Exec(truncateConnectionSQL)
+	_, err3 := ts.db.Exec(truncatePipesStatusSQL)
+	_, err4 := ts.db.Exec(truncatePipesSQL)
+	_, err5 := ts.db.Exec(truncateImportsSQL)
+	_, err6 := ts.db.Exec(truncateQueuedPipesSQL)
+
+	ts.NoError(err1)
+	ts.NoError(err2)
+	ts.NoError(err3)
+	ts.NoError(err4)
+	ts.NoError(err5)
+	ts.NoError(err6)
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
