@@ -254,6 +254,26 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 	ts.Equal(2, len(ps))
 }
 
+func (ts *StorageTestSuite) TestStorage_SaveObject_LoadObject() {
+	s := NewPostgresStorage(ts.db)
+
+	type obj struct {
+		Name  string
+		Value string
+	}
+	o := obj{"Test", "Test2"}
+
+	svc := pipe.NewExternalService(integrations.GitHub, 1)
+
+	err := s.SaveObject(svc, integrations.ProjectsPipe, o)
+	ts.NoError(err)
+
+	b, err := s.LoadObject(svc, integrations.ProjectsPipe)
+	ts.NoError(err)
+
+	ts.Equal(`{"Name":"Test","Value":"Test2"}`, string(b))
+}
+
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestStorageTestSuite(t *testing.T) {
