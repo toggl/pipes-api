@@ -147,7 +147,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_O
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
 
-	err = s.DestroyAuthorization(1, integrations.GitHub)
+	err = s.DeleteAuthorization(1, integrations.GitHub)
 	ts.NoError(err)
 }
 
@@ -191,6 +191,67 @@ func (ts *StorageTestSuite) TestStorage_Save_Load() {
 	p2, err := s.LoadPipe(1, integrations.GitHub, integrations.UsersPipe)
 	ts.NoError(err)
 	ts.Equal(p1, p2)
+}
+
+func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipeStatus(1, integrations.GitHub, integrations.UsersPipe, "")
+	p1.Status = pipe.StatusSuccess
+	p1.ObjectCounts = []string{"obj1", "obj2"}
+
+	err := s.SavePipeStatus(p1)
+	ts.NoError(err)
+
+	p2, err := s.LoadPipeStatus(1, integrations.GitHub, integrations.UsersPipe)
+	ts.NoError(err)
+	ts.Equal(p1.WorkspaceID, p2.WorkspaceID)
+	ts.Equal(p1.ServiceID, p2.ServiceID)
+	ts.Equal(p1.PipeID, p2.PipeID)
+	ts.Contains(p2.Message, "successfully imported/exported")
+
+	p3 := pipe.NewPipeStatus(2, integrations.GitHub, integrations.UsersPipe, "")
+	p3.Status = pipe.StatusSuccess
+	err = s.SavePipeStatus(p3)
+	ts.NoError(err)
+
+	p4, err := s.LoadPipeStatus(2, integrations.GitHub, integrations.UsersPipe)
+	ts.NoError(err)
+
+	ts.Contains(p4.Message, "No new")
+}
+
+func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipeStatus(1, integrations.GitHub, integrations.UsersPipe, "")
+	p2 := pipe.NewPipeStatus(1, integrations.Asana, integrations.UsersPipe, "")
+
+	err := s.SavePipeStatus(p1)
+	ts.NoError(err)
+	err = s.SavePipeStatus(p2)
+	ts.NoError(err)
+
+	ss, err := s.LoadPipeStatuses(1)
+	ts.NoError(err)
+
+	ts.Equal(2, len(ss))
+}
+
+func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipe(1, integrations.GitHub, integrations.UsersPipe)
+	err := s.Save(p1)
+	ts.NoError(err)
+
+	p2 := pipe.NewPipe(1, integrations.Asana, integrations.UsersPipe)
+	err = s.Save(p2)
+	ts.NoError(err)
+
+	ps, err := s.LoadPipes(1)
+	ts.NoError(err)
+	ts.Equal(2, len(ps))
 }
 
 // In order for 'go test' to run this suite, we need to create

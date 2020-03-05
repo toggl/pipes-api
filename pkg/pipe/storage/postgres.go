@@ -88,7 +88,7 @@ func (ps *PostgresStorage) Save(p *pipe.Pipe) error {
 	return nil
 }
 
-func (ps *PostgresStorage) Destroy(p *pipe.Pipe, workspaceID int) error {
+func (ps *PostgresStorage) Delete(p *pipe.Pipe, workspaceID int) error {
 	tx, err := ps.db.Begin()
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func (ps *PostgresStorage) QueuePipeAsFirst(pipe *pipe.Pipe) error {
 	return err
 }
 
-func (ps *PostgresStorage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+func (ps *PostgresStorage) LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
 	var result []byte
 	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor("accounts"))
 	if err != nil {
@@ -246,7 +246,7 @@ func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID 
 	return &a, nil
 }
 
-func (ps *PostgresStorage) DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
+func (ps *PostgresStorage) DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
@@ -373,7 +373,7 @@ func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
 	return nil
 }
 
-func (ps *PostgresStorage) GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
+func (ps *PostgresStorage) LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
 	var result []byte
 	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
@@ -389,14 +389,14 @@ func (ps *PostgresStorage) GetObject(s integrations.ExternalService, pid integra
 	return result, nil
 }
 
-func (ps *PostgresStorage) SaveObject(workspaceID int, objKey string, obj interface{}) error {
+func (ps *PostgresStorage) SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error {
 	b, err := json.Marshal(obj)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err
 	}
 
-	_, err = ps.db.Exec(saveImportsSQL, workspaceID, objKey, b)
+	_, err = ps.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err

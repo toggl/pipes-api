@@ -11,4 +11,5 @@ type Queue interface {
 	QueueAutomaticPipes() error
 	GetPipesFromQueue() ([]*Pipe, error)
 	SetQueuedPipeSynced(*Pipe) error
+	QueuePipeAsFirst(*Pipe) error
 }

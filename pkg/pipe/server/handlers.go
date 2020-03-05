@@ -35,7 +35,7 @@ func (c *Controller) GetIntegrationPipeHandler(req Request) Response {
 	if err != nil {
 		return badRequest(err.Error())
 	}
-	p, err := c.pipesSvc.GetIntegrationPipe(workspaceID, serviceID, pipeID)
+	p, err := c.pipesSvc.GetPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}

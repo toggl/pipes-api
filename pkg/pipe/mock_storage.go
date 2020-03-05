@@ -25,6 +25,34 @@ func (_m *MockStorage) ClearImportFor(s integrations.ExternalService, pid integr
 	return r0
 }
 
+// Delete provides a mock function with given fields: p, workspaceID
+func (_m *MockStorage) Delete(p *Pipe, workspaceID int) error {
+	ret := _m.Called(p, workspaceID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*Pipe, int) error); ok {
+		r0 = rf(p, workspaceID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteAuthorization provides a mock function with given fields: workspaceID, externalServiceID
+func (_m *MockStorage) DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
+	ret := _m.Called(workspaceID, externalServiceID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID) error); ok {
+		r0 = rf(workspaceID, externalServiceID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // DeletePipeByWorkspaceIDServiceID provides a mock function with given fields: workspaceID, sid
 func (_m *MockStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error {
 	ret := _m.Called(workspaceID, sid)
@@ -51,80 +79,6 @@ func (_m *MockStorage) DeletePipeConnections(workspaceID int, pipeConnectionKey 
 	}
 
 	return r0
-}
-
-// Destroy provides a mock function with given fields: p, workspaceID
-func (_m *MockStorage) Destroy(p *Pipe, workspaceID int) error {
-	ret := _m.Called(p, workspaceID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*Pipe, int) error); ok {
-		r0 = rf(p, workspaceID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// DestroyAuthorization provides a mock function with given fields: workspaceID, externalServiceID
-func (_m *MockStorage) DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
-	ret := _m.Called(workspaceID, externalServiceID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID) error); ok {
-		r0 = rf(workspaceID, externalServiceID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// GetAccounts provides a mock function with given fields: s
-func (_m *MockStorage) GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
-	ret := _m.Called(s)
-
-	var r0 *toggl.AccountsResponse
-	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.AccountsResponse); ok {
-		r0 = rf(s)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*toggl.AccountsResponse)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
-		r1 = rf(s)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetObject provides a mock function with given fields: s, pid
-func (_m *MockStorage) GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
-	ret := _m.Called(s, pid)
-
-	var r0 []byte
-	if rf, ok := ret.Get(0).(func(integrations.ExternalService, integrations.PipeID) []byte); ok {
-		r0 = rf(s, pid)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.ExternalService, integrations.PipeID) error); ok {
-		r1 = rf(s, pid)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetPipesFromQueue provides a mock function with given fields:
@@ -162,6 +116,29 @@ func (_m *MockStorage) IsDown() bool {
 	}
 
 	return r0
+}
+
+// LoadAccounts provides a mock function with given fields: s
+func (_m *MockStorage) LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+	ret := _m.Called(s)
+
+	var r0 *toggl.AccountsResponse
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.AccountsResponse); ok {
+		r0 = rf(s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*toggl.AccountsResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
+		r1 = rf(s)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // LoadAuthorization provides a mock function with given fields: workspaceID, sid
@@ -213,6 +190,29 @@ func (_m *MockStorage) LoadConnection(workspaceID int, key string) (*Connection,
 // LoadLastSync provides a mock function with given fields: p
 func (_m *MockStorage) LoadLastSync(p *Pipe) {
 	_m.Called(p)
+}
+
+// LoadObject provides a mock function with given fields: s, pid
+func (_m *MockStorage) LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
+	ret := _m.Called(s, pid)
+
+	var r0 []byte
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, integrations.PipeID) []byte); ok {
+		r0 = rf(s, pid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService, integrations.PipeID) error); ok {
+		r1 = rf(s, pid)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // LoadPipe provides a mock function with given fields: workspaceID, sid, pid
@@ -367,13 +367,13 @@ func (_m *MockStorage) QueueAutomaticPipes() error {
 	return r0
 }
 
-// QueuePipeAsFirst provides a mock function with given fields: pipe
-func (_m *MockStorage) QueuePipeAsFirst(pipe *Pipe) error {
-	ret := _m.Called(pipe)
+// QueuePipeAsFirst provides a mock function with given fields: _a0
+func (_m *MockStorage) QueuePipeAsFirst(_a0 *Pipe) error {
+	ret := _m.Called(_a0)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
-		r0 = rf(pipe)
+		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -437,13 +437,13 @@ func (_m *MockStorage) SaveConnection(c *Connection) error {
 	return r0
 }
 
-// SaveObject provides a mock function with given fields: workspaceID, objKey, obj
-func (_m *MockStorage) SaveObject(workspaceID int, objKey string, obj interface{}) error {
-	ret := _m.Called(workspaceID, objKey, obj)
+// SaveObject provides a mock function with given fields: s, pid, obj
+func (_m *MockStorage) SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error {
+	ret := _m.Called(s, pid, obj)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, string, interface{}) error); ok {
-		r0 = rf(workspaceID, objKey, obj)
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, integrations.PipeID, interface{}) error); ok {
+		r0 = rf(s, pid, obj)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -9,20 +9,20 @@ import (
 type Service interface {
 	QueueRunner
 
-	GetIntegrationPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (*Pipe, error)
-	CreatePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error
-	UpdatePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error
-	DeletePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) error
-	GetServicePipeLog(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (string, error)
-	ClearPipeConnections(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) error
-	RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error
-	GetServiceUsers(workspaceID int, serviceID integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error)
-	GetServiceAccounts(workspaceID int, serviceID integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error)
-	GetAuthURL(serviceID integrations.ExternalServiceID, accountName, callbackURL string) (string, error)
-	CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error
-	DeleteAuthorization(workspaceID int, serviceID integrations.ExternalServiceID) error
+	GetPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
+	CreatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
+	UpdatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
+	DeletePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
+	GetServicePipeLog(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (string, error)
+	ClearPipeConnections(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
+	RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
+	GetServiceUsers(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error)
+	GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error)
+	GetAuthURL(sid integrations.ExternalServiceID, accountName, callbackURL string) (string, error)
+	CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error
+	DeleteAuthorization(workspaceID int, sid integrations.ExternalServiceID) error
 	WorkspaceIntegrations(workspaceID int) ([]Integration, error)
 	Ready() []error
-	AvailablePipeType(pipeID integrations.PipeID) bool
-	AvailableServiceType(serviceID integrations.ExternalServiceID) bool
+	AvailablePipeType(pid integrations.PipeID) bool
+	AvailableServiceType(sid integrations.ExternalServiceID) bool
 }

@@ -10,12 +10,10 @@ type Storage interface {
 	Queue
 
 	IsDown() bool
-	QueuePipeAsFirst(pipe *Pipe) error
 
-	GetAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
-	SaveAccounts(s integrations.ExternalService) error
 	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
 
+	LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
 	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
 	LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error)
 	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
@@ -26,17 +24,17 @@ type Storage interface {
 	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
 
+	Delete(p *Pipe, workspaceID int) error
 	DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
 	DeletePipeConnections(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
-
-	Destroy(p *Pipe, workspaceID int) error
-	DestroyAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
+	DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
 
 	Save(p *Pipe) error
 	SaveConnection(c *Connection) error
 	SavePipeStatus(p *Status) error
 	SaveAuthorization(a *Authorization) error
+	SaveAccounts(s integrations.ExternalService) error
 
-	GetObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error)
-	SaveObject(workspaceID int, objKey string, obj interface{}) error
+	LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error)
+	SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error
 }

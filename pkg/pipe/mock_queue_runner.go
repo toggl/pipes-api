@@ -46,6 +46,20 @@ func (_m *MockQueueRunner) QueueAutomaticPipes() error {
 	return r0
 }
 
+// QueuePipeAsFirst provides a mock function with given fields: _a0
+func (_m *MockQueueRunner) QueuePipeAsFirst(_a0 *Pipe) error {
+	ret := _m.Called(_a0)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
+		r0 = rf(_a0)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Run provides a mock function with given fields: _a0
 func (_m *MockQueueRunner) Run(_a0 *Pipe) {
 	_m.Called(_a0)
