@@ -4,6 +4,9 @@ BUGSNAG_DEPLOY_NOTIFY_URL:=https://notify.bugsnag.com/deploy
 REVISION:=$(shell git rev-parse HEAD)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
 
+
+all: build test
+
 test: inittestdb
 	go test -race -cover ./pkg/...
 
@@ -14,6 +17,11 @@ inittestdb:
 	psql -c 'DROP database pipes_test;' -U postgres
 	psql -c 'CREATE database pipes_test;' -U postgres
 	psql pipes_test < db/schema.sql
+
+mocks:
+	mockery -dir ./pkg/pipe -output ./pkg/pipe/mocks -case underscore -all
+	mockery -dir ./pkg/oauth -output ./pkg/oauth/mocks -case underscore -all
+	mockery -dir ./pkg/integrations -output ./pkg/integrations/mocks -case underscore -all
 
 run:
 	mkdir -p bin

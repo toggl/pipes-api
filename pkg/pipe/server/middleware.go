@@ -7,38 +7,30 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
-type WorkspaceFinder interface {
-	GetWorkspaceIdByToken(authToken string) (int, error)
-}
-
-type TypeResolver interface {
-	ServiceTypeResolver
-	PipeTypeResolver
-}
-
 type Middleware struct {
-	tResolver TypeResolver
-	wsFinder  WorkspaceFinder
+	svc pipe.Service
+	clt pipe.TogglClient
 }
 
-func NewMiddleware(wsFinder WorkspaceFinder, tr TypeResolver) *Middleware {
+func NewMiddleware(clt pipe.TogglClient, svc pipe.Service) *Middleware {
 	return &Middleware{
-		tResolver: tr,
-		wsFinder:  wsFinder,
+		svc: svc,
+		clt: clt,
 	}
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := integrations.ExternalServiceID(mux.Vars(r)["service"])
-		if !mw.tResolver.AvailableServiceType(serviceID) {
+		if !mw.svc.AvailableServiceType(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := integrations.PipeID(mux.Vars(r)["pipe"])
-		if !mw.tResolver.AvailablePipeType(pipeID) {
+		if !mw.svc.AvailablePipeType(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}
@@ -61,7 +53,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.wsFinder.GetWorkspaceIdByToken(authData.Username)
+		workspaceID, err = mw.clt.GetWorkspaceIdByToken(authData.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
