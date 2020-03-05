@@ -37,7 +37,7 @@ func TestStatus_Complete(t *testing.T) {
 	assert.Equal(t, StatusSuccess, s.Status)
 	assert.Equal(t, 2, len(s.Notifications))
 	assert.Equal(t, 1, len(s.ObjectCounts))
-	assert.Equal(t, "https://store.toggl.space/api/v1/integrations/github/store/projects/log", s.SyncLog)
+	assert.Equal(t, "https://store.toggl.space/api/v1/integrations/github/pipes/projects/log", s.SyncLog)
 }
 
 func TestStatus_Complete_Err(t *testing.T) {
