@@ -6,15 +6,15 @@ Basically this is just job scheduler with REST-API.
 It schedules job to do synchronization to a third party service.
 Pipes-api will fetch data then send them to pipes endpoints in "Toggl API".
 
-[![Build Status](https://travis-ci.org/toggl/pipes-api.svg?branch=master)](https://travis-ci.org/toggl/pipes-api)
-
 ## Requirements
 
-* goenv - [github.com/syndbg/goenv](https://github.com/syndbg/goenv)
-* Go 1.11.8 - [http://golang.org/](http://golang.org/)
-* PostgreSQL 9.6 - [http://www.postgresql.org/](http://www.postgresql.org/)
+* [goenv](https://github.com/syndbg/goenv)
+* [Go 1.13.8](http://golang.org/)
+* [PostgreSQL 9.6](http://www.postgresql.org/)
+* [mockery](https://github.com/syndbg/goenv) - for generating Mocks
 
 ## Getting Started
+
 * Clone the repo `git@github.com:toggl/pipes-api.git`
 * Copy configuration files `cp -r config-sample config`
 * Fill in needed oauth tokens and URL-s under config json files
