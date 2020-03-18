@@ -304,6 +304,8 @@ func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, account
 	return token.AuthorizeUrl, nil
 }
 
+// CreateAuthorization - creates new authorization for workspace and specified service.
+// Parameter: currentWorkspaceToken is an "Toggl.Track" API token or UserName.
 func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error {
 	var err error
 	auth := pipe.NewAuthorization(workspaceID, serviceID)

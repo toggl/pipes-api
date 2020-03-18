@@ -29,7 +29,7 @@ func (c *Controller) GetIntegrationsHandler(req Request) Response {
 	return ok(resp)
 }
 
-func (c *Controller) GetIntegrationPipeHandler(req Request) Response {
+func (c *Controller) ReadPipeHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID, err := c.getIntegrationParams(req)
 	if err != nil {
@@ -42,7 +42,7 @@ func (c *Controller) GetIntegrationPipeHandler(req Request) Response {
 	return ok(p)
 }
 
-func (c *Controller) PostPipeSetupHandler(req Request) Response {
+func (c *Controller) CreatePipeHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID, err := c.getIntegrationParams(req)
 	if err != nil {
@@ -58,7 +58,7 @@ func (c *Controller) PostPipeSetupHandler(req Request) Response {
 	return ok(nil)
 }
 
-func (c *Controller) PutPipeSetupHandler(req Request) Response {
+func (c *Controller) UpdatePipeHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID, err := c.getIntegrationParams(req)
 	if err != nil {
@@ -78,7 +78,7 @@ func (c *Controller) PutPipeSetupHandler(req Request) Response {
 	return ok(nil)
 }
 
-func (c *Controller) DeletePipeSetupHandler(req Request) Response {
+func (c *Controller) DeletePipeHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID, err := c.getIntegrationParams(req)
 	if err != nil {
@@ -120,7 +120,7 @@ func (c *Controller) GetAuthURLHandler(req Request) Response {
 	}{url})
 }
 
-func (c *Controller) PostAuthorizationHandler(req Request) Response {
+func (c *Controller) CreateAuthorizationHandler(req Request) Response {
 	currentToken := currentWorkspaceToken(req.r)
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, err := c.getServiceId(req)
