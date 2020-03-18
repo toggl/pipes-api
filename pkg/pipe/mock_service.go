@@ -241,13 +241,13 @@ func (_m *MockService) Run(_a0 *Pipe) {
 	_m.Called(_a0)
 }
 
-// RunPipe provides a mock function with given fields: workspaceID, sid, pid, payload
-func (_m *MockService) RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, payload []byte) error {
-	ret := _m.Called(workspaceID, sid, pid, payload)
+// RunPipe provides a mock function with given fields: workspaceID, sid, pid, usersSelector
+func (_m *MockService) RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, usersSelector []byte) error {
+	ret := _m.Called(workspaceID, sid, pid, usersSelector)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID, []byte) error); ok {
-		r0 = rf(workspaceID, sid, pid, payload)
+		r0 = rf(workspaceID, sid, pid, usersSelector)
 	} else {
 		r0 = ret.Error(0)
 	}

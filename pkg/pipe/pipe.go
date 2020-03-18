@@ -35,11 +35,11 @@ type Pipe struct {
 	ServiceParams   []byte              `json:"service_params,omitempty"`
 	PipeStatus      *Status             `json:"pipe_status,omitempty"`
 
-	WorkspaceID int                            `json:"-"`
-	ServiceID   integrations.ExternalServiceID `json:"-"`
-	Key         string                         `json:"-"`
-	Payload     []byte                         `json:"-"`
-	LastSync    *time.Time                     `json:"-"`
+	WorkspaceID   int                            `json:"-"`
+	ServiceID     integrations.ExternalServiceID `json:"-"`
+	Key           string                         `json:"-"`
+	UsersSelector []byte                         `json:"-"`
+	LastSync      *time.Time                     `json:"-"`
 }
 
 func NewPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) *Pipe {

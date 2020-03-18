@@ -175,7 +175,7 @@ func (svc *Service) ClearPipeConnections(workspaceID int, serviceID integrations
 	return nil
 }
 
-func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, payload []byte) error {
+func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, usersSelector []byte) error {
 	// make sure no race condition on fetching workspace lock
 	postPipeRunLock.Lock()
 	wsLock, exists := postPipeRunWorkspaceLock[workspaceID]
@@ -193,10 +193,9 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServ
 		return ErrPipeNotConfigured
 	}
 
-	p.Payload = payload
-
 	if p.ID == integrations.UsersPipe {
-		if len(p.Payload) == 0 {
+		p.UsersSelector = usersSelector
+		if len(p.UsersSelector) == 0 {
 			return SetParamsError{errors.New("Missing request payload")}
 		}
 
@@ -637,7 +636,7 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		IDs         []int `json:"ids"`
 		SendInvites bool  `json:"send_invites"`
 	}
-	if err := json.Unmarshal(p.Payload, &selector); err != nil {
+	if err := json.Unmarshal(p.UsersSelector, &selector); err != nil {
 		return err
 	}
 

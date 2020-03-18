@@ -44,7 +44,7 @@ type Service interface {
 	DeletePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
 	GetServicePipeLog(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (string, error)
 	ClearPipeConnections(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
-	RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, payload []byte) error
+	RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, usersSelector []byte) error
 	GetServiceUsers(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error)
 	GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error)
 	GetAuthURL(sid integrations.ExternalServiceID, accountName, callbackURL string) (string, error)
