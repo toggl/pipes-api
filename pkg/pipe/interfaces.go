@@ -58,8 +58,6 @@ type Service interface {
 
 //go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
-	Queue
-
 	IsDown() bool
 
 	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error

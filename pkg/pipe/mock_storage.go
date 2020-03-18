@@ -81,29 +81,6 @@ func (_m *MockStorage) DeletePipeConnections(workspaceID int, pipeConnectionKey 
 	return r0
 }
 
-// GetPipesFromQueue provides a mock function with given fields:
-func (_m *MockStorage) GetPipesFromQueue() ([]*Pipe, error) {
-	ret := _m.Called()
-
-	var r0 []*Pipe
-	if rf, ok := ret.Get(0).(func() []*Pipe); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*Pipe)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // IsDown provides a mock function with given fields:
 func (_m *MockStorage) IsDown() bool {
 	ret := _m.Called()
@@ -353,34 +330,6 @@ func (_m *MockStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integra
 	return r0, r1
 }
 
-// QueueAutomaticPipes provides a mock function with given fields:
-func (_m *MockStorage) QueueAutomaticPipes() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// QueuePipeAsFirst provides a mock function with given fields: _a0
-func (_m *MockStorage) QueuePipeAsFirst(_a0 *Pipe) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Save provides a mock function with given fields: p
 func (_m *MockStorage) Save(p *Pipe) error {
 	ret := _m.Called(p)
@@ -458,20 +407,6 @@ func (_m *MockStorage) SavePipeStatus(p *Status) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*Status) error); ok {
 		r0 = rf(p)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SetQueuedPipeSynced provides a mock function with given fields: _a0
-func (_m *MockStorage) SetQueuedPipeSynced(_a0 *Pipe) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
-		r0 = rf(_a0)
 	} else {
 		r0 = ret.Error(0)
 	}

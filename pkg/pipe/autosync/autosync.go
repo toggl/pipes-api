@@ -21,38 +21,38 @@ const (
 )
 
 type Service struct {
-	pipesQueue  pipe.Queue
-	pipesRunner pipe.Runner
+	queue  pipe.Queue
+	runner pipe.Runner
 }
 
 func NewService(p pipe.Queue, r pipe.Runner) *Service {
 	return &Service{
-		pipesQueue:  p,
-		pipesRunner: r,
+		queue:  p,
+		runner: r,
 	}
 }
 
-func (ss *Service) Start() {
-	go ss.startRunner()
-	go ss.startQueue()
+func (s *Service) Start() {
+	go s.startRunner()
+	go s.startQueue()
 }
 
 // run background workers
-func (ss *Service) runPipes() {
+func (s *Service) runPipes() {
 	wg.Add(workersCount)
 	for i := 0; i < workersCount; i++ {
-		go ss.pipeWorker(i)
+		go s.pipeWorker(i)
 	}
 }
 
 // background worker function
-func (ss *Service) pipeWorker(id int) {
+func (s *Service) pipeWorker(id int) {
 	defer func() {
 		log.Printf("[Workder %d] died\n", id)
 		wg.Done()
 	}()
 	for {
-		pipes, err := ss.pipesQueue.GetPipesFromQueue()
+		pipes, err := s.queue.GetPipesFromQueue()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -71,9 +71,9 @@ func (ss *Service) pipeWorker(id int) {
 		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
 			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
-			ss.pipesRunner.Run(pipe)
+			s.runner.Run(pipe)
 
-			err := ss.pipesQueue.SetQueuedPipeSynced(pipe)
+			err := s.queue.SetQueuedPipeSynced(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
@@ -90,14 +90,14 @@ func (ss *Service) pipeWorker(id int) {
 	}
 }
 
-func (ss *Service) startRunner() {
+func (s *Service) startRunner() {
 	for {
 		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
 		log.Println("-- Autosync sleeping for ", duration)
 		time.Sleep(duration)
 
 		log.Println("-- Autosync started")
-		ss.runPipes()
+		s.runPipes()
 
 		wg.Wait()
 		log.Println("-- Autosync finished")
@@ -105,7 +105,7 @@ func (ss *Service) startRunner() {
 }
 
 // schedule background job for each integration with auto sync enabled
-func (ss *Service) startQueue() {
+func (s *Service) startQueue() {
 	for {
 		// making sleep longer to not trigger auto sync too fast
 		// between 600s until 3000s
@@ -115,7 +115,7 @@ func (ss *Service) startQueue() {
 
 		log.Println("-- startQueue started")
 
-		if err := ss.pipesQueue.QueueAutomaticPipes(); err != nil {
+		if err := s.queue.QueueAutomaticPipes(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}

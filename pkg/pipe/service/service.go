@@ -30,6 +30,7 @@ type Service struct {
 	oauth oauth.Provider
 	toggl pipe.TogglClient
 	store pipe.Storage
+	queue pipe.Queue
 
 	availablePipeType     *regexp.Regexp
 	availableServiceType  *regexp.Regexp
@@ -41,12 +42,13 @@ type Service struct {
 	mx                 sync.RWMutex
 }
 
-func NewService(oauth oauth.Provider, store pipe.Storage, toggl pipe.TogglClient, pipesApiHost string) *Service {
+func NewService(oauth oauth.Provider, store pipe.Storage, queue pipe.Queue, toggl pipe.TogglClient, pipesApiHost string) *Service {
 
 	svc := &Service{
 		toggl: toggl,
 		oauth: oauth,
 		store: store,
+		queue: queue,
 
 		pipesApiHost:          pipesApiHost,
 		availableIntegrations: []*pipe.Integration{},
@@ -207,7 +209,7 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServ
 		return nil
 	}
 
-	if err := svc.store.QueuePipeAsFirst(p); err != nil {
+	if err := svc.queue.QueuePipeAsFirst(p); err != nil {
 		return err
 	}
 	return nil

@@ -40,41 +40,6 @@ func (ps *PostgresStorage) LoadPipe(workspaceID int, sid integrations.ExternalSe
 	return ps.loadPipeWithKey(workspaceID, key)
 }
 
-func (ps *PostgresStorage) GetPipesFromQueue() ([]*pipe.Pipe, error) {
-	var pipes []*pipe.Pipe
-	rows, err := ps.db.Query(selectPipesFromQueueSQL)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil
-		}
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var workspaceID int
-		var key string
-		err := rows.Scan(&workspaceID, &key)
-		if err != nil {
-			return nil, err
-		}
-
-		if workspaceID > 0 && len(key) > 0 {
-			pipe, err := ps.loadPipeWithKey(workspaceID, key)
-			if err != nil {
-				return nil, err
-			}
-			pipes = append(pipes, pipe)
-		}
-	}
-	return pipes, nil
-}
-
-func (ps *PostgresStorage) SetQueuedPipeSynced(pipe *pipe.Pipe) error {
-	_, err := ps.db.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key)
-	return err
-}
-
 func (ps *PostgresStorage) Save(p *pipe.Pipe) error {
 	p.Configured = true
 	b, err := json.Marshal(p)
@@ -158,18 +123,8 @@ func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.Exte
 	return &pipeStatus, nil
 }
 
-func (ps *PostgresStorage) QueueAutomaticPipes() error {
-	_, err := ps.db.Exec(queueAutomaticPipesSQL)
-	return err
-}
-
 func (ps *PostgresStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
-	return err
-}
-
-func (ps *PostgresStorage) QueuePipeAsFirst(pipe *pipe.Pipe) error {
-	_, err := ps.db.Exec(queuePipeAsFirstSQL, pipe.WorkspaceID, pipe.Key)
 	return err
 }
 

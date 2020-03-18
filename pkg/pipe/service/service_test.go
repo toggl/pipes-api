@@ -18,6 +18,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/queue"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
@@ -58,7 +59,8 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost)
+	pipesQueue := queue.NewPostgresQueue(db)
+	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *pipe.Pipe {
 		pipe := pipe.NewPipe(workspaceID, serviceID, pipeID)
@@ -90,7 +92,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	createAndEnqueuePipeFn(3, "asana", "projects", 100)
 
 	// first fetch should return 3 store and unique per workspace
-	pipes, err := pipeService.store.GetPipesFromQueue()
+	pipes, err := pipeService.queue.GetPipesFromQueue()
 	if err != nil {
 		t.Error(err)
 	}
@@ -110,14 +112,14 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 		}
 
 		retrievedWorkspace[pipe.WorkspaceID] = true
-		err = pipeService.store.SetQueuedPipeSynced(pipe)
+		err = pipeService.queue.SetQueuedPipeSynced(pipe)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
 	// second fetch should return 1 pipe left
-	pipes, err = pipeService.store.GetPipesFromQueue()
+	pipes, err = pipeService.queue.GetPipesFromQueue()
 	if err != nil {
 		t.Error(err)
 	}
@@ -153,7 +155,8 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost)
+	pipesQueue := queue.NewPostgresQueue(db)
+	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -204,7 +207,8 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipeService := NewService(oauthProvider, pipesStorage, api, cfg.PipesAPIHost)
+	pipesQueue := queue.NewPostgresQueue(db)
+	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
 
@@ -265,10 +269,11 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	config.ParseFlags(&flags, os.Args)
 
 	s := &pipe.MockStorage{}
+	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 
-	svc := NewService(op, s, api, "https://localhost")
+	svc := NewService(op, s, q, api, "https://localhost")
 	svc.setAuthorizationType("github", pipe.TypeOauth2)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub)
@@ -299,10 +304,11 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	s := storage.NewPostgresStorage(ts.db)
+	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 
-	svc := NewService(op, s, api, "")
+	svc := NewService(op, s, q, api, "")
 
 	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
 
@@ -317,8 +323,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
+	q := &pipe.MockQueue{}
 
-	svc := NewService(op, s, api, "https://localhost")
+	svc := NewService(op, s, q, api, "https://localhost")
 	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub)
@@ -341,8 +348,9 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	s := storage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
+	q := &pipe.MockQueue{}
 
-	svc := NewService(op, s, api, "https://localhost")
+	svc := NewService(op, s, q, api, "https://localhost")
 
 	res := svc.getAvailableAuthorizations("github")
 	ts.Equal("", res)

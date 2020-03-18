@@ -15,6 +15,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe/autosync"
+	"github.com/toggl/pipes-api/pkg/pipe/queue"
 	"github.com/toggl/pipes-api/pkg/pipe/server"
 	"github.com/toggl/pipes-api/pkg/pipe/service"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
@@ -56,12 +57,13 @@ func main() {
 	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 
 	pipesStore := storage.NewPostgresStorage(db)
+	pipesQueue := queue.NewPostgresQueue(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
-	pipesService := service.NewService(oauthProvider, pipesStore, api, cfg.PipesAPIHost)
+	pipesService := service.NewService(oauthProvider, pipesStore, pipesQueue, api, cfg.PipesAPIHost)
 	pipesService.LoadIntegrationsFromConfig(integrationsConfigPath)
 
-	autosync.NewService(pipesStore, pipesService).Start()
+	autosync.NewService(pipesQueue, pipesService).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
 		server.NewController(pipesService),
