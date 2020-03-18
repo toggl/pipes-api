@@ -173,13 +173,13 @@ func (svc *Service) ClearPipeConnections(workspaceID int, serviceID integrations
 	return nil
 }
 
-func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error {
+func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, payload []byte) error {
 	// make sure no race condition on fetching workspace lock
 	postPipeRunLock.Lock()
-	workspaceLock, exists := postPipeRunWorkspaceLock[workspaceID]
+	wsLock, exists := postPipeRunWorkspaceLock[workspaceID]
 	if !exists {
-		workspaceLock = &sync.Mutex{}
-		postPipeRunWorkspaceLock[workspaceID] = workspaceLock
+		wsLock = &sync.Mutex{}
+		postPipeRunWorkspaceLock[workspaceID] = wsLock
 	}
 	postPipeRunLock.Unlock()
 
@@ -190,21 +190,25 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServ
 	if p == nil {
 		return ErrPipeNotConfigured
 	}
-	if msg := p.ValidatePayload(params); msg != "" {
-		return SetParamsError{errors.New(msg)}
-	}
+
+	p.Payload = payload
 
 	if p.ID == integrations.UsersPipe {
+		if len(p.Payload) == 0 {
+			return SetParamsError{errors.New("Missing request payload")}
+		}
+
 		go func() {
-			workspaceLock.Lock()
+			wsLock.Lock()
 			svc.Run(p)
-			workspaceLock.Unlock()
+			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
-	} else {
-		if err := svc.QueuePipeAsFirst(p); err != nil {
-			return err
-		}
+		return nil
+	}
+
+	if err := svc.QueuePipeAsFirst(p); err != nil {
+		return err
 	}
 	return nil
 }

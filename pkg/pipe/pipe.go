@@ -50,14 +50,6 @@ func NewPipe(workspaceID int, sid integrations.ExternalServiceID, pid integratio
 	}
 }
 
-func (p *Pipe) ValidatePayload(payload []byte) string {
-	if p.ID == "users" && len(payload) == 0 {
-		return "Missing request payload"
-	}
-	p.Payload = payload
-	return ""
-}
-
 func PipesKey(sid integrations.ExternalServiceID, pid integrations.PipeID) string {
 	return fmt.Sprintf("%s:%s", sid, pid)
 }
