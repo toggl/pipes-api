@@ -80,6 +80,7 @@ const (
 	ClientsPipe     PipeID = "clients"
 	ProjectsPipe    PipeID = "projects"
 	TasksPipe       PipeID = "tasks"
-	TodoPipe        PipeID = "todolists"
-	TimeEntriesPipe PipeID = "time_entries"
+	TodoListsPipe   PipeID = "todolists"
+	TodosPipe       PipeID = "todos"
+	TimeEntriesPipe PipeID = "timeentries"
 )
