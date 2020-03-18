@@ -153,29 +153,6 @@ func (_m *MockService) GetPipe(workspaceID int, sid integrations.ExternalService
 	return r0, r1
 }
 
-// GetPipesFromQueue provides a mock function with given fields:
-func (_m *MockService) GetPipesFromQueue() ([]*Pipe, error) {
-	ret := _m.Called()
-
-	var r0 []*Pipe
-	if rf, ok := ret.Get(0).(func() []*Pipe); ok {
-		r0 = rf()
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*Pipe)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetServiceAccounts provides a mock function with given fields: workspaceID, sid, forceImport
 func (_m *MockService) GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error) {
 	ret := _m.Called(workspaceID, sid, forceImport)
@@ -243,34 +220,6 @@ func (_m *MockService) GetServiceUsers(workspaceID int, sid integrations.Externa
 	return r0, r1
 }
 
-// QueueAutomaticPipes provides a mock function with given fields:
-func (_m *MockService) QueueAutomaticPipes() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// QueuePipeAsFirst provides a mock function with given fields: _a0
-func (_m *MockService) QueuePipeAsFirst(_a0 *Pipe) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
-		r0 = rf(_a0)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Ready provides a mock function with given fields:
 func (_m *MockService) Ready() []error {
 	ret := _m.Called()
@@ -292,27 +241,13 @@ func (_m *MockService) Run(_a0 *Pipe) {
 	_m.Called(_a0)
 }
 
-// RunPipe provides a mock function with given fields: workspaceID, sid, pid, params
-func (_m *MockService) RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error {
-	ret := _m.Called(workspaceID, sid, pid, params)
+// RunPipe provides a mock function with given fields: workspaceID, sid, pid, payload
+func (_m *MockService) RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, payload []byte) error {
+	ret := _m.Called(workspaceID, sid, pid, payload)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID, []byte) error); ok {
-		r0 = rf(workspaceID, sid, pid, params)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SetQueuedPipeSynced provides a mock function with given fields: _a0
-func (_m *MockService) SetQueuedPipeSynced(_a0 *Pipe) error {
-	ret := _m.Called(_a0)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
-		r0 = rf(_a0)
+		r0 = rf(workspaceID, sid, pid, payload)
 	} else {
 		r0 = ret.Error(0)
 	}

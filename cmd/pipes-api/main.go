@@ -61,7 +61,7 @@ func main() {
 	pipesService := service.NewService(oauthProvider, pipesStore, api, cfg.PipesAPIHost)
 	pipesService.LoadIntegrationsFromConfig(integrationsConfigPath)
 
-	autosync.NewService(pipesService).Start()
+	autosync.NewService(pipesStore, pipesService).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
 		server.NewController(pipesService),

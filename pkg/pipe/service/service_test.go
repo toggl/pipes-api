@@ -90,7 +90,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	createAndEnqueuePipeFn(3, "asana", "projects", 100)
 
 	// first fetch should return 3 store and unique per workspace
-	pipes, err := pipeService.GetPipesFromQueue()
+	pipes, err := pipeService.store.GetPipesFromQueue()
 	if err != nil {
 		t.Error(err)
 	}
@@ -110,14 +110,14 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 		}
 
 		retrievedWorkspace[pipe.WorkspaceID] = true
-		err = pipeService.SetQueuedPipeSynced(pipe)
+		err = pipeService.store.SetQueuedPipeSynced(pipe)
 		if err != nil {
 			t.Error(err)
 		}
 	}
 
 	// second fetch should return 1 pipe left
-	pipes, err = pipeService.GetPipesFromQueue()
+	pipes, err = pipeService.store.GetPipesFromQueue()
 	if err != nil {
 		t.Error(err)
 	}

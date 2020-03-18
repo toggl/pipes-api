@@ -207,7 +207,7 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServ
 		return nil
 	}
 
-	if err := svc.QueuePipeAsFirst(p); err != nil {
+	if err := svc.store.QueuePipeAsFirst(p); err != nil {
 		return err
 	}
 	return nil
@@ -510,28 +510,12 @@ func (svc *Service) Ready() []error {
 	return errs
 }
 
-func (svc *Service) GetPipesFromQueue() ([]*pipe.Pipe, error) {
-	return svc.store.GetPipesFromQueue()
-}
-
-func (svc *Service) SetQueuedPipeSynced(pipe *pipe.Pipe) error {
-	return svc.store.SetQueuedPipeSynced(pipe)
-}
-
-func (svc *Service) QueueAutomaticPipes() error {
-	return svc.store.QueueAutomaticPipes()
-}
-
 func (svc *Service) AvailablePipeType(pipeID integrations.PipeID) bool {
 	return svc.availablePipeType.MatchString(string(pipeID))
 }
 
 func (svc *Service) AvailableServiceType(serviceID integrations.ExternalServiceID) bool {
 	return svc.availableServiceType.MatchString(string(serviceID))
-}
-
-func (svc *Service) QueuePipeAsFirst(pipe *pipe.Pipe) error {
-	return svc.store.QueuePipeAsFirst(pipe)
 }
 
 func (svc *Service) setAuthorizationType(serviceID integrations.ExternalServiceID, authType string) {
