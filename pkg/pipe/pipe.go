@@ -2,6 +2,7 @@ package pipe
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
@@ -52,6 +53,11 @@ func NewPipe(workspaceID int, sid integrations.ExternalServiceID, pid integratio
 
 func PipesKey(sid integrations.ExternalServiceID, pid integrations.PipeID) string {
 	return fmt.Sprintf("%s:%s", sid, pid)
+}
+
+func GetSidPidFromKey(key string) (integrations.ExternalServiceID, integrations.PipeID) {
+	ids := strings.Split(key, ":")
+	return integrations.ExternalServiceID(ids[0]), integrations.PipeID(ids[1])
 }
 
 func NewExternalService(id integrations.ExternalServiceID, workspaceID int) integrations.ExternalService {

@@ -59,7 +59,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipesQueue := queue.NewPostgresQueue(db)
+	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *pipe.Pipe {
@@ -155,7 +155,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipesQueue := queue.NewPostgresQueue(db)
+	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
@@ -207,7 +207,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
 	pipesStorage := storage.NewPostgresStorage(db)
-	pipesQueue := queue.NewPostgresQueue(db)
+	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)

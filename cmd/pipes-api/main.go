@@ -57,7 +57,7 @@ func main() {
 	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 
 	pipesStore := storage.NewPostgresStorage(db)
-	pipesQueue := queue.NewPostgresQueue(db)
+	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
 	pipesService := service.NewService(oauthProvider, pipesStore, pipesQueue, api, cfg.PipesAPIHost)
