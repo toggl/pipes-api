@@ -43,6 +43,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	err = db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer db.Close()
 
 	oAuth1ConfigPath := filepath.Join(env.WorkDir, "config", "oauth1.json")
