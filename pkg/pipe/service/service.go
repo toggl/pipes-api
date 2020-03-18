@@ -251,7 +251,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 		if forceImport {
 			go func() {
 				fetchErr := svc.fetchUsers(usersPipe)
-				if err := svc.endSync(usersPipe, false, fetchErr); err != nil {
+				if fetchErr != nil {
 					log.Print(err.Error())
 				}
 			}()
@@ -412,8 +412,17 @@ func (svc *Service) Run(p *pipe.Pipe) {
 
 	var err error
 	defer func() {
-		err := svc.endSync(p, true, err)
-		log.Println(err)
+		if err != nil {
+			// If it is JSON marshalling error suppress it for status
+			if _, ok := err.(*json.UnmarshalTypeError); ok {
+				err = ErrJSONParsing
+			}
+			p.PipeStatus.AddError(err)
+		}
+		if e := svc.store.SavePipeStatus(p.PipeStatus); e != nil {
+			svc.notifyBugsnag(e, p)
+			log.Println(e)
+		}
 	}()
 
 	svc.store.LoadLastSync(p)
@@ -459,8 +468,7 @@ func (svc *Service) Run(p *pipe.Pipe) {
 		bugsnag.Notify(fmt.Errorf("fetchObjects: Unrecognized pipeID - %s", p.ID))
 		return
 	}
-
-	if err = svc.endSync(p, false, fErr); err != nil {
+	if fErr != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
@@ -495,8 +503,7 @@ func (svc *Service) Run(p *pipe.Pipe) {
 		bugsnag.Notify(fmt.Errorf("postObjects: Unrecognized pipeID - %s", p.ID))
 		return
 	}
-
-	if err = svc.endSync(p, false, pErr); err != nil {
+	if pErr != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
@@ -915,24 +922,6 @@ func (svc *Service) postTimeEntries(p *pipe.Pipe, service integrations.ExternalS
 	return nil
 }
 
-func (svc *Service) fetchObjects(p *pipe.Pipe, saveStatus bool) (err error) {
-	switch p.ID {
-	case "users":
-		err = svc.fetchUsers(p)
-	case "projects":
-		err = svc.fetchProjects(p)
-	case "todolists":
-		err = svc.fetchTodoLists(p)
-	case "todos", "tasks":
-		err = svc.fetchTasks(p)
-	case "timeentries":
-		err = svc.fetchTimeEntries(p)
-	default:
-		panic(fmt.Sprintf("fetchObjects: Unrecognized pipeID - %s", p.ID))
-	}
-	return svc.endSync(p, saveStatus, err)
-}
-
 func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 	service := pipe.NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
@@ -1308,34 +1297,6 @@ func (svc *Service) getTasks(s integrations.ExternalService, objType integration
 		return nil, err
 	}
 	return &tasksResponse, nil
-}
-
-func (svc *Service) endSync(p *pipe.Pipe, saveStatus bool, err error) error {
-	if !saveStatus {
-		return err
-	}
-
-	if err != nil {
-		// If it is JSON marshalling error suppress it for status
-		if _, ok := err.(*json.UnmarshalTypeError); ok {
-			err = ErrJSONParsing
-		}
-		p.PipeStatus.AddError(err)
-	}
-	if err = svc.store.SavePipeStatus(p.PipeStatus); err != nil {
-		bugsnag.Notify(err, bugsnag.MetaData{
-			"pipe": {
-				"ID":            p.ID,
-				"Name":          p.Name,
-				"ServiceParams": string(p.ServiceParams),
-				"WorkspaceID":   p.WorkspaceID,
-				"ServiceID":     p.ServiceID,
-			},
-		})
-		return err
-	}
-
-	return nil
 }
 
 func (svc *Service) fillAvailablePipeTypes() *Service {
