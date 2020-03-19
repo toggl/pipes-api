@@ -128,8 +128,13 @@ func (ps *PostgresStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, ser
 	return err
 }
 
-func (ps *PostgresStorage) ClearImportFor(s integrations.ExternalService, pipeID integrations.PipeID) error {
-	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(pipeID))
+func (ps *PostgresStorage) DeleteAccountsFor(s integrations.ExternalService) error {
+	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integrations.AccountsPipe))
+	return err
+}
+
+func (ps *PostgresStorage) DeleteUsersFor(s integrations.ExternalService) error {
+	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integrations.UsersPipe))
 	return err
 }
 

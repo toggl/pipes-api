@@ -11,20 +11,6 @@ type MockStorage struct {
 	mock.Mock
 }
 
-// ClearImportFor provides a mock function with given fields: s, pid
-func (_m *MockStorage) ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error {
-	ret := _m.Called(s, pid)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(integrations.ExternalService, integrations.PipeID) error); ok {
-		r0 = rf(s, pid)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Delete provides a mock function with given fields: p, workspaceID
 func (_m *MockStorage) Delete(p *Pipe, workspaceID int) error {
 	ret := _m.Called(p, workspaceID)
@@ -32,6 +18,20 @@ func (_m *MockStorage) Delete(p *Pipe, workspaceID int) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*Pipe, int) error); ok {
 		r0 = rf(p, workspaceID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteAccountsFor provides a mock function with given fields: s
+func (_m *MockStorage) DeleteAccountsFor(s integrations.ExternalService) error {
+	ret := _m.Called(s)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) error); ok {
+		r0 = rf(s)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -74,6 +74,20 @@ func (_m *MockStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, sid int
 	var r0 error
 	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID) error); ok {
 		r0 = rf(workspaceID, sid)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteUsersFor provides a mock function with given fields: s
+func (_m *MockStorage) DeleteUsersFor(s integrations.ExternalService) error {
+	ret := _m.Called(s)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) error); ok {
+		r0 = rf(s)
 	} else {
 		r0 = ret.Error(0)
 	}

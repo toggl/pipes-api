@@ -341,7 +341,7 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
 func (ts *StorageTestSuite) TestStorage_ClearImportFor() {
 	s := NewPostgresStorage(ts.db)
 	svc := pipe.NewExternalService(integrations.GitHub, 1)
-	err := s.ClearImportFor(svc, integrations.UsersPipe)
+	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
 }
 

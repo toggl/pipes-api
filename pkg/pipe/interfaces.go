@@ -97,9 +97,11 @@ type Storage interface {
 	// Objects
 	LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error)
 	SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error
+	DeleteAccountsFor(s integrations.ExternalService) error
 
 	LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error)
 	SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error
+	DeleteUsersFor(s integrations.ExternalService) error
 
 	LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error)
 	SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error
@@ -113,8 +115,5 @@ type Storage interface {
 	LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error)
 	SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error
 
-	// Other
-
-	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
 	IsDown() bool
 }

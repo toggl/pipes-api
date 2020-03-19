@@ -237,7 +237,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 	}
 
 	if forceImport {
-		if err := svc.store.ClearImportFor(service, integrations.UsersPipe); err != nil {
+		if err := svc.store.DeleteUsersFor(service); err != nil {
 			return nil, err
 		}
 	}
@@ -275,7 +275,7 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.E
 		return nil, RefreshError{errors.New("oAuth refresh failed!")}
 	}
 	if forceImport {
-		if err := svc.store.ClearImportFor(service, "accounts"); err != nil { // TODO: Why "accounts". We have no accounts store. ???
+		if err := svc.store.DeleteAccountsFor(service); err != nil {
 			return nil, err
 		}
 	}
