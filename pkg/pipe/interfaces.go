@@ -66,22 +66,26 @@ type Service interface {
 //go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
 	// Authorizations
+
 	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
 	SaveAuthorization(a *Authorization) error
 	DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
 
 	// ID Mappings
+
 	LoadIDMapping(workspaceID int, key string) (*IDMapping, error)
 	LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error)
 	SaveIDMapping(c *IDMapping) error
 	DeleteIDMappings(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
 
 	// Accounts
+
 	LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
 	SaveAccounts(s integrations.ExternalService) error
 
 	// Pipes
+
 	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
 	LoadPipes(workspaceID int) (map[string]*Pipe, error)
 	Save(p *Pipe) error
@@ -90,15 +94,29 @@ type Storage interface {
 	LoadLastSync(p *Pipe)
 
 	// Pipe statuses
+
 	LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error)
 	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
 	SavePipeStatus(p *Status) error
 
 	// Objects
-	LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error)
-	SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error
+	LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error)
+	SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error
+
+	LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error)
+	SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error
+
+	LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error)
+	SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error
+
+	LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error)
+	SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error
+
+	LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error)
+	SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error
 
 	// Other
+
 	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
 	IsDown() bool
 }

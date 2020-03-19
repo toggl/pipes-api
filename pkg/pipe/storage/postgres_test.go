@@ -266,10 +266,10 @@ func (ts *StorageTestSuite) TestStorage_SaveObject_LoadObject() {
 
 	svc := pipe.NewExternalService(integrations.GitHub, 1)
 
-	err := s.SaveObject(svc, integrations.ProjectsPipe, o)
+	err := s.saveObject(svc, integrations.ProjectsPipe, o)
 	ts.NoError(err)
 
-	b, err := s.LoadObject(svc, integrations.ProjectsPipe)
+	b, err := s.loadObject(svc, integrations.ProjectsPipe)
 	ts.NoError(err)
 
 	ts.Equal(`{"Name":"Test","Value":"Test2"}`, string(b))

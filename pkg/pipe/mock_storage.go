@@ -141,6 +141,29 @@ func (_m *MockStorage) LoadAuthorization(workspaceID int, sid integrations.Exter
 	return r0, r1
 }
 
+// LoadClientsFor provides a mock function with given fields: s
+func (_m *MockStorage) LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
+	ret := _m.Called(s)
+
+	var r0 *toggl.ClientsResponse
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.ClientsResponse); ok {
+		r0 = rf(s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*toggl.ClientsResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
+		r1 = rf(s)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // LoadIDMapping provides a mock function with given fields: workspaceID, key
 func (_m *MockStorage) LoadIDMapping(workspaceID int, key string) (*IDMapping, error) {
 	ret := _m.Called(workspaceID, key)
@@ -167,29 +190,6 @@ func (_m *MockStorage) LoadIDMapping(workspaceID int, key string) (*IDMapping, e
 // LoadLastSync provides a mock function with given fields: p
 func (_m *MockStorage) LoadLastSync(p *Pipe) {
 	_m.Called(p)
-}
-
-// LoadObject provides a mock function with given fields: s, pid
-func (_m *MockStorage) LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
-	ret := _m.Called(s, pid)
-
-	var r0 []byte
-	if rf, ok := ret.Get(0).(func(integrations.ExternalService, integrations.PipeID) []byte); ok {
-		r0 = rf(s, pid)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.ExternalService, integrations.PipeID) error); ok {
-		r1 = rf(s, pid)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // LoadPipe provides a mock function with given fields: workspaceID, sid, pid
@@ -284,6 +284,29 @@ func (_m *MockStorage) LoadPipes(workspaceID int) (map[string]*Pipe, error) {
 	return r0, r1
 }
 
+// LoadProjectsFor provides a mock function with given fields: s
+func (_m *MockStorage) LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
+	ret := _m.Called(s)
+
+	var r0 *toggl.ProjectsResponse
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.ProjectsResponse); ok {
+		r0 = rf(s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*toggl.ProjectsResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
+		r1 = rf(s)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // LoadReversedIDMapping provides a mock function with given fields: workspaceID, key
 func (_m *MockStorage) LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error) {
 	ret := _m.Called(workspaceID, key)
@@ -300,6 +323,75 @@ func (_m *MockStorage) LoadReversedIDMapping(workspaceID int, key string) (*Reve
 	var r1 error
 	if rf, ok := ret.Get(1).(func(int, string) error); ok {
 		r1 = rf(workspaceID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoadTasksFor provides a mock function with given fields: s
+func (_m *MockStorage) LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
+	ret := _m.Called(s)
+
+	var r0 *toggl.TasksResponse
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.TasksResponse); ok {
+		r0 = rf(s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*toggl.TasksResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
+		r1 = rf(s)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoadTodoListsFor provides a mock function with given fields: s
+func (_m *MockStorage) LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
+	ret := _m.Called(s)
+
+	var r0 *toggl.TasksResponse
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.TasksResponse); ok {
+		r0 = rf(s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*toggl.TasksResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
+		r1 = rf(s)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LoadUsersFor provides a mock function with given fields: s
+func (_m *MockStorage) LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error) {
+	ret := _m.Called(s)
+
+	var r0 *toggl.UsersResponse
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService) *toggl.UsersResponse); ok {
+		r0 = rf(s)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*toggl.UsersResponse)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(integrations.ExternalService) error); ok {
+		r1 = rf(s)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -372,6 +464,20 @@ func (_m *MockStorage) SaveAuthorization(a *Authorization) error {
 	return r0
 }
 
+// SaveClientsFor provides a mock function with given fields: s, res
+func (_m *MockStorage) SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error {
+	ret := _m.Called(s, res)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, toggl.ClientsResponse) error); ok {
+		r0 = rf(s, res)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SaveIDMapping provides a mock function with given fields: c
 func (_m *MockStorage) SaveIDMapping(c *IDMapping) error {
 	ret := _m.Called(c)
@@ -386,20 +492,6 @@ func (_m *MockStorage) SaveIDMapping(c *IDMapping) error {
 	return r0
 }
 
-// SaveObject provides a mock function with given fields: s, pid, obj
-func (_m *MockStorage) SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error {
-	ret := _m.Called(s, pid, obj)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(integrations.ExternalService, integrations.PipeID, interface{}) error); ok {
-		r0 = rf(s, pid, obj)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // SavePipeStatus provides a mock function with given fields: p
 func (_m *MockStorage) SavePipeStatus(p *Status) error {
 	ret := _m.Called(p)
@@ -407,6 +499,62 @@ func (_m *MockStorage) SavePipeStatus(p *Status) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*Status) error); ok {
 		r0 = rf(p)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SaveProjectsFor provides a mock function with given fields: s, res
+func (_m *MockStorage) SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error {
+	ret := _m.Called(s, res)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, toggl.ProjectsResponse) error); ok {
+		r0 = rf(s, res)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SaveTasksFor provides a mock function with given fields: s, res
+func (_m *MockStorage) SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error {
+	ret := _m.Called(s, res)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, toggl.TasksResponse) error); ok {
+		r0 = rf(s, res)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SaveTodoListsFor provides a mock function with given fields: s, res
+func (_m *MockStorage) SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error {
+	ret := _m.Called(s, res)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, toggl.TasksResponse) error); ok {
+		r0 = rf(s, res)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// SaveUsersFor provides a mock function with given fields: s, res
+func (_m *MockStorage) SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error {
+	ret := _m.Called(s, res)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, toggl.UsersResponse) error); ok {
+		r0 = rf(s, res)
 	} else {
 		r0 = ret.Error(0)
 	}

@@ -328,7 +328,7 @@ func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
 	return nil
 }
 
-func (ps *PostgresStorage) LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
+func (ps *PostgresStorage) loadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
 	var result []byte
 	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
@@ -344,19 +344,125 @@ func (ps *PostgresStorage) LoadObject(s integrations.ExternalService, pid integr
 	return result, nil
 }
 
-func (ps *PostgresStorage) SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error {
-	b, err := json.Marshal(obj)
+func (ps *PostgresStorage) SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error {
+	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err
 	}
 
-	_, err = ps.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
+	return ps.saveObject(s, integrations.UsersPipe, b)
+}
+
+func (ps *PostgresStorage) SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error {
+	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err
 	}
-	return nil
+
+	return ps.saveObject(s, integrations.ClientsPipe, b)
+}
+
+func (ps *PostgresStorage) SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error {
+	b, err := json.Marshal(res)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
+
+	return ps.saveObject(s, integrations.ProjectsPipe, b)
+}
+
+func (ps *PostgresStorage) SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error {
+	b, err := json.Marshal(res)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
+
+	return ps.saveObject(s, integrations.TasksPipe, b)
+}
+
+func (ps *PostgresStorage) SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error {
+	b, err := json.Marshal(res)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
+
+	return ps.saveObject(s, integrations.TodoListsPipe, b)
+}
+
+func (ps *PostgresStorage) LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error) {
+	b, err := ps.loadObject(s, integrations.UsersPipe)
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var usersResponse toggl.UsersResponse
+	err = json.Unmarshal(b, &usersResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &usersResponse, nil
+}
+
+func (ps *PostgresStorage) LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
+	b, err := ps.loadObject(s, integrations.ClientsPipe)
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var clientsResponse toggl.ClientsResponse
+	err = json.Unmarshal(b, &clientsResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &clientsResponse, nil
+}
+
+func (ps *PostgresStorage) LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
+	b, err := ps.loadObject(s, integrations.ProjectsPipe)
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var projectsResponse toggl.ProjectsResponse
+	err = json.Unmarshal(b, &projectsResponse)
+	if err != nil {
+		return nil, err
+	}
+
+	return &projectsResponse, nil
+}
+
+func (ps *PostgresStorage) LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
+	b, err := ps.loadObject(s, integrations.TodoListsPipe)
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var tasksResponse toggl.TasksResponse
+	err = json.Unmarshal(b, &tasksResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &tasksResponse, nil
+}
+
+func (ps *PostgresStorage) LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
+	b, err := ps.loadObject(s, integrations.TasksPipe)
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var tasksResponse toggl.TasksResponse
+	err = json.Unmarshal(b, &tasksResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &tasksResponse, nil
 }
 
 func (ps *PostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
@@ -410,5 +516,14 @@ func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
 	p.Key = key
 	p.WorkspaceID = wid
 	p.ServiceID = integrations.ExternalServiceID(strings.Split(key, ":")[0])
+	return nil
+}
+
+func (ps *PostgresStorage) saveObject(s integrations.ExternalService, pid integrations.PipeID, b []byte) error {
+	_, err := ps.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
 	return nil
 }

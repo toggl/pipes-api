@@ -242,7 +242,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 		}
 	}
 
-	usersResponse, err := svc.getUsers(service)
+	usersResponse, err := svc.store.LoadUsersFor(service)
 	if err != nil {
 		return nil, err
 	}
@@ -625,7 +625,7 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		return err
 	}
 
-	usersResponse, err := svc.getUsers(service)
+	usersResponse, err := svc.store.LoadUsersFor(service)
 	if err != nil {
 		return errors.New("unable to get users from DB")
 	}
@@ -683,7 +683,7 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 		return err
 	}
 
-	clientsResponse, err := svc.getClients(service)
+	clientsResponse, err := svc.store.LoadClientsFor(service)
 	if err != nil {
 		return errors.New("unable to get clients from DB")
 	}
@@ -728,7 +728,7 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 		return err
 	}
 
-	projectsResponse, err := svc.getProjects(service)
+	projectsResponse, err := svc.store.LoadProjectsFor(service)
 	if err != nil {
 		return errors.New("unable to get projects from DB")
 	}
@@ -770,7 +770,7 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 		return err
 	}
 
-	tasksResponse, err := svc.getTasks(service, integrations.TodoListsPipe) // TODO: WTF?? Why toggl.TodoListsPipe
+	tasksResponse, err := svc.store.LoadTodoListsFor(service)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -818,7 +818,7 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 		return err
 	}
 
-	tasksResponse, err := svc.getTasks(service, integrations.TasksPipe)
+	tasksResponse, err := svc.store.LoadTasksFor(service)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -953,7 +953,7 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveObject(service, integrations.UsersPipe, response); err != nil {
+		if err := svc.store.SaveUsersFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe), err)
 			return
 		}
@@ -995,7 +995,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveObject(service, integrations.ClientsPipe, response); err != nil {
+		if err := svc.store.SaveClientsFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe), err)
 			return
 		}
@@ -1034,7 +1034,7 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveObject(service, integrations.ProjectsPipe, response); err != nil {
+		if err := svc.store.SaveProjectsFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe), err)
 			return
 		}
@@ -1107,7 +1107,7 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveObject(service, integrations.TodoListsPipe, response); err != nil {
+		if err := svc.store.SaveTodoListsFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.TodoListsPipe), err)
 			return
 		}
@@ -1182,7 +1182,7 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveObject(service, integrations.TasksPipe, response); err != nil {
+		if err := svc.store.SaveTasksFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe), err)
 			return
 		}
@@ -1242,66 +1242,10 @@ func (svc *Service) fetchTimeEntries(p *pipe.Pipe) error {
 	return nil
 }
 
-func (svc *Service) getUsers(s integrations.ExternalService) (*toggl.UsersResponse, error) {
-	b, err := svc.store.LoadObject(s, integrations.UsersPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var usersResponse toggl.UsersResponse
-	err = json.Unmarshal(b, &usersResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &usersResponse, nil
-}
-
-func (svc *Service) getClients(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
-	b, err := svc.store.LoadObject(s, integrations.ClientsPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var clientsResponse toggl.ClientsResponse
-	err = json.Unmarshal(b, &clientsResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &clientsResponse, nil
-}
-
-func (svc *Service) getProjects(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
-	b, err := svc.store.LoadObject(s, integrations.ProjectsPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var projectsResponse toggl.ProjectsResponse
-	err = json.Unmarshal(b, &projectsResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return &projectsResponse, nil
-}
-
-func (svc *Service) getTasks(s integrations.ExternalService, objType integrations.PipeID) (*toggl.TasksResponse, error) {
-	b, err := svc.store.LoadObject(s, objType)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var tasksResponse toggl.TasksResponse
-	err = json.Unmarshal(b, &tasksResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &tasksResponse, nil
-}
-
 func (svc *Service) fillAvailablePipeTypes() *Service {
 	svc.mx.Lock()
 	defer svc.mx.Unlock()
-	svc.availablePipeType = regexp.MustCompile("users|projects|todolists|todos|tasks|timeentries")
+	str := fmt.Sprintf("%s|%s|%s|%s|%s|%s", integrations.UsersPipe, integrations.ProjectsPipe, integrations.TodoListsPipe, integrations.TodosPipe, integrations.TasksPipe, integrations.TimeEntriesPipe)
+	svc.availablePipeType = regexp.MustCompile(str)
 	return svc
 }
