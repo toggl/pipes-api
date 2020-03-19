@@ -75,7 +75,7 @@ func (ps *PostgresStorage) Delete(p *pipe.Pipe, workspaceID int) error {
 	return tx.Commit()
 }
 
-func (ps *PostgresStorage) DeletePipeConnections(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
+func (ps *PostgresStorage) DeleteIDMappings(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
 	tx, err := ps.db.Begin()
 	if err != nil {
 		return
@@ -225,7 +225,7 @@ func (ps *PostgresStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[int
 	return authorizations, nil
 }
 
-func (ps *PostgresStorage) SaveConnection(c *pipe.Connection) error {
+func (ps *PostgresStorage) SaveIDMapping(c *pipe.IDMapping) error {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -237,12 +237,12 @@ func (ps *PostgresStorage) SaveConnection(c *pipe.Connection) error {
 	return nil
 }
 
-func (ps *PostgresStorage) LoadConnection(workspaceID int, key string) (*pipe.Connection, error) {
-	return ps.loadConnection(workspaceID, key)
+func (ps *PostgresStorage) LoadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
+	return ps.loadIDMapping(workspaceID, key)
 }
 
-func (ps *PostgresStorage) LoadReversedConnection(workspaceID int, key string) (*pipe.ReversedConnection, error) {
-	connection, err := ps.loadConnection(workspaceID, key)
+func (ps *PostgresStorage) LoadReversedIDMapping(workspaceID int, key string) (*pipe.ReversedIDMapping, error) {
+	connection, err := ps.loadIDMapping(workspaceID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -359,14 +359,14 @@ func (ps *PostgresStorage) SaveObject(s integrations.ExternalService, pid integr
 	return nil
 }
 
-func (ps *PostgresStorage) loadConnection(workspaceID int, key string) (*pipe.Connection, error) {
+func (ps *PostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
 	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	connection := pipe.NewConnection(workspaceID, key)
+	connection := pipe.NewIDMapping(workspaceID, key)
 	if rows.Next() {
 		var b []byte
 		if err := rows.Scan(&connection.Key, &b); err != nil {

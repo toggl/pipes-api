@@ -68,12 +68,12 @@ func (ts *StorageTestSuite) SetupTest() {
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
 	s := NewPostgresStorage(ts.db)
-	c := pipe.NewConnection(1, "test1")
+	c := pipe.NewIDMapping(1, "test1")
 
-	err := s.SaveConnection(c)
+	err := s.SaveIDMapping(c)
 	ts.NoError(err)
 
-	cFromDb, err := s.LoadConnection(1, "test1")
+	cFromDb, err := s.LoadIDMapping(1, "test1")
 	ts.NoError(err)
 	ts.Equal(c, cFromDb)
 }
@@ -84,26 +84,26 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed()
 	cdb.Close()
 
 	s := NewPostgresStorage(cdb)
-	c := pipe.NewConnection(2, "test2")
+	c := pipe.NewIDMapping(2, "test2")
 
-	err = s.SaveConnection(c)
+	err = s.SaveIDMapping(c)
 	ts.Error(err)
 
-	con, err := s.LoadConnection(2, "test2")
+	con, err := s.LoadIDMapping(2, "test2")
 	ts.Error(err)
 	ts.Nil(con)
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
 	s := NewPostgresStorage(ts.db)
-	c := pipe.NewConnection(3, "test3")
+	c := pipe.NewIDMapping(3, "test3")
 	c.Data["1-test"] = 10
 	c.Data["2-test"] = 20
 
-	err := s.SaveConnection(c)
+	err := s.SaveIDMapping(c)
 	ts.NoError(err)
 
-	cFromDb, err := s.LoadReversedConnection(3, "test3")
+	cFromDb, err := s.LoadReversedIDMapping(3, "test3")
 	ts.NoError(err)
 	ts.Contains(cFromDb.GetKeys(), 10)
 	ts.Contains(cFromDb.GetKeys(), 20)
@@ -349,7 +349,7 @@ func (ts *StorageTestSuite) TestStorage_DeletePipeConnections() {
 	p1.PipeStatus = pipe.NewPipeStatus(1, integrations.GitHub, integrations.UsersPipe, "test")
 	svc := pipe.NewExternalService(integrations.GitHub, 1)
 
-	err := s.DeletePipeConnections(1, svc.KeyFor(p1.ID), p1.PipeStatus.Key)
+	err := s.DeleteIDMappings(1, svc.KeyFor(p1.ID), p1.PipeStatus.Key)
 	ts.NoError(err)
 }
 

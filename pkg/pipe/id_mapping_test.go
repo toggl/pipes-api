@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewConnection(t *testing.T) {
-	c := NewConnection(1, "test")
+	c := NewIDMapping(1, "test")
 	assert.NotNil(t, c.Data)
 }
 

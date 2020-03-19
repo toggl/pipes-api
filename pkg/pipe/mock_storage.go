@@ -53,13 +53,13 @@ func (_m *MockStorage) DeleteAuthorization(workspaceID int, externalServiceID in
 	return r0
 }
 
-// DeletePipeByWorkspaceIDServiceID provides a mock function with given fields: workspaceID, sid
-func (_m *MockStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error {
-	ret := _m.Called(workspaceID, sid)
+// DeleteIDMappings provides a mock function with given fields: workspaceID, pipeConnectionKey, pipeStatusKey
+func (_m *MockStorage) DeleteIDMappings(workspaceID int, pipeConnectionKey string, pipeStatusKey string) error {
+	ret := _m.Called(workspaceID, pipeConnectionKey, pipeStatusKey)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID) error); ok {
-		r0 = rf(workspaceID, sid)
+	if rf, ok := ret.Get(0).(func(int, string, string) error); ok {
+		r0 = rf(workspaceID, pipeConnectionKey, pipeStatusKey)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -67,13 +67,13 @@ func (_m *MockStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, sid int
 	return r0
 }
 
-// DeletePipeConnections provides a mock function with given fields: workspaceID, pipeConnectionKey, pipeStatusKey
-func (_m *MockStorage) DeletePipeConnections(workspaceID int, pipeConnectionKey string, pipeStatusKey string) error {
-	ret := _m.Called(workspaceID, pipeConnectionKey, pipeStatusKey)
+// DeletePipeByWorkspaceIDServiceID provides a mock function with given fields: workspaceID, sid
+func (_m *MockStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error {
+	ret := _m.Called(workspaceID, sid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, string, string) error); ok {
-		r0 = rf(workspaceID, pipeConnectionKey, pipeStatusKey)
+	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID) error); ok {
+		r0 = rf(workspaceID, sid)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -141,16 +141,16 @@ func (_m *MockStorage) LoadAuthorization(workspaceID int, sid integrations.Exter
 	return r0, r1
 }
 
-// LoadConnection provides a mock function with given fields: workspaceID, key
-func (_m *MockStorage) LoadConnection(workspaceID int, key string) (*Connection, error) {
+// LoadIDMapping provides a mock function with given fields: workspaceID, key
+func (_m *MockStorage) LoadIDMapping(workspaceID int, key string) (*IDMapping, error) {
 	ret := _m.Called(workspaceID, key)
 
-	var r0 *Connection
-	if rf, ok := ret.Get(0).(func(int, string) *Connection); ok {
+	var r0 *IDMapping
+	if rf, ok := ret.Get(0).(func(int, string) *IDMapping); ok {
 		r0 = rf(workspaceID, key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*Connection)
+			r0 = ret.Get(0).(*IDMapping)
 		}
 	}
 
@@ -284,16 +284,16 @@ func (_m *MockStorage) LoadPipes(workspaceID int) (map[string]*Pipe, error) {
 	return r0, r1
 }
 
-// LoadReversedConnection provides a mock function with given fields: workspaceID, key
-func (_m *MockStorage) LoadReversedConnection(workspaceID int, key string) (*ReversedConnection, error) {
+// LoadReversedIDMapping provides a mock function with given fields: workspaceID, key
+func (_m *MockStorage) LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error) {
 	ret := _m.Called(workspaceID, key)
 
-	var r0 *ReversedConnection
-	if rf, ok := ret.Get(0).(func(int, string) *ReversedConnection); ok {
+	var r0 *ReversedIDMapping
+	if rf, ok := ret.Get(0).(func(int, string) *ReversedIDMapping); ok {
 		r0 = rf(workspaceID, key)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*ReversedConnection)
+			r0 = ret.Get(0).(*ReversedIDMapping)
 		}
 	}
 
@@ -372,12 +372,12 @@ func (_m *MockStorage) SaveAuthorization(a *Authorization) error {
 	return r0
 }
 
-// SaveConnection provides a mock function with given fields: c
-func (_m *MockStorage) SaveConnection(c *Connection) error {
+// SaveIDMapping provides a mock function with given fields: c
+func (_m *MockStorage) SaveIDMapping(c *IDMapping) error {
 	ret := _m.Called(c)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*Connection) error); ok {
+	if rf, ok := ret.Get(0).(func(*IDMapping) error); ok {
 		r0 = rf(c)
 	} else {
 		r0 = ret.Error(0)

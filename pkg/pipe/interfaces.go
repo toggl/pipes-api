@@ -42,48 +42,63 @@ type Service interface {
 	CreatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
 	UpdatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
 	DeletePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
-	GetServicePipeLog(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (string, error)
-	ClearPipeConnections(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
 	RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, usersSelector []byte) error
+	GetServicePipeLog(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (string, error)
+
+	ClearIDMappings(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error // TODO: Remove (Probably dead method).
+
 	GetServiceUsers(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error)
+
 	GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error)
+
 	GetAuthURL(sid integrations.ExternalServiceID, accountName, callbackURL string) (string, error)
 	CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error
 	DeleteAuthorization(workspaceID int, sid integrations.ExternalServiceID) error
+
 	WorkspaceIntegrations(workspaceID int) ([]Integration, error)
+
 	Ready() []error
+
 	AvailablePipeType(pid integrations.PipeID) bool
 	AvailableServiceType(sid integrations.ExternalServiceID) bool
 }
 
 //go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
-	IsDown() bool
-
-	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
-
-	LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
-	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
-	LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error)
+	// Authorizations
 	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
-	LoadConnection(workspaceID int, key string) (*Connection, error)
-	LoadReversedConnection(workspaceID int, key string) (*ReversedConnection, error)
-	LoadPipes(workspaceID int) (map[string]*Pipe, error)
-	LoadLastSync(p *Pipe)
-	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
-
-	Delete(p *Pipe, workspaceID int) error
-	DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
-	DeletePipeConnections(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
+	SaveAuthorization(a *Authorization) error
 	DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
 
-	Save(p *Pipe) error
-	SaveConnection(c *Connection) error
-	SavePipeStatus(p *Status) error
-	SaveAuthorization(a *Authorization) error
+	// ID Mappings
+	LoadIDMapping(workspaceID int, key string) (*IDMapping, error)
+	LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error)
+	SaveIDMapping(c *IDMapping) error
+	DeleteIDMappings(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
+
+	// Accounts
+	LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
 	SaveAccounts(s integrations.ExternalService) error
 
+	// Pipes
+	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
+	LoadPipes(workspaceID int) (map[string]*Pipe, error)
+	Save(p *Pipe) error
+	Delete(p *Pipe, workspaceID int) error
+	DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
+	LoadLastSync(p *Pipe)
+
+	// Pipe statuses
+	LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error)
+	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
+	SavePipeStatus(p *Status) error
+
+	// Objects
 	LoadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error)
 	SaveObject(s integrations.ExternalService, pid integrations.PipeID, obj interface{}) error
+
+	// Other
+	ClearImportFor(s integrations.ExternalService, pid integrations.PipeID) error
+	IsDown() bool
 }

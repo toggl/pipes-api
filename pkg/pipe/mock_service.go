@@ -39,8 +39,8 @@ func (_m *MockService) AvailableServiceType(sid integrations.ExternalServiceID) 
 	return r0
 }
 
-// ClearPipeConnections provides a mock function with given fields: workspaceID, sid, pid
-func (_m *MockService) ClearPipeConnections(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error {
+// ClearIDMappings provides a mock function with given fields: workspaceID, sid, pid
+func (_m *MockService) ClearIDMappings(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 error

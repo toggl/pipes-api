@@ -38,7 +38,7 @@ func (router *Router) AttachHandlers(c *Controller, mw *Middleware) *Router {
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.CreatePipeHandler))).Methods("POST")
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.DeletePipeHandler))).Methods("DELETE")
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", mw.withService(mw.withAuth(handleRequest(c.GetServicePipeLogHandler)))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", mw.withService(mw.withAuth(handleRequest(c.PostServicePipeClearConnectionsHandler)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", mw.withService(mw.withAuth(handleRequest(c.PostServicePipeClearIDMappingsHandler)))).Methods("POST") // TODO: Remove (Probably dead endpoint).
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/users", mw.withAuth(handleRequest(c.GetServiceUsersHandler))).Methods("GET")
 	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/run", mw.withService(mw.withAuth(handleRequest(c.PostPipeRunHandler)))).Methods("POST")
 

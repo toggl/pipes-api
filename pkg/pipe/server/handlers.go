@@ -227,11 +227,13 @@ func (c *Controller) GetServicePipeLogHandler(req Request) Response {
 	return Response{http.StatusOK, pipesLog, "text/plain"}
 }
 
-func (c *Controller) PostServicePipeClearConnectionsHandler(req Request) Response {
+// PostServicePipeClearIDMappingsHandler clears mappings between pipes entities.
+// TODO: Remove (Probably dead endpoint).
+func (c *Controller) PostServicePipeClearIDMappingsHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	err := c.pipesSvc.ClearPipeConnections(workspaceID, serviceID, pipeID)
+	err := c.pipesSvc.ClearIDMappings(workspaceID, serviceID, pipeID)
 	if err != nil {
 		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
