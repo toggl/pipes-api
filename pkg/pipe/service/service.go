@@ -406,10 +406,6 @@ func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]pipe.Integration, 
 }
 
 func (svc *Service) Run(p *pipe.Pipe) {
-	svc.mx.RLock()
-	host := svc.pipesApiHost
-	svc.mx.RUnlock()
-
 	var err error
 	defer func() {
 		if err != nil {
@@ -425,31 +421,27 @@ func (svc *Service) Run(p *pipe.Pipe) {
 		}
 	}()
 
-	svc.store.LoadLastSync(p)
-	p.PipeStatus = pipe.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, host)
+	svc.mx.RLock()
+	host := svc.pipesApiHost
+	svc.mx.RUnlock()
 
+	svc.store.LoadLastSync(p)
+
+	p.PipeStatus = pipe.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, host)
 	if err = svc.store.SavePipeStatus(p.PipeStatus); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
 
-	s := pipe.NewExternalService(p.ServiceID, p.WorkspaceID)
-	auth, err := svc.store.LoadAuthorization(s.GetWorkspaceID(), s.ID())
+	auth, err := svc.store.LoadAuthorization(p.WorkspaceID, p.ServiceID)
 	if err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
-
-	if err := s.SetAuthData(auth.Data); err != nil {
-		svc.notifyBugsnag(err, p)
-		return
-	}
-
 	if err = svc.refreshAuthorization(auth); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
-
 	svc.toggl.WithAuthToken(auth.WorkspaceToken)
 
 	var fErr error
