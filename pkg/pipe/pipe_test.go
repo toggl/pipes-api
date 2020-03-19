@@ -20,6 +20,12 @@ func TestPipesKey(t *testing.T) {
 	assert.Equal(t, "github:projects", pk)
 }
 
+func TestGetSidPidFromKey(t *testing.T) {
+	sid, pid := GetSidPidFromKey("github:projects")
+	assert.Equal(t, integrations.GitHub, sid)
+	assert.Equal(t, integrations.ProjectsPipe, pid)
+}
+
 func TestNewExternalService(t *testing.T) {
 	s1 := NewExternalService(integrations.BaseCamp, 1)
 	s2 := NewExternalService(integrations.Asana, 2)

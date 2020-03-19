@@ -96,7 +96,7 @@ func (ps *PostgresStorage) DeletePipeConnections(workspaceID int, pipeConnection
 		}
 
 	}
-	return
+	return tx.Commit()
 }
 
 func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Status, error) {

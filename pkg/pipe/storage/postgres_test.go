@@ -5,6 +5,7 @@ import (
 	"flag"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -272,6 +273,84 @@ func (ts *StorageTestSuite) TestStorage_SaveObject_LoadObject() {
 	ts.NoError(err)
 
 	ts.Equal(`{"Name":"Test","Value":"Test2"}`, string(b))
+}
+
+func (ts *StorageTestSuite) TestStorage_Save_Delete() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipe(1, integrations.GitHub, integrations.UsersPipe)
+	err := s.Save(p1)
+	ts.NoError(err)
+
+	p2 := pipe.NewPipe(1, integrations.Asana, integrations.UsersPipe)
+	err = s.Save(p2)
+	ts.NoError(err)
+
+	ps, err := s.LoadPipes(1)
+	ts.NoError(err)
+	ts.Equal(2, len(ps))
+
+	err = s.Delete(p1, 1)
+	ts.NoError(err)
+
+	ps, err = s.LoadPipes(1)
+	ts.NoError(err)
+	ts.Equal(1, len(ps))
+}
+
+func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipe(1, integrations.GitHub, integrations.UsersPipe)
+	err := s.Save(p1)
+	ts.NoError(err)
+
+	p2 := pipe.NewPipe(1, integrations.GitHub, integrations.ProjectsPipe)
+	err = s.Save(p2)
+	ts.NoError(err)
+
+	ps, err := s.LoadPipes(1)
+	ts.NoError(err)
+	ts.Equal(2, len(ps))
+
+	err = s.DeletePipeByWorkspaceIDServiceID(1, integrations.GitHub)
+	ts.NoError(err)
+
+	ps, err = s.LoadPipes(1)
+	ts.NoError(err)
+	ts.Equal(0, len(ps))
+}
+
+func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
+	s := NewPostgresStorage(ts.db)
+	t := time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC)
+
+	p1 := pipe.NewPipe(1, integrations.GitHub, integrations.UsersPipe)
+	p1.ServiceParams = []byte(`{"start_date":"2020-01-02"}`)
+	err := s.Save(p1)
+	ts.NoError(err)
+
+	s.LoadLastSync(p1)
+	ts.NotNil(p1.LastSync)
+	ts.Equal(t, *p1.LastSync)
+}
+
+func (ts *StorageTestSuite) TestStorage_ClearImportFor() {
+	s := NewPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integrations.GitHub, 1)
+	err := s.ClearImportFor(svc, integrations.UsersPipe)
+	ts.NoError(err)
+}
+
+func (ts *StorageTestSuite) TestStorage_DeletePipeConnections() {
+	s := NewPostgresStorage(ts.db)
+
+	p1 := pipe.NewPipe(1, integrations.GitHub, integrations.UsersPipe)
+	p1.PipeStatus = pipe.NewPipeStatus(1, integrations.GitHub, integrations.UsersPipe, "test")
+	svc := pipe.NewExternalService(integrations.GitHub, 1)
+
+	err := s.DeletePipeConnections(1, svc.KeyFor(p1.ID), p1.PipeStatus.Key)
+	ts.NoError(err)
 }
 
 // In order for 'go test' to run this suite, we need to create
