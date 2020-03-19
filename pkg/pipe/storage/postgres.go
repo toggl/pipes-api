@@ -128,49 +128,6 @@ func (ps *PostgresStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, ser
 	return err
 }
 
-func (ps *PostgresStorage) LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
-	var result []byte
-	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor("accounts"))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return nil, rows.Err()
-	}
-	if err := rows.Scan(&result); err != nil {
-		return nil, err
-	}
-
-	var accountsResponse toggl.AccountsResponse
-	err = json.Unmarshal(result, &accountsResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &accountsResponse, nil
-}
-
-func (ps *PostgresStorage) SaveAccounts(s integrations.ExternalService) error {
-	var response toggl.AccountsResponse
-	accounts, err := s.Accounts()
-	response.Accounts = accounts
-	if err != nil {
-		response.Error = err.Error()
-	}
-
-	b, err := json.Marshal(response)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-	_, err = ps.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor("accounts"), b)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-	return nil
-}
-
 func (ps *PostgresStorage) ClearImportFor(s integrations.ExternalService, pipeID integrations.PipeID) error {
 	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(pipeID))
 	return err
@@ -344,6 +301,15 @@ func (ps *PostgresStorage) loadObject(s integrations.ExternalService, pid integr
 	return result, nil
 }
 
+func (ps *PostgresStorage) SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error {
+	b, err := json.Marshal(res)
+	if err != nil {
+		bugsnag.Notify(err)
+		return err
+	}
+	return ps.saveObject(s, integrations.AccountsPipe, b)
+}
+
 func (ps *PostgresStorage) SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
@@ -392,6 +358,20 @@ func (ps *PostgresStorage) SaveTodoListsFor(s integrations.ExternalService, res 
 	}
 
 	return ps.saveObject(s, integrations.TodoListsPipe, b)
+}
+
+func (ps *PostgresStorage) LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+	b, err := ps.loadObject(s, integrations.AccountsPipe)
+	if err != nil || b == nil {
+		return nil, err
+	}
+
+	var accountsResponse toggl.AccountsResponse
+	err = json.Unmarshal(b, &accountsResponse)
+	if err != nil {
+		return nil, err
+	}
+	return &accountsResponse, nil
 }
 
 func (ps *PostgresStorage) LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error) {

@@ -95,8 +95,8 @@ func (_m *MockStorage) IsDown() bool {
 	return r0
 }
 
-// LoadAccounts provides a mock function with given fields: s
-func (_m *MockStorage) LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+// LoadAccountsFor provides a mock function with given fields: s
+func (_m *MockStorage) LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
 	ret := _m.Called(s)
 
 	var r0 *toggl.AccountsResponse
@@ -436,13 +436,13 @@ func (_m *MockStorage) Save(p *Pipe) error {
 	return r0
 }
 
-// SaveAccounts provides a mock function with given fields: s
-func (_m *MockStorage) SaveAccounts(s integrations.ExternalService) error {
-	ret := _m.Called(s)
+// SaveAccountsFor provides a mock function with given fields: s, res
+func (_m *MockStorage) SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error {
+	ret := _m.Called(s, res)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(integrations.ExternalService) error); ok {
-		r0 = rf(s)
+	if rf, ok := ret.Get(0).(func(integrations.ExternalService, toggl.AccountsResponse) error); ok {
+		r0 = rf(s, res)
 	} else {
 		r0 = ret.Error(0)
 	}

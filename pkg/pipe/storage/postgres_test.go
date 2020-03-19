@@ -2,6 +2,7 @@ package storage
 
 import (
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"sync"
 	"testing"
@@ -263,10 +264,12 @@ func (ts *StorageTestSuite) TestStorage_SaveObject_LoadObject() {
 		Value string
 	}
 	o := obj{"Test", "Test2"}
+	b1, err := json.Marshal(o)
+	ts.NoError(err)
 
 	svc := pipe.NewExternalService(integrations.GitHub, 1)
 
-	err := s.saveObject(svc, integrations.ProjectsPipe, o)
+	err = s.saveObject(svc, integrations.ProjectsPipe, b1)
 	ts.NoError(err)
 
 	b, err := s.loadObject(svc, integrations.ProjectsPipe)

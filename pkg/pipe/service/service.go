@@ -280,14 +280,20 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.E
 		}
 	}
 
-	accountsResponse, err := svc.store.LoadAccounts(service)
+	accountsResponse, err := svc.store.LoadAccountsFor(service)
 	if err != nil {
 		return nil, err
 	}
 
 	if accountsResponse == nil {
 		go func() {
-			if err := svc.store.SaveAccounts(service); err != nil {
+			var response toggl.AccountsResponse
+			accounts, err := service.Accounts()
+			response.Accounts = accounts
+			if err != nil {
+				response.Error = err.Error()
+			}
+			if err := svc.store.SaveAccountsFor(service, response); err != nil {
 				log.Print(err.Error())
 			}
 		}()

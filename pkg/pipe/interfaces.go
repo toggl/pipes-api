@@ -79,11 +79,6 @@ type Storage interface {
 	SaveIDMapping(c *IDMapping) error
 	DeleteIDMappings(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
 
-	// Accounts
-
-	LoadAccounts(s integrations.ExternalService) (*toggl.AccountsResponse, error)
-	SaveAccounts(s integrations.ExternalService) error
-
 	// Pipes
 
 	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
@@ -100,6 +95,9 @@ type Storage interface {
 	SavePipeStatus(p *Status) error
 
 	// Objects
+	LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error)
+	SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error
+
 	LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error)
 	SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error
 

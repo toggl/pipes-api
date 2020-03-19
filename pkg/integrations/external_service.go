@@ -83,4 +83,5 @@ const (
 	TodoListsPipe   PipeID = "todolists"
 	TodosPipe       PipeID = "todos"
 	TimeEntriesPipe PipeID = "timeentries"
+	AccountsPipe    PipeID = "accounts"
 )
