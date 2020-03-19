@@ -523,12 +523,6 @@ func (svc *Service) syncTasks(p *pipe.Pipe) {
 }
 
 func (svc *Service) syncTEs(p *pipe.Pipe) {
-	err := svc.fetchTimeEntries(p)
-	if err != nil {
-		svc.notifyBugsnag(err, p)
-		return
-	}
-
 	service := pipe.NewExternalService(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		log.Printf("could not set service params: %v, reason: %v", p.ID, err)
@@ -1277,10 +1271,6 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 			response.Tasks = append(response.Tasks, task)
 		}
 	}
-	return nil
-}
-
-func (svc *Service) fetchTimeEntries(p *pipe.Pipe) error {
 	return nil
 }
 
