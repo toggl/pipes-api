@@ -95,14 +95,15 @@ func currentWorkspaceID(r *http.Request) int {
 }
 
 func currentServicePipeID(r *http.Request) (integrations.ExternalServiceID, integrations.PipeID) {
-	var serviceID, pipeID string
+	var serviceID integrations.ExternalServiceID
+	var pipeID integrations.PipeID
 	if v, ok := context.GetOk(r, serviceIDKey); ok {
-		serviceID = v.(string)
+		serviceID = v.(integrations.ExternalServiceID)
 	}
 	if v, ok := context.GetOk(r, pipeIDKey); ok {
-		pipeID = v.(string)
+		pipeID = v.(integrations.PipeID)
 	}
-	return integrations.ExternalServiceID(serviceID), integrations.PipeID(pipeID)
+	return serviceID, pipeID
 }
 
 func currentWorkspaceToken(r *http.Request) string {
