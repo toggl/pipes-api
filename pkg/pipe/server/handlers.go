@@ -168,7 +168,7 @@ func (c *Controller) GetServiceAccountsHandler(req Request) Response {
 	}
 	fi, err := strconv.ParseBool(forceImport)
 	if err != nil {
-		return badRequest(err.Error())
+		fi = false
 	}
 
 	accountsResponse, err := c.pipesSvc.GetServiceAccounts(workspaceID, serviceID, fi)
@@ -199,7 +199,7 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 
 	fi, err := strconv.ParseBool(forceImport)
 	if err != nil {
-		return badRequest(err.Error())
+		fi = false
 	}
 
 	usersResponse, err := c.pipesSvc.GetServiceUsers(workspaceID, serviceID, fi)
