@@ -252,7 +252,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 			go func() {
 				fetchErr := svc.fetchUsers(usersPipe)
 				if fetchErr != nil {
-					log.Print(err.Error())
+					log.Print(fetchErr.Error())
 				}
 			}()
 		}
@@ -591,7 +591,7 @@ func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
 }
 
 func (svc *Service) notifyBugsnag(err error, p *pipe.Pipe) {
-	bugsnag.Notify(err, bugsnag.MetaData{
+	meta := bugsnag.MetaData{
 		"pipe": {
 			"ID":            p.ID,
 			"Name":          p.Name,
@@ -599,7 +599,9 @@ func (svc *Service) notifyBugsnag(err error, p *pipe.Pipe) {
 			"WorkspaceID":   p.WorkspaceID,
 			"ServiceID":     p.ServiceID,
 		},
-	})
+	}
+	log.Println(err, meta)
+	bugsnag.Notify(err, meta)
 }
 
 func (svc *Service) loadIntegrations(integrationsConfigPath string) *Service {
@@ -674,8 +676,9 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 	if err != nil {
 		return err
 	}
-	var idMapping *pipe.IDMapping
-	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe)); err != nil {
+
+	idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe))
+	if err != nil {
 		return err
 	}
 	for _, user := range usersImport.WorkspaceUsers {
