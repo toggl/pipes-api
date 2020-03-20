@@ -179,6 +179,9 @@ func (c *Controller) GetServiceAccountsHandler(req Request) Response {
 		if errors.Is(err, &service.RefreshError{}) {
 			return badRequest(err.Error())
 		}
+		if errors.Is(err, service.ErrNoContent) {
+			return noContent()
+		}
 
 		return internalServerError(err.Error())
 	}

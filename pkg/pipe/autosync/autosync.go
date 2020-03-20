@@ -61,8 +61,7 @@ func (s *Service) pipeWorker(id int) {
 		// no more work, sleep then continue
 		if pipes == nil {
 			duration := time.Duration(30+rand.Int31n(30)) * time.Second
-
-			log.Printf("[Worker %d] did not receive works, sleeping for %d\n", id, duration)
+			//log.Printf("[Worker %d] did not receive works, sleeping for %d\n", id, duration)
 			time.Sleep(duration)
 
 			continue
