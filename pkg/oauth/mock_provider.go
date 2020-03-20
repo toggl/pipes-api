@@ -38,22 +38,22 @@ func (_m *MockProvider) OAuth1Configs(_a0 integrations.ExternalServiceID) (*oaut
 	return r0, r1
 }
 
-// OAuth1Exchange provides a mock function with given fields: _a0, _a1
-func (_m *MockProvider) OAuth1Exchange(_a0 integrations.ExternalServiceID, _a1 ParamsV1) ([]byte, error) {
-	ret := _m.Called(_a0, _a1)
+// OAuth1Exchange provides a mock function with given fields: sid, accountName, oAuthToken, oAuthVerifier
+func (_m *MockProvider) OAuth1Exchange(sid integrations.ExternalServiceID, accountName string, oAuthToken string, oAuthVerifier string) (*oauthplain.Token, error) {
+	ret := _m.Called(sid, accountName, oAuthToken, oAuthVerifier)
 
-	var r0 []byte
-	if rf, ok := ret.Get(0).(func(integrations.ExternalServiceID, ParamsV1) []byte); ok {
-		r0 = rf(_a0, _a1)
+	var r0 *oauthplain.Token
+	if rf, ok := ret.Get(0).(func(integrations.ExternalServiceID, string, string, string) *oauthplain.Token); ok {
+		r0 = rf(sid, accountName, oAuthToken, oAuthVerifier)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+			r0 = ret.Get(0).(*oauthplain.Token)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.ExternalServiceID, ParamsV1) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(integrations.ExternalServiceID, string, string, string) error); ok {
+		r1 = rf(sid, accountName, oAuthToken, oAuthVerifier)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -84,22 +84,22 @@ func (_m *MockProvider) OAuth2Configs(_a0 integrations.ExternalServiceID) (*oaut
 	return r0, r1
 }
 
-// OAuth2Exchange provides a mock function with given fields: _a0, _a1
-func (_m *MockProvider) OAuth2Exchange(_a0 integrations.ExternalServiceID, _a1 string) ([]byte, error) {
-	ret := _m.Called(_a0, _a1)
+// OAuth2Exchange provides a mock function with given fields: sid, code
+func (_m *MockProvider) OAuth2Exchange(sid integrations.ExternalServiceID, code string) (*oauth.Token, error) {
+	ret := _m.Called(sid, code)
 
-	var r0 []byte
-	if rf, ok := ret.Get(0).(func(integrations.ExternalServiceID, string) []byte); ok {
-		r0 = rf(_a0, _a1)
+	var r0 *oauth.Token
+	if rf, ok := ret.Get(0).(func(integrations.ExternalServiceID, string) *oauth.Token); ok {
+		r0 = rf(sid, code)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]byte)
+			r0 = ret.Get(0).(*oauth.Token)
 		}
 	}
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(integrations.ExternalServiceID, string) error); ok {
-		r1 = rf(_a0, _a1)
+		r1 = rf(sid, code)
 	} else {
 		r1 = ret.Error(1)
 	}

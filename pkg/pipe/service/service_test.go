@@ -274,9 +274,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	op := &oauth.MockProvider{}
 
 	svc := NewService(op, s, q, api, "https://localhost")
-	svc.setAuthorizationType("github", pipe.TypeOauth2)
+	svc.setAuthType("github", pipe.TypeOauth2)
 
-	a1 := pipe.NewAuthorization(1, integrations.GitHub)
+	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
 	t := goauth2.Token{
 		AccessToken:  "123",
 		RefreshToken: "456",
@@ -310,9 +310,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	svc := NewService(op, s, q, api, "")
 
-	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
+	svc.setAuthType(integrations.GitHub, pipe.TypeOauth1)
 
-	a1 := pipe.NewAuthorization(1, integrations.GitHub)
+	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
 
 	err := svc.refreshAuthorization(a1)
 	ts.NoError(err)
@@ -326,9 +326,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	q := &pipe.MockQueue{}
 
 	svc := NewService(op, s, q, api, "https://localhost")
-	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
+	svc.setAuthType(integrations.GitHub, pipe.TypeOauth2)
 
-	a1 := pipe.NewAuthorization(1, integrations.GitHub)
+	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
 	t := goauth2.Token{
 		AccessToken:  "123",
 		RefreshToken: "456",
@@ -352,16 +352,16 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
 	svc := NewService(op, s, q, api, "https://localhost")
 
-	res := svc.getAvailableAuthorizations("github")
+	res := svc.getAuthType("github")
 	ts.Equal("", res)
 
-	svc.setAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
-	svc.setAuthorizationType(integrations.Asana, pipe.TypeOauth1)
+	svc.setAuthType(integrations.GitHub, pipe.TypeOauth2)
+	svc.setAuthType(integrations.Asana, pipe.TypeOauth1)
 
-	res = svc.getAvailableAuthorizations(integrations.GitHub)
+	res = svc.getAuthType(integrations.GitHub)
 	ts.Equal(pipe.TypeOauth2, res)
 
-	res = svc.getAvailableAuthorizations(integrations.Asana)
+	res = svc.getAuthType(integrations.Asana)
 	ts.Equal(pipe.TypeOauth1, res)
 }
 

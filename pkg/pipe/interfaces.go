@@ -52,7 +52,11 @@ type Service interface {
 	GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error)
 
 	GetAuthURL(sid integrations.ExternalServiceID, accountName, callbackURL string) (string, error)
-	CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error
+	// CreateAuthorization creates new authorization for specified workspace and service and stores it in the persistent storage.
+	// workspaceToken - it is an "Toggl.Track" authorization token which is "user_name" field from BasicAuth HTTP Header. E.g.: "Authorization Bearer base64(user_name:password)".
+	CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, workspaceToken string, params AuthParams) error
+	// DeleteAuthorization removes authorization for specified workspace and service from the persistent storage.
+	// It also delete all pipes for given service and workspace.
 	DeleteAuthorization(workspaceID int, sid integrations.ExternalServiceID) error
 
 	WorkspaceIntegrations(workspaceID int) ([]Integration, error)
@@ -85,7 +89,7 @@ type Storage interface {
 	LoadPipes(workspaceID int) (map[string]*Pipe, error)
 	Save(p *Pipe) error
 	Delete(p *Pipe, workspaceID int) error
-	DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
+	DeletePipesByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
 	LoadLastSync(p *Pipe)
 
 	// Pipe statuses

@@ -53,13 +53,13 @@ func (_m *MockService) ClearIDMappings(workspaceID int, sid integrations.Externa
 	return r0
 }
 
-// CreateAuthorization provides a mock function with given fields: workspaceID, sid, currentWorkspaceToken, oAuthRawData
-func (_m *MockService) CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error {
-	ret := _m.Called(workspaceID, sid, currentWorkspaceToken, oAuthRawData)
+// CreateAuthorization provides a mock function with given fields: workspaceID, sid, workspaceToken, params
+func (_m *MockService) CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, workspaceToken string, params AuthParams) error {
+	ret := _m.Called(workspaceID, sid, workspaceToken, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, string, []byte) error); ok {
-		r0 = rf(workspaceID, sid, currentWorkspaceToken, oAuthRawData)
+	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, string, AuthParams) error); ok {
+		r0 = rf(workspaceID, sid, workspaceToken, params)
 	} else {
 		r0 = ret.Error(0)
 	}

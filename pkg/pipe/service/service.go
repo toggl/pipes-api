@@ -317,35 +317,29 @@ func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, account
 	return token.AuthorizeUrl, nil
 }
 
-// CreateAuthorization - creates new authorization for workspace and specified service.
-// Parameter: currentWorkspaceToken is an "Toggl.Track" API token or UserName.
-func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, currentWorkspaceToken string, oAuthRawData []byte) error {
-	var err error
-	auth := pipe.NewAuthorization(workspaceID, serviceID)
-	auth.WorkspaceToken = currentWorkspaceToken
+func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, workspaceToken string, params pipe.AuthParams) error {
+	auth := pipe.NewAuthorization(workspaceID, serviceID, workspaceToken)
 
-	switch svc.getAvailableAuthorizations(serviceID) {
+	switch svc.getAuthType(serviceID) {
 	case pipe.TypeOauth1:
-		var params oauth.ParamsV1
-		err := json.Unmarshal(oAuthRawData, &params)
+		token, err := svc.oauth.OAuth1Exchange(serviceID, params.AccountName, params.Token, params.Verifier)
 		if err != nil {
 			return err
 		}
-		auth.Data, err = svc.oauth.OAuth1Exchange(serviceID, params)
+		if err := auth.SetOAuth1Token(token); err != nil {
+			return err
+		}
 	case pipe.TypeOauth2:
-		var payload map[string]interface{}
-		err := json.Unmarshal(oAuthRawData, &payload)
-		if err != nil {
-			return err
-		}
-		oAuth2Code := payload["code"].(string)
-		if oAuth2Code == "" {
+		if params.Code == "" {
 			return errors.New("missing code")
 		}
-		auth.Data, err = svc.oauth.OAuth2Exchange(serviceID, oAuth2Code)
-	}
-	if err != nil {
-		return err
+		token, err := svc.oauth.OAuth2Exchange(serviceID, params.Code)
+		if err != nil {
+			return err
+		}
+		if err := auth.SetOAuth2Token(token); err != nil {
+			return err
+		}
 	}
 
 	if err := svc.store.SaveAuthorization(auth); err != nil {
@@ -355,19 +349,10 @@ func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.
 }
 
 func (svc *Service) DeleteAuthorization(workspaceID int, serviceID integrations.ExternalServiceID) error {
-	service := pipe.NewExternalService(serviceID, workspaceID)
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	if err := svc.store.DeleteAuthorization(workspaceID, serviceID); err != nil {
 		return err
 	}
-	if err := service.SetAuthData(auth.Data); err != nil {
-		return err
-	}
-
-	if err := svc.store.DeleteAuthorization(service.GetWorkspaceID(), service.ID()); err != nil {
-		return err
-	}
-	if err := svc.store.DeletePipeByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
+	if err := svc.store.DeletePipesByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
 		return err
 	}
 	return nil
@@ -566,20 +551,20 @@ func (svc *Service) AvailableServiceType(serviceID integrations.ExternalServiceI
 	return svc.availableServiceType.MatchString(string(serviceID))
 }
 
-func (svc *Service) setAuthorizationType(serviceID integrations.ExternalServiceID, authType string) {
+func (svc *Service) setAuthType(serviceID integrations.ExternalServiceID, authType string) {
 	svc.mx.Lock()
 	defer svc.mx.Unlock()
 	svc.availableAuthTypes[serviceID] = authType
 }
 
-func (svc *Service) getAvailableAuthorizations(serviceID integrations.ExternalServiceID) string {
+func (svc *Service) getAuthType(serviceID integrations.ExternalServiceID) string {
 	svc.mx.RLock()
 	defer svc.mx.RUnlock()
 	return svc.availableAuthTypes[serviceID]
 }
 
 func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
-	if svc.getAvailableAuthorizations(a.ServiceID) != pipe.TypeOauth2 {
+	if svc.getAuthType(a.ServiceID) != pipe.TypeOauth2 {
 		return nil
 	}
 	var token goauth2.Token
@@ -593,12 +578,10 @@ func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
 	if !res {
 		return errors.New("service OAuth config not found")
 	}
-
 	if err := svc.oauth.OAuth2Refresh(config, &token); err != nil {
 		return err
 	}
-	err := a.SetOauth2Token(token)
-	if err != nil {
+	if err := a.SetOAuth2Token(&token); err != nil {
 		return err
 	}
 	if err := svc.store.SaveAuthorization(a); err != nil {

@@ -4,19 +4,23 @@ BUGSNAG_DEPLOY_NOTIFY_URL:=https://notify.bugsnag.com/deploy
 REVISION:=$(shell git rev-parse HEAD)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
 
+all: init-dev-db build test
 
-all: build test
-
-test: inittestdb
+test: init-test-db
 	go test -race -cover ./pkg/...
 
-test-integration: inittestdb
+test-integration: init-test-db
 	source config/test_accounts.sh && go test -v -race -cover -tags=integration ./pkg/...
 
-inittestdb:
-	psql -c 'DROP database pipes_test;' -U postgres
-	psql -c 'CREATE database pipes_test;' -U postgres
+init-test-db:
+	psql -c 'DROP DATABASE IF EXISTS pipes_test;' -U postgres
+	psql -c 'CREATE DATABASE pipes_test;' -U postgres
 	psql pipes_test < db/schema.sql
+
+init-dev-db:
+	psql -c 'DROP DATABASE IF EXISTS pipes_development;' -U postgres
+	psql -c 'CREATE DATABASE pipes_development;' -U postgres
+	psql pipes_development < db/schema.sql
 
 mocks:
 	go generate ./pkg/...

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -131,7 +132,13 @@ func (c *Controller) CreateAuthorizationHandler(req Request) Response {
 		return badRequest("Missing payload")
 	}
 
-	err = c.pipesSvc.CreateAuthorization(workspaceID, serviceID, currentToken, req.body)
+	var params pipe.AuthParams
+	err = json.Unmarshal(req.body, &params)
+	if err != nil {
+		return badRequest("Bad payload")
+	}
+
+	err = c.pipesSvc.CreateAuthorization(workspaceID, serviceID, currentToken, params)
 	if err != nil {
 		return internalServerError(err.Error())
 	}

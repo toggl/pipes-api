@@ -67,8 +67,8 @@ func (_m *MockStorage) DeleteIDMappings(workspaceID int, pipeConnectionKey strin
 	return r0
 }
 
-// DeletePipeByWorkspaceIDServiceID provides a mock function with given fields: workspaceID, sid
-func (_m *MockStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error {
+// DeletePipesByWorkspaceIDServiceID provides a mock function with given fields: workspaceID, sid
+func (_m *MockStorage) DeletePipesByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error {
 	ret := _m.Called(workspaceID, sid)
 
 	var r0 error

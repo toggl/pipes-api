@@ -123,7 +123,7 @@ func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.Exte
 	return &pipeStatus, nil
 }
 
-func (ps *PostgresStorage) DeletePipeByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
+func (ps *PostgresStorage) DeletePipesByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }

@@ -13,12 +13,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
-type ParamsV1 struct {
-	AccountName string `json:"account_name,omitempty"`
-	Token       string `json:"oauth_token,omitempty"`
-	Verifier    string `json:"oauth_verifier,omitempty"`
-}
-
 type InMemoryProvider struct {
 	envType          string
 	oauth1ConfigPath string
@@ -52,14 +46,14 @@ func (p *InMemoryProvider) OAuth2URL(sid integrations.ExternalServiceID) string 
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (p *InMemoryProvider) OAuth1Exchange(sid integrations.ExternalServiceID, op ParamsV1) ([]byte, error) {
-	if op.AccountName == "" {
+func (p *InMemoryProvider) OAuth1Exchange(sid integrations.ExternalServiceID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
+	if accountName == "" {
 		return nil, errors.New("missing account_name")
 	}
-	if op.Token == "" {
+	if oAuthToken == "" {
 		return nil, errors.New("missing oauth_token")
 	}
-	if op.Verifier == "" {
+	if oAuthVerifier == "" {
 		return nil, errors.New("missing oauth_verifier")
 	}
 
@@ -72,25 +66,21 @@ func (p *InMemoryProvider) OAuth1Exchange(sid integrations.ExternalServiceID, op
 	p.mx.RUnlock()
 
 	transport := &oauthplain.Transport{
-		Config: config.UpdateURLs(op.AccountName),
+		Config: config.UpdateURLs(accountName),
 	}
 	token := &oauthplain.Token{
-		OAuthToken:    op.Token,
-		OAuthVerifier: op.Verifier,
+		OAuthToken:    oAuthToken,
+		OAuthVerifier: oAuthVerifier,
 	}
 	if err := transport.Exchange(token); err != nil {
 		return nil, err
 	}
 	token.Extra = make(map[string]string)
-	token.Extra["account_name"] = op.AccountName
-	b, err := json.Marshal(token)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
+	token.Extra["account_name"] = accountName
+	return token, nil
 }
 
-func (p *InMemoryProvider) OAuth2Exchange(sid integrations.ExternalServiceID, code string) ([]byte, error) {
+func (p *InMemoryProvider) OAuth2Exchange(sid integrations.ExternalServiceID, code string) (*oauth.Token, error) {
 
 	p.mx.RLock()
 	config, res := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -105,11 +95,7 @@ func (p *InMemoryProvider) OAuth2Exchange(sid integrations.ExternalServiceID, co
 	if err != nil {
 		return nil, err
 	}
-	b, err := json.Marshal(token)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
+	return token, nil
 }
 
 func (p *InMemoryProvider) OAuth1Configs(sid integrations.ExternalServiceID) (*oauthplain.Config, bool) {

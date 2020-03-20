@@ -7,6 +7,8 @@ CREATE TABLE authorizations(
   data JSON
 );
 
+COMMENT ON COLUMN authorizations.data IS 'This field store 2 types of structures. For OAuth v1 it stores "oauthplain.Token" from "github.com/tambet/oauthplain" library. For OAuth v2 it stores "oauth.Token" from "code.google.com/p/goauth2/oauth" library.';
+
 CREATE TABLE imports(
   workspace_id INTEGER,
   key VARCHAR(50),

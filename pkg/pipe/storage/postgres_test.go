@@ -115,7 +115,7 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 	s := NewPostgresStorage(ts.db)
-	a := pipe.NewAuthorization(1, integrations.GitHub)
+	a := pipe.NewAuthorization(1, integrations.GitHub, "")
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
@@ -132,7 +132,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 
 	s := NewPostgresStorage(cdb)
 
-	a := pipe.NewAuthorization(2, integrations.Asana)
+	a := pipe.NewAuthorization(2, integrations.Asana, "")
 	err = s.SaveAuthorization(a)
 	ts.Error(err)
 
@@ -144,7 +144,7 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := NewPostgresStorage(ts.db)
 
-	a := pipe.NewAuthorization(1, integrations.GitHub)
+	a := pipe.NewAuthorization(1, integrations.GitHub, "")
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
@@ -156,8 +156,8 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_O
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := NewPostgresStorage(ts.db)
 
-	a1 := pipe.NewAuthorization(1, integrations.GitHub)
-	a2 := pipe.NewAuthorization(1, integrations.Asana)
+	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
+	a2 := pipe.NewAuthorization(1, integrations.Asana, "")
 
 	err := s.SaveAuthorization(a1)
 	ts.NoError(err)
@@ -316,7 +316,7 @@ func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() 
 	ts.NoError(err)
 	ts.Equal(2, len(ps))
 
-	err = s.DeletePipeByWorkspaceIDServiceID(1, integrations.GitHub)
+	err = s.DeletePipesByWorkspaceIDServiceID(1, integrations.GitHub)
 	ts.NoError(err)
 
 	ps, err = s.LoadPipes(1)
