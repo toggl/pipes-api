@@ -30,15 +30,15 @@ const (
 	truncateImportsSQL = `TRUNCATE TABLE imports`
 )
 
-type PostgresImportsStorage struct {
+type ImportsPostgresStorage struct {
 	db *sql.DB
 }
 
-func NewPostgresImportsStorage(db *sql.DB) *PostgresImportsStorage {
-	return &PostgresImportsStorage{db: db}
+func NewImportsPostgresStorage(db *sql.DB) *ImportsPostgresStorage {
+	return &ImportsPostgresStorage{db: db}
 }
 
-func (pis *PostgresImportsStorage) SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error {
+func (pis *ImportsPostgresStorage) SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
@@ -47,7 +47,7 @@ func (pis *PostgresImportsStorage) SaveAccountsFor(s integrations.ExternalServic
 	return pis.saveObject(s, integrations.AccountsPipe, b)
 }
 
-func (pis *PostgresImportsStorage) SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error {
+func (pis *ImportsPostgresStorage) SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
@@ -57,7 +57,7 @@ func (pis *PostgresImportsStorage) SaveUsersFor(s integrations.ExternalService, 
 	return pis.saveObject(s, integrations.UsersPipe, b)
 }
 
-func (pis *PostgresImportsStorage) SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error {
+func (pis *ImportsPostgresStorage) SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
@@ -67,7 +67,7 @@ func (pis *PostgresImportsStorage) SaveClientsFor(s integrations.ExternalService
 	return pis.saveObject(s, integrations.ClientsPipe, b)
 }
 
-func (pis *PostgresImportsStorage) SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error {
+func (pis *ImportsPostgresStorage) SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
@@ -77,7 +77,7 @@ func (pis *PostgresImportsStorage) SaveProjectsFor(s integrations.ExternalServic
 	return pis.saveObject(s, integrations.ProjectsPipe, b)
 }
 
-func (pis *PostgresImportsStorage) SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error {
+func (pis *ImportsPostgresStorage) SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
@@ -87,7 +87,7 @@ func (pis *PostgresImportsStorage) SaveTasksFor(s integrations.ExternalService, 
 	return pis.saveObject(s, integrations.TasksPipe, b)
 }
 
-func (pis *PostgresImportsStorage) SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error {
+func (pis *ImportsPostgresStorage) SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		bugsnag.Notify(err)
@@ -97,7 +97,7 @@ func (pis *PostgresImportsStorage) SaveTodoListsFor(s integrations.ExternalServi
 	return pis.saveObject(s, integrations.TodoListsPipe, b)
 }
 
-func (pis *PostgresImportsStorage) LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
+func (pis *ImportsPostgresStorage) LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
 	b, err := pis.loadObject(s, integrations.AccountsPipe)
 	if err != nil || b == nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (pis *PostgresImportsStorage) LoadAccountsFor(s integrations.ExternalServic
 	return &accountsResponse, nil
 }
 
-func (pis *PostgresImportsStorage) LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error) {
+func (pis *ImportsPostgresStorage) LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error) {
 	b, err := pis.loadObject(s, integrations.UsersPipe)
 	if err != nil || b == nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (pis *PostgresImportsStorage) LoadUsersFor(s integrations.ExternalService) 
 	return &usersResponse, nil
 }
 
-func (pis *PostgresImportsStorage) LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
+func (pis *ImportsPostgresStorage) LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
 	b, err := pis.loadObject(s, integrations.ClientsPipe)
 	if err != nil || b == nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (pis *PostgresImportsStorage) LoadClientsFor(s integrations.ExternalService
 	return &clientsResponse, nil
 }
 
-func (pis *PostgresImportsStorage) LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
+func (pis *ImportsPostgresStorage) LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
 	b, err := pis.loadObject(s, integrations.ProjectsPipe)
 	if err != nil || b == nil {
 		return nil, err
@@ -154,7 +154,7 @@ func (pis *PostgresImportsStorage) LoadProjectsFor(s integrations.ExternalServic
 	return &projectsResponse, nil
 }
 
-func (pis *PostgresImportsStorage) LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
+func (pis *ImportsPostgresStorage) LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
 	b, err := pis.loadObject(s, integrations.TodoListsPipe)
 	if err != nil || b == nil {
 		return nil, err
@@ -168,7 +168,7 @@ func (pis *PostgresImportsStorage) LoadTodoListsFor(s integrations.ExternalServi
 	return &tasksResponse, nil
 }
 
-func (pis *PostgresImportsStorage) LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
+func (pis *ImportsPostgresStorage) LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
 	b, err := pis.loadObject(s, integrations.TasksPipe)
 	if err != nil || b == nil {
 		return nil, err
@@ -182,17 +182,17 @@ func (pis *PostgresImportsStorage) LoadTasksFor(s integrations.ExternalService) 
 	return &tasksResponse, nil
 }
 
-func (pis *PostgresImportsStorage) DeleteAccountsFor(s integrations.ExternalService) error {
+func (pis *ImportsPostgresStorage) DeleteAccountsFor(s integrations.ExternalService) error {
 	_, err := pis.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integrations.AccountsPipe))
 	return err
 }
 
-func (pis *PostgresImportsStorage) DeleteUsersFor(s integrations.ExternalService) error {
+func (pis *ImportsPostgresStorage) DeleteUsersFor(s integrations.ExternalService) error {
 	_, err := pis.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integrations.UsersPipe))
 	return err
 }
 
-func (pis *PostgresImportsStorage) loadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
+func (pis *ImportsPostgresStorage) loadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
 	var result []byte
 	rows, err := pis.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
@@ -208,7 +208,7 @@ func (pis *PostgresImportsStorage) loadObject(s integrations.ExternalService, pi
 	return result, nil
 }
 
-func (pis *PostgresImportsStorage) saveObject(s integrations.ExternalService, pid integrations.PipeID, b []byte) error {
+func (pis *ImportsPostgresStorage) saveObject(s integrations.ExternalService, pid integrations.PipeID, b []byte) error {
 	_, err := pis.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
 	if err != nil {
 		bugsnag.Notify(err)

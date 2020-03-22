@@ -58,6 +58,19 @@ func NewService(
 	return svc
 }
 
+func (svc *Service) Ready() []error {
+	errs := make([]error, 0)
+
+	if svc.store.IsDown() {
+		errs = append(errs, errors.New("database is down"))
+	}
+
+	if err := svc.toggl.Ping(); err != nil {
+		errs = append(errs, err)
+	}
+	return errs
+}
+
 func (svc *Service) GetPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (*pipe.Pipe, error) {
 	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
@@ -162,45 +175,6 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integrations.Exte
 
 	err = svc.store.DeleteIDMappings(p.WorkspaceID, service.KeyFor(p.ID), pipeStatus.Key)
 	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, usersSelector []byte) error {
-	// make sure no race condition on fetching workspace lock
-	postPipeRunLock.Lock()
-	wsLock, exists := postPipeRunWorkspaceLock[workspaceID]
-	if !exists {
-		wsLock = &sync.Mutex{}
-		postPipeRunWorkspaceLock[workspaceID] = wsLock
-	}
-	postPipeRunLock.Unlock()
-
-	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
-	if err != nil {
-		return err
-	}
-	if p == nil {
-		return ErrPipeNotConfigured
-	}
-
-	if p.ID == integrations.UsersPipe {
-		p.UsersSelector = usersSelector
-		if len(p.UsersSelector) == 0 {
-			return SetParamsError{errors.New("Missing request payload")}
-		}
-
-		go func() {
-			wsLock.Lock()
-			svc.Run(p)
-			wsLock.Unlock()
-		}()
-		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
-		return nil
-	}
-
-	if err := svc.queue.QueuePipeAsFirst(p); err != nil {
 		return err
 	}
 	return nil
@@ -395,17 +369,43 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 	return igr, nil
 }
 
-func (svc *Service) Ready() []error {
-	errs := make([]error, 0)
+func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, usersSelector []byte) error {
+	// make sure no race condition on fetching workspace lock
+	postPipeRunLock.Lock()
+	wsLock, exists := postPipeRunWorkspaceLock[workspaceID]
+	if !exists {
+		wsLock = &sync.Mutex{}
+		postPipeRunWorkspaceLock[workspaceID] = wsLock
+	}
+	postPipeRunLock.Unlock()
 
-	if svc.store.IsDown() {
-		errs = append(errs, errors.New("database is down"))
+	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
+	if err != nil {
+		return err
+	}
+	if p == nil {
+		return ErrPipeNotConfigured
 	}
 
-	if err := svc.toggl.Ping(); err != nil {
-		errs = append(errs, err)
+	if p.ID == integrations.UsersPipe {
+		p.UsersSelector = usersSelector
+		if len(p.UsersSelector) == 0 {
+			return SetParamsError{errors.New("Missing request payload")}
+		}
+
+		go func() {
+			wsLock.Lock()
+			svc.Run(p)
+			wsLock.Unlock()
+		}()
+		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
+		return nil
 	}
-	return errs
+
+	if err := svc.queue.QueuePipeAsFirst(p); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (svc *Service) Run(p *pipe.Pipe) {

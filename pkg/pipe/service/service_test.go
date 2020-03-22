@@ -58,10 +58,10 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	importsStorage := storage.NewPostgresImportsStorage(db)
+	importsStorage := storage.NewImportsPostgresStorage(db)
 	pipesStorage := storage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	integrationsStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, integrationsStorage, importsStorage, pipesQueue, api, cfg.PipesAPIHost)
 
@@ -157,10 +157,10 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	importsStorage := storage.NewPostgresImportsStorage(db)
+	importsStorage := storage.NewImportsPostgresStorage(db)
 	pipesStorage := storage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	integrationsStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, integrationsStorage, importsStorage, pipesQueue, api, cfg.PipesAPIHost)
 
@@ -212,10 +212,10 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	importsStorage := storage.NewPostgresImportsStorage(db)
+	importsStorage := storage.NewImportsPostgresStorage(db)
 	pipesStorage := storage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	integrationsStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, integrationsStorage, importsStorage, pipesQueue, api, cfg.PipesAPIHost)
 
@@ -320,7 +320,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	s := storage.NewPostgresStorage(ts.db)
-	ims := storage.NewPostgresImportsStorage(ts.db)
+	ims := storage.NewImportsPostgresStorage(ts.db)
 	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
@@ -343,7 +343,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 
 	s := storage.NewPostgresStorage(ts.db)
-	ims := storage.NewPostgresImportsStorage(ts.db)
+	ims := storage.NewImportsPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 	q := &pipe.MockQueue{}
@@ -374,7 +374,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
 	s := storage.NewPostgresStorage(ts.db)
-	ims := storage.NewPostgresImportsStorage(ts.db)
+	ims := storage.NewImportsPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 	q := &pipe.MockQueue{}

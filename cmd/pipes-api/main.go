@@ -57,10 +57,10 @@ func main() {
 	togglApi := client.NewTogglApiClient(cfg.TogglAPIHost)
 
 	pipesStore := storage.NewPostgresStorage(db)
-	importsStore := storage.NewPostgresImportsStorage(db)
+	importsStore := storage.NewImportsPostgresStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
-	integrationsStore := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStore := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
 

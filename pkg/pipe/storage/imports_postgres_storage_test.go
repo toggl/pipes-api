@@ -47,7 +47,7 @@ func (ts *ImportsStorageTestSuite) SetupTest() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveObject_LoadObject() {
-	s := NewPostgresImportsStorage(ts.db)
+	s := NewImportsPostgresStorage(ts.db)
 
 	type obj struct {
 		Name  string
@@ -69,7 +69,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveObject_LoadObject() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_ClearImportFor() {
-	s := NewPostgresImportsStorage(ts.db)
+	s := NewImportsPostgresStorage(ts.db)
 	svc := pipe.NewExternalService(integrations.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
