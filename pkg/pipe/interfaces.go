@@ -62,19 +62,21 @@ type Service interface {
 	WorkspaceIntegrations(workspaceID int) ([]Integration, error)
 
 	Ready() []error
-
-	AvailablePipeType(pid integrations.PipeID) bool
-	AvailableServiceType(sid integrations.ExternalServiceID) bool
 }
 
 //go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
+	// Integrations
+	LoadIntegrations() ([]*Integration, error)
+
 	// Authorizations
 
 	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
 	SaveAuthorization(a *Authorization) error
 	DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
+	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
+	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
 
 	// ID Mappings
 
@@ -120,4 +122,17 @@ type Storage interface {
 	SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error
 
 	IsDown() bool
+}
+
+type PipeValidator interface {
+	IsValidPipe(pipeID integrations.PipeID) bool
+}
+
+type ServiceValidator interface {
+	IsValidService(serviceID integrations.ExternalServiceID) bool
+}
+
+type PipeServiceValidator interface {
+	PipeValidator
+	ServiceValidator
 }

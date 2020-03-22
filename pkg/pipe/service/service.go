@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -32,14 +29,8 @@ type Service struct {
 	store pipe.Storage
 	queue pipe.Queue
 
-	availablePipeType     *regexp.Regexp
-	availableServiceType  *regexp.Regexp
-	availableIntegrations []*pipe.Integration
-	// Stores available authorization types for each service
-	// Map format: map[externalServiceID]authType
-	availableAuthTypes map[integrations.ExternalServiceID]string
-	pipesApiHost       string
-	mx                 sync.RWMutex
+	pipesApiHost string
+	mx           sync.RWMutex
 }
 
 func NewService(oauth oauth.Provider, store pipe.Storage, queue pipe.Queue, toggl pipe.TogglClient, pipesApiHost string) *Service {
@@ -50,21 +41,10 @@ func NewService(oauth oauth.Provider, store pipe.Storage, queue pipe.Queue, togg
 		store: store,
 		queue: queue,
 
-		pipesApiHost:          pipesApiHost,
-		availableIntegrations: []*pipe.Integration{},
-		availableAuthTypes:    map[integrations.ExternalServiceID]string{},
+		pipesApiHost: pipesApiHost,
 	}
 
 	return svc
-}
-
-func (svc *Service) LoadIntegrationsFromConfig(integrationsConfigPath string) {
-	svc.loadIntegrations(integrationsConfigPath).fillAvailableServices().fillAvailablePipeTypes()
-	svc.mx.RLock()
-	for _, integration := range svc.availableIntegrations {
-		svc.availableAuthTypes[integration.ID] = integration.AuthType
-	}
-	svc.mx.RUnlock()
 }
 
 func (svc *Service) GetPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (*pipe.Pipe, error) {
@@ -319,8 +299,11 @@ func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, account
 
 func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, workspaceToken string, params pipe.AuthParams) error {
 	auth := pipe.NewAuthorization(workspaceID, serviceID, workspaceToken)
-
-	switch svc.getAuthType(serviceID) {
+	authType, err := svc.store.LoadAuthorizationType(serviceID)
+	if err != nil {
+		return err
+	}
+	switch authType {
 	case pipe.TypeOauth1:
 		token, err := svc.oauth.OAuth1Exchange(serviceID, params.AccountName, params.Token, params.Verifier)
 		if err != nil {
@@ -372,8 +355,13 @@ func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]pipe.Integration, 
 		return nil, err
 	}
 
+	allIntegrations, err := svc.store.LoadIntegrations()
+	if err != nil {
+		return nil, err
+	}
+
 	var igr []pipe.Integration
-	for _, current := range svc.getIntegrations() {
+	for _, current := range allIntegrations {
 		var integration = current
 		integration.AuthURL = svc.oauth.OAuth2URL(integration.ID)
 		integration.Authorized = authorizations[integration.ID]
@@ -543,28 +531,12 @@ func (svc *Service) Ready() []error {
 	return errs
 }
 
-func (svc *Service) AvailablePipeType(pipeID integrations.PipeID) bool {
-	return svc.availablePipeType.MatchString(string(pipeID))
-}
-
-func (svc *Service) AvailableServiceType(serviceID integrations.ExternalServiceID) bool {
-	return svc.availableServiceType.MatchString(string(serviceID))
-}
-
-func (svc *Service) setAuthType(serviceID integrations.ExternalServiceID, authType string) {
-	svc.mx.Lock()
-	defer svc.mx.Unlock()
-	svc.availableAuthTypes[serviceID] = authType
-}
-
-func (svc *Service) getAuthType(serviceID integrations.ExternalServiceID) string {
-	svc.mx.RLock()
-	defer svc.mx.RUnlock()
-	return svc.availableAuthTypes[serviceID]
-}
-
 func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
-	if svc.getAuthType(a.ServiceID) != pipe.TypeOauth2 {
+	authType, err := svc.store.LoadAuthorizationType(a.ServiceID)
+	if err != nil {
+		return err
+	}
+	if authType != pipe.TypeOauth2 {
 		return nil
 	}
 	var token goauth2.Token
@@ -602,34 +574,6 @@ func (svc *Service) notifyBugsnag(err error, p *pipe.Pipe) {
 	}
 	log.Println(err, meta)
 	bugsnag.Notify(err, meta)
-}
-
-func (svc *Service) loadIntegrations(integrationsConfigPath string) *Service {
-	svc.mx.Lock()
-	defer svc.mx.Unlock()
-	b, err := ioutil.ReadFile(integrationsConfigPath)
-	if err != nil {
-		log.Fatalf("Could not read integrations.json, reason: %v", err)
-	}
-	if err := json.Unmarshal(b, &svc.availableIntegrations); err != nil {
-		log.Fatalf("Could not parse integrations.json, reason: %v", err)
-	}
-	return svc
-}
-
-func (svc *Service) getIntegrations() []*pipe.Integration {
-	svc.mx.RLock()
-	defer svc.mx.RUnlock()
-	return svc.availableIntegrations
-}
-
-func (svc *Service) fillAvailableServices() *Service {
-	ids := make([]string, len(svc.availableIntegrations))
-	for i := range svc.availableIntegrations {
-		ids = append(ids, string(svc.availableIntegrations[i].ID))
-	}
-	svc.availableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
-	return svc
 }
 
 func (svc *Service) postUsers(p *pipe.Pipe) error {
@@ -1258,12 +1202,4 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 		}
 	}
 	return nil
-}
-
-func (svc *Service) fillAvailablePipeTypes() *Service {
-	svc.mx.Lock()
-	defer svc.mx.Unlock()
-	str := fmt.Sprintf("%s|%s|%s|%s|%s|%s", integrations.UsersPipe, integrations.ProjectsPipe, integrations.TodoListsPipe, integrations.TodosPipe, integrations.TasksPipe, integrations.TimeEntriesPipe)
-	svc.availablePipeType = regexp.MustCompile(str)
-	return svc
 }

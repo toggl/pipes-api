@@ -269,12 +269,16 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	config.ParseFlags(&flags, os.Args)
 
 	s := &pipe.MockStorage{}
+	s.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
+	s.On("LoadAuthorizationType", mock.Anything).Return(pipe.TypeOauth2, nil)
+
 	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 
 	svc := NewService(op, s, q, api, "https://localhost")
-	svc.setAuthType("github", pipe.TypeOauth2)
+	err := svc.store.SaveAuthorizationType("github", pipe.TypeOauth2)
+	ts.NoError(err)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
 	t := goauth2.Token{
@@ -310,11 +314,12 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	svc := NewService(op, s, q, api, "")
 
-	svc.setAuthType(integrations.GitHub, pipe.TypeOauth1)
+	err := svc.store.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
+	ts.NoError(err)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
 
-	err := svc.refreshAuthorization(a1)
+	err = svc.refreshAuthorization(a1)
 	ts.NoError(err)
 }
 
@@ -326,7 +331,8 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	q := &pipe.MockQueue{}
 
 	svc := NewService(op, s, q, api, "https://localhost")
-	svc.setAuthType(integrations.GitHub, pipe.TypeOauth2)
+	err := svc.store.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
+	ts.NoError(err)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
 	t := goauth2.Token{
@@ -352,16 +358,21 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
 	svc := NewService(op, s, q, api, "https://localhost")
 
-	res := svc.getAuthType("github")
+	res, err := svc.store.LoadAuthorizationType(integrations.GitHub)
+	ts.NoError(err)
 	ts.Equal("", res)
 
-	svc.setAuthType(integrations.GitHub, pipe.TypeOauth2)
-	svc.setAuthType(integrations.Asana, pipe.TypeOauth1)
+	err = svc.store.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
+	ts.NoError(err)
+	err = svc.store.SaveAuthorizationType(integrations.Asana, pipe.TypeOauth1)
+	ts.NoError(err)
 
-	res = svc.getAuthType(integrations.GitHub)
+	res, err = svc.store.LoadAuthorizationType(integrations.GitHub)
+	ts.NoError(err)
 	ts.Equal(pipe.TypeOauth2, res)
 
-	res = svc.getAuthType(integrations.Asana)
+	res, err = svc.store.LoadAuthorizationType(integrations.Asana)
+	ts.NoError(err)
 	ts.Equal(pipe.TypeOauth1, res)
 }
 
