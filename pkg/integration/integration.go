@@ -33,18 +33,18 @@ const (
 // Example implementation: github.go
 //go:generate mockery -name Integration -case underscore -inpkg
 type Integration interface {
-	// ID of the service
+	// ID returns an ID of the service
 	ID() ID
 
-	// WorkspaceID helper function, should just return workspaceID
+	// GetWorkspaceID helper function, should just return workspaceID
 	GetWorkspaceID() int
 
-	// setSince takes the provided time.Time
+	// SetSince takes the provided time.Time
 	// and adds it to Integration struct. This can be used
 	// to fetch just the modified data from external services.
 	SetSince(*time.Time)
 
-	// setParams takes the necessary Integration params
+	// SetParams takes the necessary Integration params
 	// (for example the selected account id) as JSON
 	// and adds them to Integration struct.
 	SetParams([]byte) error
@@ -52,7 +52,7 @@ type Integration interface {
 	// SetAuthData adds the provided oauth token to Integration struct
 	SetAuthData([]byte) error
 
-	// keyFor should provide unique key for object type
+	// KeyFor should provide unique key for object type
 	// Example: asana:account:XXXX:projects
 	KeyFor(PipeID) string
 
@@ -76,11 +76,11 @@ type Integration interface {
 	// https://github.com/toggl/pipes-api/blob/master/model.go#L38-L45
 	Tasks() ([]*toggl.Task, error)
 
-	// TodoLists maps foreign todo lists to Task models
+	// TodoLists maps foreign to do lists to Task models
 	// https://github.com/toggl/pipes-api/blob/master/model.go#L38-45
 	TodoLists() ([]*toggl.Task, error)
 
-	// Exports time entry model to foreign service
+	// ExportTimeEntry exports time entry model to foreign service
 	// should return foreign id of saved time entry
 	// https://github.com/toggl/pipes-api/blob/master/model.go#L47-L61
 	ExportTimeEntry(*toggl.TimeEntry) (int, error)
