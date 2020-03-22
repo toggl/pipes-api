@@ -2,7 +2,6 @@ package storage
 
 import (
 	"database/sql"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
 type ImportsStorageTestSuite struct {
@@ -46,33 +46,170 @@ func (ts *ImportsStorageTestSuite) SetupTest() {
 	ts.NoError(err5)
 }
 
-func (ts *ImportsStorageTestSuite) TestStorage_SaveObject_LoadObject() {
+func (ts *ImportsStorageTestSuite) TestStorage_DeleteAccountsFor() {
 	s := NewImportsPostgresStorage(ts.db)
-
-	type obj struct {
-		Name  string
-		Value string
-	}
-	o := obj{"Test", "Test2"}
-	b1, err := json.Marshal(o)
-	ts.NoError(err)
-
 	svc := pipe.NewExternalService(integration.GitHub, 1)
-
-	err = s.saveObject(svc, integration.ProjectsPipe, b1)
+	err := s.DeleteAccountsFor(svc)
 	ts.NoError(err)
-
-	b, err := s.loadObject(svc, integration.ProjectsPipe)
-	ts.NoError(err)
-
-	ts.Equal(`{"Name":"Test","Value":"Test2"}`, string(b))
 }
 
-func (ts *ImportsStorageTestSuite) TestStorage_ClearImportFor() {
+func (ts *ImportsStorageTestSuite) TestStorage_DeleteUsersFor() {
 	s := NewImportsPostgresStorage(ts.db)
 	svc := pipe.NewExternalService(integration.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
+}
+
+func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor() {
+	s := NewImportsPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
+
+	resp := &toggl.AccountsResponse{
+		Error: "",
+		Accounts: []*toggl.Account{
+			{ID: 1, Name: "test1"},
+			{ID: 2, Name: "test2"},
+		},
+	}
+
+	err := s.SaveAccountsFor(svc, *resp)
+	ts.NoError(err)
+
+	got, err := s.LoadAccountsFor(svc)
+	ts.NoError(err)
+	ts.Equal(resp, got)
+}
+
+func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
+	s := NewImportsPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
+
+	resp := &toggl.UsersResponse{
+		Error: "",
+		Users: []*toggl.User{
+			{ID: 1, Name: "test1"},
+			{ID: 2, Name: "test2"},
+		},
+	}
+
+	err := s.SaveUsersFor(svc, *resp)
+	ts.NoError(err)
+
+	got, err := s.LoadUsersFor(svc)
+	ts.NoError(err)
+	ts.Equal(resp, got)
+}
+
+func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
+	s := NewImportsPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
+
+	resp := &toggl.ClientsResponse{
+		Error: "",
+		Clients: []*toggl.Client{
+			{ID: 1, Name: "test1"},
+			{ID: 2, Name: "test2"},
+		},
+	}
+
+	err := s.SaveClientsFor(svc, *resp)
+	ts.NoError(err)
+
+	got, err := s.LoadClientsFor(svc)
+	ts.NoError(err)
+	ts.Equal(resp, got)
+}
+
+func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor() {
+	s := NewImportsPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
+
+	resp := &toggl.ProjectsResponse{
+		Error: "",
+		Projects: []*toggl.Project{
+			{
+				ID:       1,
+				Name:     "test1",
+				Active:   true,
+				Billable: false,
+				ClientID: 3,
+			},
+			{
+				ID:       2,
+				Name:     "test2",
+				Active:   false,
+				Billable: true,
+				ClientID: 4,
+			},
+		},
+	}
+
+	err := s.SaveProjectsFor(svc, *resp)
+	ts.NoError(err)
+
+	got, err := s.LoadProjectsFor(svc)
+	ts.NoError(err)
+	ts.Equal(resp, got)
+}
+
+func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
+	s := NewImportsPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
+
+	resp := &toggl.TasksResponse{
+		Error: "",
+		Tasks: []*toggl.Task{
+			{
+				ID:        1,
+				Name:      "test1",
+				Active:    true,
+				ProjectID: 3,
+			},
+			{
+				ID:        2,
+				Name:      "test2",
+				Active:    false,
+				ProjectID: 4,
+			},
+		},
+	}
+
+	err := s.SaveTasksFor(svc, *resp)
+	ts.NoError(err)
+
+	got, err := s.LoadTasksFor(svc)
+	ts.NoError(err)
+	ts.Equal(resp, got)
+}
+
+func (ts *ImportsStorageTestSuite) TestStorage_SaveTodoListsFor_LoadTodoListsFor() {
+	s := NewImportsPostgresStorage(ts.db)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
+
+	resp := &toggl.TasksResponse{
+		Error: "",
+		Tasks: []*toggl.Task{
+			{
+				ID:        1,
+				Name:      "test1",
+				Active:    true,
+				ProjectID: 3,
+			},
+			{
+				ID:        2,
+				Name:      "test2",
+				Active:    false,
+				ProjectID: 4,
+			},
+		},
+	}
+
+	err := s.SaveTodoListsFor(svc, *resp)
+	ts.NoError(err)
+
+	got, err := s.LoadTodoListsFor(svc)
+	ts.NoError(err)
+	ts.Equal(resp, got)
 }
 
 // In order for 'go test' to run this suite, we need to create

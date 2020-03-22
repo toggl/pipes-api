@@ -41,7 +41,6 @@ func NewImportsPostgresStorage(db *sql.DB) *ImportsPostgresStorage {
 func (pis *ImportsPostgresStorage) SaveAccountsFor(s integration.Integration, res toggl.AccountsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
-		bugsnag.Notify(err)
 		return err
 	}
 	return pis.saveObject(s, integration.AccountsPipe, b)
@@ -50,7 +49,6 @@ func (pis *ImportsPostgresStorage) SaveAccountsFor(s integration.Integration, re
 func (pis *ImportsPostgresStorage) SaveUsersFor(s integration.Integration, res toggl.UsersResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
-		bugsnag.Notify(err)
 		return err
 	}
 
@@ -60,7 +58,6 @@ func (pis *ImportsPostgresStorage) SaveUsersFor(s integration.Integration, res t
 func (pis *ImportsPostgresStorage) SaveClientsFor(s integration.Integration, res toggl.ClientsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
-		bugsnag.Notify(err)
 		return err
 	}
 
@@ -70,7 +67,6 @@ func (pis *ImportsPostgresStorage) SaveClientsFor(s integration.Integration, res
 func (pis *ImportsPostgresStorage) SaveProjectsFor(s integration.Integration, res toggl.ProjectsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
-		bugsnag.Notify(err)
 		return err
 	}
 
@@ -80,7 +76,6 @@ func (pis *ImportsPostgresStorage) SaveProjectsFor(s integration.Integration, re
 func (pis *ImportsPostgresStorage) SaveTasksFor(s integration.Integration, res toggl.TasksResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
-		bugsnag.Notify(err)
 		return err
 	}
 
@@ -90,7 +85,6 @@ func (pis *ImportsPostgresStorage) SaveTasksFor(s integration.Integration, res t
 func (pis *ImportsPostgresStorage) SaveTodoListsFor(s integration.Integration, res toggl.TasksResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
-		bugsnag.Notify(err)
 		return err
 	}
 
