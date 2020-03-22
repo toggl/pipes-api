@@ -39,6 +39,7 @@ dist:
 
 build:
 	go build -o bin/$(APPNAME) ./cmd/pipes-api
+	go build -o bin/toggl_api_stub ./cmd/toggl_api_stub # This binary needs only for testing purposes. For more information see main.go of this binary.
 
 vendor: dist
 	cd dist && tar czf pipes-api.tgz pipes-api config
