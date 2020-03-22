@@ -158,7 +158,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
-	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
+	integrations, err := pipeService.GetIntegrations(workspaceID)
 
 	if err != nil {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)
@@ -210,7 +210,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	pipeService := NewService(oauthProvider, pipesStorage, pipesQueue, api, cfg.PipesAPIHost)
 
-	integrations, err := pipeService.WorkspaceIntegrations(workspaceID)
+	integrations, err := pipeService.GetIntegrations(workspaceID)
 
 	if err != nil {
 		t.Fatalf("workspaceIntegrations returned error: %v", err)

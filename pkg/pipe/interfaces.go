@@ -59,7 +59,7 @@ type Service interface {
 	// It also delete all pipes for given service and workspace.
 	DeleteAuthorization(workspaceID int, sid integrations.ExternalServiceID) error
 
-	WorkspaceIntegrations(workspaceID int) ([]Integration, error)
+	GetIntegrations(workspaceID int) ([]Integration, error)
 
 	Ready() []error
 }

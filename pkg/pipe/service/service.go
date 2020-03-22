@@ -341,7 +341,7 @@ func (svc *Service) DeleteAuthorization(workspaceID int, serviceID integrations.
 	return nil
 }
 
-func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]pipe.Integration, error) {
+func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error) {
 	authorizations, err := svc.store.LoadWorkspaceAuthorizations(workspaceID)
 	if err != nil {
 		return nil, err
@@ -382,6 +382,19 @@ func (svc *Service) WorkspaceIntegrations(workspaceID int) ([]pipe.Integration, 
 		igr = append(igr, *integration)
 	}
 	return igr, nil
+}
+
+func (svc *Service) Ready() []error {
+	errs := make([]error, 0)
+
+	if svc.store.IsDown() {
+		errs = append(errs, errors.New("database is down"))
+	}
+
+	if err := svc.toggl.Ping(); err != nil {
+		errs = append(errs, err)
+	}
+	return errs
 }
 
 func (svc *Service) Run(p *pipe.Pipe) {
@@ -516,19 +529,6 @@ func (svc *Service) syncTEs(p *pipe.Pipe) {
 		svc.notifyBugsnag(err, p)
 		return
 	}
-}
-
-func (svc *Service) Ready() []error {
-	errs := make([]error, 0)
-
-	if svc.store.IsDown() {
-		errs = append(errs, errors.New("database is down"))
-	}
-
-	if err := svc.toggl.Ping(); err != nil {
-		errs = append(errs, err)
-	}
-	return errs
 }
 
 func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {

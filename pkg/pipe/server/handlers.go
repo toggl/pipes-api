@@ -24,7 +24,7 @@ func NewController(pipes pipe.Service, validator pipe.PipeServiceValidator) *Con
 
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	resp, err := c.pipesSvc.WorkspaceIntegrations(workspaceID)
+	resp, err := c.pipesSvc.GetIntegrations(workspaceID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
