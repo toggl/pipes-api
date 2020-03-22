@@ -54,22 +54,31 @@ func main() {
 	oAuth2ConfigPath := filepath.Join(env.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(env.Environment, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	api := client.NewTogglApiClient(cfg.TogglAPIHost)
+	togglApi := client.NewTogglApiClient(cfg.TogglAPIHost)
 
 	pipesStore := storage.NewPostgresStorage(db)
+	importsStore := storage.NewPostgresImportsStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
 	integrationsStore := storage.NewFileIntegrationsStorage(integrationsConfigPath)
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
 
-	pipesService := service.NewService(oauthProvider, pipesStore, integrationsStore, pipesQueue, api, cfg.PipesAPIHost)
+	pipesService := service.NewService(
+		oauthProvider,
+		pipesStore,
+		integrationsStore,
+		importsStore,
+		pipesQueue,
+		togglApi,
+		cfg.PipesAPIHost,
+	)
 
 	autosync.NewService(pipesQueue, pipesService).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
 		server.NewController(pipesService, integrationsStore),
-		server.NewMiddleware(api, integrationsStore),
+		server.NewMiddleware(togglApi, integrationsStore),
 	)
 	server.Start(env.Port, router)
 }

@@ -2,7 +2,6 @@ package storage
 
 import (
 	"database/sql"
-	"encoding/json"
 	"flag"
 	"sync"
 	"testing"
@@ -57,14 +56,12 @@ func (ts *StorageTestSuite) SetupTest() {
 	_, err3 := ts.db.Exec(truncatePipesStatusSQL)
 	_, err4 := ts.db.Exec(truncatePipesSQL)
 	_, err5 := ts.db.Exec(truncateImportsSQL)
-	_, err6 := ts.db.Exec(truncateQueuedPipesSQL)
 
 	ts.NoError(err1)
 	ts.NoError(err2)
 	ts.NoError(err3)
 	ts.NoError(err4)
 	ts.NoError(err5)
-	ts.NoError(err6)
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
@@ -256,28 +253,6 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 	ts.Equal(2, len(ps))
 }
 
-func (ts *StorageTestSuite) TestStorage_SaveObject_LoadObject() {
-	s := NewPostgresStorage(ts.db)
-
-	type obj struct {
-		Name  string
-		Value string
-	}
-	o := obj{"Test", "Test2"}
-	b1, err := json.Marshal(o)
-	ts.NoError(err)
-
-	svc := pipe.NewExternalService(integrations.GitHub, 1)
-
-	err = s.saveObject(svc, integrations.ProjectsPipe, b1)
-	ts.NoError(err)
-
-	b, err := s.loadObject(svc, integrations.ProjectsPipe)
-	ts.NoError(err)
-
-	ts.Equal(`{"Name":"Test","Value":"Test2"}`, string(b))
-}
-
 func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 	s := NewPostgresStorage(ts.db)
 
@@ -336,13 +311,6 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
 	s.LoadLastSync(p1)
 	ts.NotNil(p1.LastSync)
 	ts.Equal(t, *p1.LastSync)
-}
-
-func (ts *StorageTestSuite) TestStorage_ClearImportFor() {
-	s := NewPostgresStorage(ts.db)
-	svc := pipe.NewExternalService(integrations.GitHub, 1)
-	err := s.DeleteUsersFor(svc)
-	ts.NoError(err)
 }
 
 func (ts *StorageTestSuite) TestStorage_DeletePipeConnections() {

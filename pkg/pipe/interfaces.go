@@ -95,6 +95,21 @@ type Storage interface {
 	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
 	SavePipeStatus(p *Status) error
 
+	IsDown() bool
+}
+
+//go:generate mockery -name IntegrationsStorage -case underscore -inpkg
+type IntegrationsStorage interface {
+	LoadIntegrations() ([]*Integration, error)
+	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
+	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
+
+	IsValidPipe(pipeID integrations.PipeID) bool
+	IsValidService(serviceID integrations.ExternalServiceID) bool
+}
+
+//go:generate mockery -name ImportsStorage -case underscore -inpkg
+type ImportsStorage interface {
 	// Imports
 	LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error)
 	SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error
@@ -115,16 +130,4 @@ type Storage interface {
 
 	LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error)
 	SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error
-
-	IsDown() bool
-}
-
-//go:generate mockery -name IntegrationsStorage -case underscore -inpkg
-type IntegrationsStorage interface {
-	LoadIntegrations() ([]*Integration, error)
-	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
-	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
-
-	IsValidPipe(pipeID integrations.PipeID) bool
-	IsValidService(serviceID integrations.ExternalServiceID) bool
 }

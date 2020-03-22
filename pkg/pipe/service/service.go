@@ -24,24 +24,33 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Service struct {
-	oauth  oauth.Provider
-	toggl  pipe.TogglClient
-	store  pipe.Storage
-	istore pipe.IntegrationsStorage
-	queue  pipe.Queue
+	oauth             oauth.Provider
+	toggl             pipe.TogglClient
+	store             pipe.Storage
+	integrationsStore pipe.IntegrationsStorage
+	importsStore      pipe.ImportsStorage
+	queue             pipe.Queue
 
 	pipesApiHost string
 	mx           sync.RWMutex
 }
 
-func NewService(oauth oauth.Provider, store pipe.Storage, istore pipe.IntegrationsStorage, queue pipe.Queue, toggl pipe.TogglClient, pipesApiHost string) *Service {
+func NewService(
+	oauth oauth.Provider,
+	store pipe.Storage,
+	integrationsStore pipe.IntegrationsStorage,
+	importsStore pipe.ImportsStorage,
+	queue pipe.Queue,
+	togglClient pipe.TogglClient,
+	pipesApiHost string) *Service {
 
 	svc := &Service{
-		toggl:  toggl,
-		oauth:  oauth,
-		store:  store,
-		istore: istore,
-		queue:  queue,
+		toggl:             togglClient,
+		oauth:             oauth,
+		store:             store,
+		integrationsStore: integrationsStore,
+		importsStore:      importsStore,
+		queue:             queue,
 
 		pipesApiHost: pipesApiHost,
 	}
@@ -219,12 +228,12 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 	}
 
 	if forceImport {
-		if err := svc.store.DeleteUsersFor(service); err != nil {
+		if err := svc.importsStore.DeleteUsersFor(service); err != nil {
 			return nil, err
 		}
 	}
 
-	usersResponse, err := svc.store.LoadUsersFor(service)
+	usersResponse, err := svc.importsStore.LoadUsersFor(service)
 	if err != nil {
 		return nil, err
 	}
@@ -257,12 +266,12 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.E
 		return nil, RefreshError{errors.New("oAuth refresh failed!")}
 	}
 	if forceImport {
-		if err := svc.store.DeleteAccountsFor(service); err != nil {
+		if err := svc.importsStore.DeleteAccountsFor(service); err != nil {
 			return nil, err
 		}
 	}
 
-	accountsResponse, err := svc.store.LoadAccountsFor(service)
+	accountsResponse, err := svc.importsStore.LoadAccountsFor(service)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +284,7 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.E
 			if err != nil {
 				response.Error = err.Error()
 			}
-			if err := svc.store.SaveAccountsFor(service, response); err != nil {
+			if err := svc.importsStore.SaveAccountsFor(service, response); err != nil {
 				log.Print(err.Error())
 			}
 		}()
@@ -301,7 +310,7 @@ func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, account
 
 func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, workspaceToken string, params pipe.AuthParams) error {
 	auth := pipe.NewAuthorization(workspaceID, serviceID, workspaceToken)
-	authType, err := svc.istore.LoadAuthorizationType(serviceID)
+	authType, err := svc.integrationsStore.LoadAuthorizationType(serviceID)
 	if err != nil {
 		return err
 	}
@@ -357,7 +366,7 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 		return nil, err
 	}
 
-	allIntegrations, err := svc.istore.LoadIntegrations()
+	allIntegrations, err := svc.integrationsStore.LoadIntegrations()
 	if err != nil {
 		return nil, err
 	}
@@ -534,7 +543,7 @@ func (svc *Service) syncTEs(p *pipe.Pipe) {
 }
 
 func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
-	authType, err := svc.istore.LoadAuthorizationType(a.ServiceID)
+	authType, err := svc.integrationsStore.LoadAuthorizationType(a.ServiceID)
 	if err != nil {
 		return err
 	}
@@ -592,7 +601,7 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		return err
 	}
 
-	usersResponse, err := svc.store.LoadUsersFor(service)
+	usersResponse, err := svc.importsStore.LoadUsersFor(service)
 	if err != nil {
 		return errors.New("unable to get users from DB")
 	}
@@ -651,7 +660,7 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 		return err
 	}
 
-	clientsResponse, err := svc.store.LoadClientsFor(service)
+	clientsResponse, err := svc.importsStore.LoadClientsFor(service)
 	if err != nil {
 		return errors.New("unable to get clients from DB")
 	}
@@ -696,7 +705,7 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 		return err
 	}
 
-	projectsResponse, err := svc.store.LoadProjectsFor(service)
+	projectsResponse, err := svc.importsStore.LoadProjectsFor(service)
 	if err != nil {
 		return errors.New("unable to get projects from DB")
 	}
@@ -738,7 +747,7 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 		return err
 	}
 
-	tasksResponse, err := svc.store.LoadTodoListsFor(service)
+	tasksResponse, err := svc.importsStore.LoadTodoListsFor(service)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -786,7 +795,7 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 		return err
 	}
 
-	tasksResponse, err := svc.store.LoadTasksFor(service)
+	tasksResponse, err := svc.importsStore.LoadTasksFor(service)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -921,7 +930,7 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveUsersFor(service, response); err != nil {
+		if err := svc.importsStore.SaveUsersFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe), err)
 			return
 		}
@@ -963,7 +972,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveClientsFor(service, response); err != nil {
+		if err := svc.importsStore.SaveClientsFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe), err)
 			return
 		}
@@ -1002,7 +1011,7 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveProjectsFor(service, response); err != nil {
+		if err := svc.importsStore.SaveProjectsFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe), err)
 			return
 		}
@@ -1075,7 +1084,7 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveTodoListsFor(service, response); err != nil {
+		if err := svc.importsStore.SaveTodoListsFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.TodoListsPipe), err)
 			return
 		}
@@ -1150,7 +1159,7 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 			return
 		}
 
-		if err := svc.store.SaveTasksFor(service, response); err != nil {
+		if err := svc.importsStore.SaveTasksFor(service, response); err != nil {
 			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe), err)
 			return
 		}

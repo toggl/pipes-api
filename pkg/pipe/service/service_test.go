@@ -58,11 +58,12 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
+	importsStorage := storage.NewPostgresImportsStorage(db)
 	pipesStorage := storage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	iStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
-	pipeService := NewService(oauthProvider, pipesStorage, iStorage, pipesQueue, api, cfg.PipesAPIHost)
+	pipeService := NewService(oauthProvider, pipesStorage, integrationsStorage, importsStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	createAndEnqueuePipeFn := func(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, priority int) *pipe.Pipe {
 		pipe := pipe.NewPipe(workspaceID, serviceID, pipeID)
@@ -156,11 +157,12 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
+	importsStorage := storage.NewPostgresImportsStorage(db)
 	pipesStorage := storage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	iStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
-	pipeService := NewService(oauthProvider, pipesStorage, iStorage, pipesQueue, api, cfg.PipesAPIHost)
+	pipeService := NewService(oauthProvider, pipesStorage, integrationsStorage, importsStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.GetIntegrations(workspaceID)
 
@@ -210,11 +212,12 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
+	importsStorage := storage.NewPostgresImportsStorage(db)
 	pipesStorage := storage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	iStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
+	integrationsStorage := storage.NewFileIntegrationsStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
-	pipeService := NewService(oauthProvider, pipesStorage, iStorage, pipesQueue, api, cfg.PipesAPIHost)
+	pipeService := NewService(oauthProvider, pipesStorage, integrationsStorage, importsStorage, pipesQueue, api, cfg.PipesAPIHost)
 
 	integrations, err := pipeService.GetIntegrations(workspaceID)
 
@@ -275,6 +278,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	config.ParseFlags(&flags, os.Args)
 
 	s := &pipe.MockStorage{}
+	ims := &pipe.MockImportsStorage{}
 
 	is := &pipe.MockIntegrationsStorage{}
 	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
@@ -284,8 +288,8 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 
-	svc := NewService(op, s, is, q, api, "https://localhost")
-	err := svc.istore.SaveAuthorizationType("github", pipe.TypeOauth2)
+	svc := NewService(op, s, is, ims, q, api, "https://localhost")
+	err := svc.integrationsStore.SaveAuthorizationType("github", pipe.TypeOauth2)
 	ts.NoError(err)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
@@ -316,6 +320,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 
 	s := storage.NewPostgresStorage(ts.db)
+	ims := storage.NewPostgresImportsStorage(ts.db)
 	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
@@ -324,9 +329,9 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
 	is.On("LoadAuthorizationType", mock.Anything).Return(pipe.TypeOauth2, nil)
 
-	svc := NewService(op, s, is, q, api, "")
+	svc := NewService(op, s, is, ims, q, api, "")
 
-	err := svc.istore.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
+	err := svc.integrationsStore.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth1)
 	ts.NoError(err)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
@@ -338,6 +343,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 
 	s := storage.NewPostgresStorage(ts.db)
+	ims := storage.NewPostgresImportsStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 	q := &pipe.MockQueue{}
@@ -346,8 +352,8 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
 	is.On("LoadAuthorizationType", mock.Anything).Return(pipe.TypeOauth2, nil)
 
-	svc := NewService(op, s, is, q, api, "https://localhost")
-	err := svc.istore.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
+	svc := NewService(op, s, is, ims, q, api, "https://localhost")
+	err := svc.integrationsStore.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
 	ts.NoError(err)
 
 	a1 := pipe.NewAuthorization(1, integrations.GitHub, "")
@@ -368,6 +374,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
 	s := storage.NewPostgresStorage(ts.db)
+	ims := storage.NewPostgresImportsStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &oauth.MockProvider{}
 	q := &pipe.MockQueue{}
@@ -377,22 +384,22 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	is.On("LoadAuthorizationType", integrations.GitHub).Return(pipe.TypeOauth2, nil)
 	is.On("LoadAuthorizationType", integrations.Asana).Return(pipe.TypeOauth1, nil)
 
-	svc := NewService(op, s, is, q, api, "https://localhost")
+	svc := NewService(op, s, is, ims, q, api, "https://localhost")
 
-	res, err := svc.istore.LoadAuthorizationType(integrations.GitHub)
+	res, err := svc.integrationsStore.LoadAuthorizationType(integrations.GitHub)
 	ts.NoError(err)
 	ts.Equal(pipe.TypeOauth2, res)
 
-	err = svc.istore.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
+	err = svc.integrationsStore.SaveAuthorizationType(integrations.GitHub, pipe.TypeOauth2)
 	ts.NoError(err)
-	err = svc.istore.SaveAuthorizationType(integrations.Asana, pipe.TypeOauth1)
+	err = svc.integrationsStore.SaveAuthorizationType(integrations.Asana, pipe.TypeOauth1)
 	ts.NoError(err)
 
-	res, err = svc.istore.LoadAuthorizationType(integrations.GitHub)
+	res, err = svc.integrationsStore.LoadAuthorizationType(integrations.GitHub)
 	ts.NoError(err)
 	ts.Equal(pipe.TypeOauth2, res)
 
-	res, err = svc.istore.LoadAuthorizationType(integrations.Asana)
+	res, err = svc.integrationsStore.LoadAuthorizationType(integrations.Asana)
 	ts.NoError(err)
 	ts.Equal(pipe.TypeOauth1, res)
 }

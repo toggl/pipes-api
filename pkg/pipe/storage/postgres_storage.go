@@ -9,11 +9,99 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/bugsnag/bugsnag-go"
-
 	"github.com/toggl/pipes-api/pkg/integrations"
 	"github.com/toggl/pipes-api/pkg/pipe"
-	"github.com/toggl/pipes-api/pkg/toggl"
+)
+
+// PostgresStorage SQL queries
+const (
+	selectPipesSQL = `SELECT workspace_id, Key, data FROM pipes WHERE workspace_id = $1`
+	singlePipesSQL = `SELECT workspace_id, Key, data FROM pipes WHERE workspace_id = $1 AND Key = $2 LIMIT 1`
+	deletePipeSQL  = `DELETE FROM pipes WHERE workspace_id = $1 AND Key LIKE $2`
+	insertPipesSQL = `
+    WITH existing_pipe AS (
+      UPDATE pipes SET data = $3
+      WHERE workspace_id = $1 AND Key = $2
+      RETURNING Key
+    ),
+    inserted_pipe AS (
+      INSERT INTO pipes(workspace_id, Key, data)
+      SELECT $1, $2, $3
+      WHERE NOT EXISTS (SELECT 1 FROM existing_pipe)
+      RETURNING Key
+    )
+    SELECT * FROM inserted_pipe
+    UNION
+    SELECT * FROM existing_pipe
+  `
+	deletePipeConnectionsSQL = `DELETE FROM connections WHERE workspace_id = $1 AND Key = $2`
+	truncatePipesSQL         = `DELETE FROM pipes WHERE 1=1`
+
+	selectPipeStatusSQL = `SELECT Key, data FROM pipes_status WHERE workspace_id = $1`
+	singlePipeStatusSQL = `SELECT data FROM pipes_status WHERE workspace_id = $1 AND Key = $2 LIMIT 1`
+	deletePipeStatusSQL = `DELETE FROM pipes_status WHERE workspace_id = $1 AND Key LIKE $2`
+	lastSyncSQL         = `SELECT (data->>'sync_date')::timestamp with time zone FROM pipes_status WHERE workspace_id = $1 AND Key = $2`
+	insertPipeStatusSQL = `
+    WITH existing_status AS (
+      UPDATE pipes_status SET data = $3
+      WHERE workspace_id = $1 AND Key = $2
+      RETURNING Key
+    ),
+    inserted_status AS (
+      INSERT INTO pipes_status(workspace_id, Key, data)
+      SELECT $1, $2, $3
+      WHERE NOT EXISTS (SELECT 1 FROM existing_status)
+      RETURNING Key
+    )
+    SELECT * FROM inserted_status
+    UNION
+    SELECT * FROM existing_status
+  `
+	truncatePipesStatusSQL = `TRUNCATE TABLE pipes_status`
+
+	selectAuthorizationSQL = `SELECT workspace_id, service, workspace_token, data
+		FROM authorizations
+		WHERE workspace_id = $1
+		AND service = $2
+		LIMIT 1
+  `
+	insertAuthorizationSQL = `WITH existing_auth AS (
+		UPDATE authorizations SET data = $4, workspace_token = $3
+		WHERE workspace_id = $1 AND service = $2
+		RETURNING service
+	),
+	inserted_auth AS (
+		INSERT INTO
+		authorizations(workspace_id, service, workspace_token, data)
+		SELECT $1, $2, $3, $4
+		WHERE NOT EXISTS (SELECT 1 FROM existing_auth)
+		RETURNING service
+	)
+	SELECT * FROM inserted_auth
+	UNION
+	SELECT * FROM existing_auth
+  `
+	deleteAuthorizationSQL   = `DELETE FROM authorizations WHERE workspace_id = $1 AND service = $2`
+	truncateAuthorizationSQL = `TRUNCATE TABLE authorizations`
+
+	selectConnectionSQL = `SELECT Key, data FROM connections WHERE workspace_id = $1 AND Key = $2 LIMIT 1`
+	insertConnectionSQL = `
+    WITH existing_connection AS (
+      UPDATE connections SET data = $3
+      WHERE workspace_id = $1 AND Key = $2
+      RETURNING Key
+    ),
+    inserted_connection AS (
+      INSERT INTO connections(workspace_id, Key, data)
+      SELECT $1, $2, $3
+      WHERE NOT EXISTS (SELECT 1 FROM existing_connection)
+      RETURNING Key
+    )
+    SELECT * FROM inserted_connection
+    UNION
+    SELECT * FROM existing_connection
+  `
+	truncateConnectionSQL = `TRUNCATE TABLE connections`
 )
 
 type PostgresStorage struct {
@@ -121,16 +209,6 @@ func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.Exte
 
 func (ps *PostgresStorage) DeletePipesByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
-	return err
-}
-
-func (ps *PostgresStorage) DeleteAccountsFor(s integrations.ExternalService) error {
-	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integrations.AccountsPipe))
-	return err
-}
-
-func (ps *PostgresStorage) DeleteUsersFor(s integrations.ExternalService) error {
-	_, err := ps.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integrations.UsersPipe))
 	return err
 }
 
@@ -286,166 +364,6 @@ func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
 	return nil
 }
 
-func (ps *PostgresStorage) loadObject(s integrations.ExternalService, pid integrations.PipeID) ([]byte, error) {
-	var result []byte
-	rows, err := ps.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	if !rows.Next() {
-		return nil, rows.Err()
-	}
-	if err := rows.Scan(&result); err != nil {
-		return nil, err
-	}
-	return result, nil
-}
-
-func (ps *PostgresStorage) SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-	return ps.saveObject(s, integrations.AccountsPipe, b)
-}
-
-func (ps *PostgresStorage) SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-
-	return ps.saveObject(s, integrations.UsersPipe, b)
-}
-
-func (ps *PostgresStorage) SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-
-	return ps.saveObject(s, integrations.ClientsPipe, b)
-}
-
-func (ps *PostgresStorage) SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-
-	return ps.saveObject(s, integrations.ProjectsPipe, b)
-}
-
-func (ps *PostgresStorage) SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-
-	return ps.saveObject(s, integrations.TasksPipe, b)
-}
-
-func (ps *PostgresStorage) SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
-
-	return ps.saveObject(s, integrations.TodoListsPipe, b)
-}
-
-func (ps *PostgresStorage) LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error) {
-	b, err := ps.loadObject(s, integrations.AccountsPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var accountsResponse toggl.AccountsResponse
-	err = json.Unmarshal(b, &accountsResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &accountsResponse, nil
-}
-
-func (ps *PostgresStorage) LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error) {
-	b, err := ps.loadObject(s, integrations.UsersPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var usersResponse toggl.UsersResponse
-	err = json.Unmarshal(b, &usersResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &usersResponse, nil
-}
-
-func (ps *PostgresStorage) LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error) {
-	b, err := ps.loadObject(s, integrations.ClientsPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var clientsResponse toggl.ClientsResponse
-	err = json.Unmarshal(b, &clientsResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &clientsResponse, nil
-}
-
-func (ps *PostgresStorage) LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error) {
-	b, err := ps.loadObject(s, integrations.ProjectsPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var projectsResponse toggl.ProjectsResponse
-	err = json.Unmarshal(b, &projectsResponse)
-	if err != nil {
-		return nil, err
-	}
-
-	return &projectsResponse, nil
-}
-
-func (ps *PostgresStorage) LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
-	b, err := ps.loadObject(s, integrations.TodoListsPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var tasksResponse toggl.TasksResponse
-	err = json.Unmarshal(b, &tasksResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &tasksResponse, nil
-}
-
-func (ps *PostgresStorage) LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error) {
-	b, err := ps.loadObject(s, integrations.TasksPipe)
-	if err != nil || b == nil {
-		return nil, err
-	}
-
-	var tasksResponse toggl.TasksResponse
-	err = json.Unmarshal(b, &tasksResponse)
-	if err != nil {
-		return nil, err
-	}
-	return &tasksResponse, nil
-}
-
 func (ps *PostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
 	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
 	if err != nil {
@@ -497,14 +415,5 @@ func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
 	p.Key = key
 	p.WorkspaceID = wid
 	p.ServiceID = integrations.ExternalServiceID(strings.Split(key, ":")[0])
-	return nil
-}
-
-func (ps *PostgresStorage) saveObject(s integrations.ExternalService, pid integrations.PipeID, b []byte) error {
-	_, err := ps.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
-	if err != nil {
-		bugsnag.Notify(err)
-		return err
-	}
 	return nil
 }
