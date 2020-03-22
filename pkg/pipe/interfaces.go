@@ -66,17 +66,12 @@ type Service interface {
 
 //go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
-	// Integrations
-	LoadIntegrations() ([]*Integration, error)
-
 	// Authorizations
 
 	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
 	SaveAuthorization(a *Authorization) error
 	DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
-	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
-	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
 
 	// ID Mappings (Connections)
 
@@ -124,15 +119,12 @@ type Storage interface {
 	IsDown() bool
 }
 
-type PipeValidator interface {
+//go:generate mockery -name IntegrationsStorage -case underscore -inpkg
+type IntegrationsStorage interface {
+	LoadIntegrations() ([]*Integration, error)
+	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
+	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
+
 	IsValidPipe(pipeID integrations.PipeID) bool
-}
-
-type ServiceValidator interface {
 	IsValidService(serviceID integrations.ExternalServiceID) bool
-}
-
-type PipeServiceValidator interface {
-	PipeValidator
-	ServiceValidator
 }

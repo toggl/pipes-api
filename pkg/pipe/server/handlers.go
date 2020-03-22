@@ -14,12 +14,12 @@ import (
 )
 
 type Controller struct {
-	pipesSvc  pipe.Service
-	validator pipe.PipeServiceValidator
+	pipesSvc pipe.Service
+	istore   pipe.IntegrationsStorage
 }
 
-func NewController(pipes pipe.Service, validator pipe.PipeServiceValidator) *Controller {
-	return &Controller{pipesSvc: pipes, validator: validator}
+func NewController(pipes pipe.Service, istore pipe.IntegrationsStorage) *Controller {
+	return &Controller{pipesSvc: pipes, istore: istore}
 }
 
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
@@ -290,11 +290,11 @@ func (c *Controller) GetStatusHandler(Request) Response {
 
 func (c *Controller) getIntegrationParams(req Request) (integrations.ExternalServiceID, integrations.PipeID, error) {
 	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
-	if !c.validator.IsValidService(serviceID) {
+	if !c.istore.IsValidService(serviceID) {
 		return "", "", errors.New("missing or invalid service")
 	}
 	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
-	if !c.validator.IsValidPipe(pipeID) {
+	if !c.istore.IsValidPipe(pipeID) {
 		return "", "", errors.New("Missing or invalid pipe")
 	}
 	return serviceID, pipeID, nil
@@ -302,7 +302,7 @@ func (c *Controller) getIntegrationParams(req Request) (integrations.ExternalSer
 
 func (c *Controller) getServiceId(req Request) (integrations.ExternalServiceID, error) {
 	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
-	if !c.validator.IsValidService(serviceID) {
+	if !c.istore.IsValidService(serviceID) {
 		return "", errors.New("missing or invalid service")
 	}
 	return serviceID, nil

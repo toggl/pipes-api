@@ -4,11 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -22,41 +18,10 @@ import (
 
 type PostgresStorage struct {
 	db *sql.DB
-
-	availablePipeType     *regexp.Regexp
-	availableServiceType  *regexp.Regexp
-	availableIntegrations []*pipe.Integration
-	// Stores available authorization types for each service
-	// Map format: map[externalServiceID]authType
-	availableAuthTypes map[integrations.ExternalServiceID]string
-	mx                 sync.RWMutex
 }
 
 func NewPostgresStorage(db *sql.DB) *PostgresStorage {
-	svc := &PostgresStorage{
-		db:                    db,
-		availableIntegrations: []*pipe.Integration{},
-		availableAuthTypes:    map[integrations.ExternalServiceID]string{},
-	}
-
-	return svc
-}
-
-func (ps *PostgresStorage) LoadIntegrationsFromConfig(integrationsConfigPath string) {
-	ps.loadIntegrations(integrationsConfigPath).fillAvailableServices().fillAvailablePipeTypes()
-	ps.mx.RLock()
-	for _, integration := range ps.availableIntegrations {
-		ps.availableAuthTypes[integration.ID] = integration.AuthType
-	}
-	ps.mx.RUnlock()
-}
-
-func (ps *PostgresStorage) IsValidPipe(pipeID integrations.PipeID) bool {
-	return ps.availablePipeType.MatchString(string(pipeID))
-}
-
-func (ps *PostgresStorage) IsValidService(serviceID integrations.ExternalServiceID) bool {
-	return ps.availableServiceType.MatchString(string(serviceID))
+	return &PostgresStorage{db: db}
 }
 
 func (ps *PostgresStorage) IsDown() bool {
@@ -481,18 +446,6 @@ func (ps *PostgresStorage) LoadTasksFor(s integrations.ExternalService) (*toggl.
 	return &tasksResponse, nil
 }
 
-func (ps *PostgresStorage) LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error) {
-	ps.mx.RLock()
-	defer ps.mx.RUnlock()
-	return ps.availableAuthTypes[serviceID], nil
-}
-
-func (ps *PostgresStorage) LoadIntegrations() ([]*pipe.Integration, error) {
-	ps.mx.RLock()
-	defer ps.mx.RUnlock()
-	return ps.availableIntegrations, nil
-}
-
 func (ps *PostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
 	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
 	if err != nil {
@@ -554,41 +507,4 @@ func (ps *PostgresStorage) saveObject(s integrations.ExternalService, pid integr
 		return err
 	}
 	return nil
-}
-
-func (ps *PostgresStorage) SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error {
-	ps.mx.Lock()
-	defer ps.mx.Unlock()
-	ps.availableAuthTypes[serviceID] = authType
-	return nil
-}
-
-func (ps *PostgresStorage) loadIntegrations(integrationsConfigPath string) *PostgresStorage {
-	ps.mx.Lock()
-	defer ps.mx.Unlock()
-	b, err := ioutil.ReadFile(integrationsConfigPath)
-	if err != nil {
-		log.Fatalf("Could not read integrations.json, reason: %v", err)
-	}
-	if err := json.Unmarshal(b, &ps.availableIntegrations); err != nil {
-		log.Fatalf("Could not parse integrations.json, reason: %v", err)
-	}
-	return ps
-}
-
-func (ps *PostgresStorage) fillAvailableServices() *PostgresStorage {
-	ids := make([]string, len(ps.availableIntegrations))
-	for i := range ps.availableIntegrations {
-		ids = append(ids, string(ps.availableIntegrations[i].ID))
-	}
-	ps.availableServiceType = regexp.MustCompile(strings.Join(ids, "|"))
-	return ps
-}
-
-func (ps *PostgresStorage) fillAvailablePipeTypes() *PostgresStorage {
-	ps.mx.Lock()
-	defer ps.mx.Unlock()
-	str := fmt.Sprintf("%s|%s|%s|%s|%s|%s", integrations.UsersPipe, integrations.ProjectsPipe, integrations.TodoListsPipe, integrations.TodosPipe, integrations.TasksPipe, integrations.TimeEntriesPipe)
-	ps.availablePipeType = regexp.MustCompile(str)
-	return ps
 }

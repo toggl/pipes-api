@@ -56,19 +56,20 @@ func main() {
 
 	api := client.NewTogglApiClient(cfg.TogglAPIHost)
 
-	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
 	pipesStore := storage.NewPostgresStorage(db)
-	pipesStore.LoadIntegrationsFromConfig(integrationsConfigPath)
+
+	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
+	integrationsStore := storage.NewFileIntegrationsStorage(integrationsConfigPath)
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
 
-	pipesService := service.NewService(oauthProvider, pipesStore, pipesQueue, api, cfg.PipesAPIHost)
+	pipesService := service.NewService(oauthProvider, pipesStore, integrationsStore, pipesQueue, api, cfg.PipesAPIHost)
 
 	autosync.NewService(pipesQueue, pipesService).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
-		server.NewController(pipesService, pipesStore),
-		server.NewMiddleware(api, pipesStore),
+		server.NewController(pipesService, integrationsStore),
+		server.NewMiddleware(api, integrationsStore),
 	)
 	server.Start(env.Port, router)
 }

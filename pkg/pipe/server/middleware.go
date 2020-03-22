@@ -11,26 +11,26 @@ import (
 )
 
 type Middleware struct {
-	psv pipe.PipeServiceValidator
-	clt pipe.TogglClient
+	istore pipe.IntegrationsStorage
+	clt    pipe.TogglClient
 }
 
-func NewMiddleware(clt pipe.TogglClient, psv pipe.PipeServiceValidator) *Middleware {
+func NewMiddleware(clt pipe.TogglClient, istore pipe.IntegrationsStorage) *Middleware {
 	return &Middleware{
-		psv: psv,
-		clt: clt,
+		istore: istore,
+		clt:    clt,
 	}
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := integrations.ExternalServiceID(mux.Vars(r)["service"])
-		if !mw.psv.IsValidService(serviceID) {
+		if !mw.istore.IsValidService(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := integrations.PipeID(mux.Vars(r)["pipe"])
-		if !mw.psv.IsValidPipe(pipeID) {
+		if !mw.istore.IsValidPipe(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}

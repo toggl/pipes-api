@@ -24,22 +24,24 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Service struct {
-	oauth oauth.Provider
-	toggl pipe.TogglClient
-	store pipe.Storage
-	queue pipe.Queue
+	oauth  oauth.Provider
+	toggl  pipe.TogglClient
+	store  pipe.Storage
+	istore pipe.IntegrationsStorage
+	queue  pipe.Queue
 
 	pipesApiHost string
 	mx           sync.RWMutex
 }
 
-func NewService(oauth oauth.Provider, store pipe.Storage, queue pipe.Queue, toggl pipe.TogglClient, pipesApiHost string) *Service {
+func NewService(oauth oauth.Provider, store pipe.Storage, istore pipe.IntegrationsStorage, queue pipe.Queue, toggl pipe.TogglClient, pipesApiHost string) *Service {
 
 	svc := &Service{
-		toggl: toggl,
-		oauth: oauth,
-		store: store,
-		queue: queue,
+		toggl:  toggl,
+		oauth:  oauth,
+		store:  store,
+		istore: istore,
+		queue:  queue,
 
 		pipesApiHost: pipesApiHost,
 	}
@@ -299,7 +301,7 @@ func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, account
 
 func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, workspaceToken string, params pipe.AuthParams) error {
 	auth := pipe.NewAuthorization(workspaceID, serviceID, workspaceToken)
-	authType, err := svc.store.LoadAuthorizationType(serviceID)
+	authType, err := svc.istore.LoadAuthorizationType(serviceID)
 	if err != nil {
 		return err
 	}
@@ -355,7 +357,7 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 		return nil, err
 	}
 
-	allIntegrations, err := svc.store.LoadIntegrations()
+	allIntegrations, err := svc.istore.LoadIntegrations()
 	if err != nil {
 		return nil, err
 	}
@@ -532,7 +534,7 @@ func (svc *Service) syncTEs(p *pipe.Pipe) {
 }
 
 func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
-	authType, err := svc.store.LoadAuthorizationType(a.ServiceID)
+	authType, err := svc.istore.LoadAuthorizationType(a.ServiceID)
 	if err != nil {
 		return err
 	}
