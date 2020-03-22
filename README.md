@@ -6,6 +6,8 @@ Basically this is just job scheduler with REST-API.
 It schedules job to do synchronization to a third party service.
 Pipes-api will fetch data then send them to pipes endpoints in "Toggl API".
 
+THIS IS REFACTORED VERSION. To look at original version see [legacy](https://github.com/toggl/pipes-api/tree/legacy) branch.
+
 ## Requirements
 
 * [goenv](https://github.com/syndbg/goenv)
