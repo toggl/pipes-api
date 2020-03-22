@@ -9,7 +9,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
@@ -19,14 +19,14 @@ type IntegrationsFileStorage struct {
 	availableIntegrations []*pipe.Integration
 	// Stores available authorization types for each service
 	// Map format: map[externalServiceID]authType
-	availableAuthTypes map[integrations.ExternalServiceID]string
+	availableAuthTypes map[integration.ID]string
 	mx                 sync.RWMutex
 }
 
 func NewIntegrationsFileStorage(integrationsConfigPath string) *IntegrationsFileStorage {
 	svc := &IntegrationsFileStorage{
 		availableIntegrations: []*pipe.Integration{},
-		availableAuthTypes:    map[integrations.ExternalServiceID]string{},
+		availableAuthTypes:    map[integration.ID]string{},
 	}
 	svc.loadIntegrations(integrationsConfigPath).fillAvailableServices().fillAvailablePipeTypes()
 	svc.mx.RLock()
@@ -37,15 +37,15 @@ func NewIntegrationsFileStorage(integrationsConfigPath string) *IntegrationsFile
 	return svc
 }
 
-func (fis *IntegrationsFileStorage) IsValidPipe(pipeID integrations.PipeID) bool {
+func (fis *IntegrationsFileStorage) IsValidPipe(pipeID integration.PipeID) bool {
 	return fis.availablePipeType.MatchString(string(pipeID))
 }
 
-func (fis *IntegrationsFileStorage) IsValidService(serviceID integrations.ExternalServiceID) bool {
+func (fis *IntegrationsFileStorage) IsValidService(serviceID integration.ID) bool {
 	return fis.availableServiceType.MatchString(string(serviceID))
 }
 
-func (fis *IntegrationsFileStorage) LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error) {
+func (fis *IntegrationsFileStorage) LoadAuthorizationType(serviceID integration.ID) (string, error) {
 	fis.mx.RLock()
 	defer fis.mx.RUnlock()
 	return fis.availableAuthTypes[serviceID], nil
@@ -57,7 +57,7 @@ func (fis *IntegrationsFileStorage) LoadIntegrations() ([]*pipe.Integration, err
 	return fis.availableIntegrations, nil
 }
 
-func (fis *IntegrationsFileStorage) SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error {
+func (fis *IntegrationsFileStorage) SaveAuthorizationType(serviceID integration.ID, authType string) error {
 	fis.mx.Lock()
 	defer fis.mx.Unlock()
 	fis.availableAuthTypes[serviceID] = authType
@@ -89,7 +89,7 @@ func (fis *IntegrationsFileStorage) fillAvailableServices() *IntegrationsFileSto
 func (fis *IntegrationsFileStorage) fillAvailablePipeTypes() *IntegrationsFileStorage {
 	fis.mx.Lock()
 	defer fis.mx.Unlock()
-	str := fmt.Sprintf("%s|%s|%s|%s|%s|%s", integrations.UsersPipe, integrations.ProjectsPipe, integrations.TodoListsPipe, integrations.TodosPipe, integrations.TasksPipe, integrations.TimeEntriesPipe)
+	str := fmt.Sprintf("%s|%s|%s|%s|%s|%s", integration.UsersPipe, integration.ProjectsPipe, integration.TodoListsPipe, integration.TodosPipe, integration.TasksPipe, integration.TimeEntriesPipe)
 	fis.availablePipeType = regexp.MustCompile(str)
 	return fis
 }

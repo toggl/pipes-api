@@ -9,7 +9,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
@@ -119,7 +119,7 @@ func (ps *PostgresStorage) IsDown() bool {
 	return false
 }
 
-func (ps *PostgresStorage) LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Pipe, error) {
+func (ps *PostgresStorage) LoadPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*pipe.Pipe, error) {
 	key := pipe.PipesKey(sid, pid)
 	return ps.loadPipeWithKey(workspaceID, key)
 }
@@ -183,7 +183,7 @@ func (ps *PostgresStorage) DeleteIDMappings(workspaceID int, pipeConnectionKey, 
 	return tx.Commit()
 }
 
-func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*pipe.Status, error) {
+func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*pipe.Status, error) {
 	key := pipe.PipesKey(sid, pid)
 	rows, err := ps.db.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
@@ -207,7 +207,7 @@ func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integrations.Exte
 	return &pipeStatus, nil
 }
 
-func (ps *PostgresStorage) DeletePipesByWorkspaceIDServiceID(workspaceID int, serviceID integrations.ExternalServiceID) error {
+func (ps *PostgresStorage) DeletePipesByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
@@ -220,7 +220,7 @@ func (ps *PostgresStorage) SaveAuthorization(a *pipe.Authorization) error {
 	return nil
 }
 
-func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) (*pipe.Authorization, error) {
+func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID) (*pipe.Authorization, error) {
 	rows, err := ps.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return nil, err
@@ -237,22 +237,22 @@ func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID 
 	return &a, nil
 }
 
-func (ps *PostgresStorage) DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error {
+func (ps *PostgresStorage) DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error {
 	_, err := ps.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
 
 // LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
 // Map format: map[externalServiceID]isAuthorized
-func (ps *PostgresStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error) {
-	authorizations := make(map[integrations.ExternalServiceID]bool)
+func (ps *PostgresStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error) {
+	authorizations := make(map[integration.ID]bool)
 	rows, err := ps.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return authorizations, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var service integrations.ExternalServiceID
+		var service integration.ID
 		if err := rows.Scan(&service); err != nil {
 			return authorizations, err
 		}
@@ -414,6 +414,6 @@ func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
 	}
 	p.Key = key
 	p.WorkspaceID = wid
-	p.ServiceID = integrations.ExternalServiceID(strings.Split(key, ":")[0])
+	p.ServiceID = integration.ID(strings.Split(key, ":")[0])
 	return nil
 }

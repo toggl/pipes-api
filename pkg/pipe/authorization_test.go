@@ -7,13 +7,13 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 func TestNewAuthorization(t *testing.T) {
-	a := NewAuthorization(1, integrations.GitHub, "")
+	a := NewAuthorization(1, integration.GitHub, "")
 	assert.Equal(t, 1, a.WorkspaceID)
-	assert.Equal(t, integrations.GitHub, a.ServiceID)
+	assert.Equal(t, integration.GitHub, a.ServiceID)
 	assert.NotNil(t, a.Data)
 }
 

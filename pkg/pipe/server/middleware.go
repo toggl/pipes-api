@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
@@ -24,12 +24,12 @@ func NewMiddleware(clt pipe.TogglClient, istore pipe.IntegrationsStorage) *Middl
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		serviceID := integrations.ExternalServiceID(mux.Vars(r)["service"])
+		serviceID := integration.ID(mux.Vars(r)["service"])
 		if !mw.istore.IsValidService(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
-		pipeID := integrations.PipeID(mux.Vars(r)["pipe"])
+		pipeID := integration.PipeID(mux.Vars(r)["pipe"])
 		if !mw.istore.IsValidPipe(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return

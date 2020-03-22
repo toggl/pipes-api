@@ -1,4 +1,4 @@
-package integrations
+package integration
 
 import (
 	"time"
@@ -6,27 +6,50 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-// ExternalService interface for external integrations
+type ID string
+
+const (
+	BaseCamp   ID = "basecamp"
+	FreshBooks ID = "freshbooks"
+	TeamWeek   ID = "teamweek"
+	Asana      ID = "asana"
+	GitHub     ID = "github"
+)
+
+type PipeID string
+
+const (
+	UsersPipe       PipeID = "users"
+	ClientsPipe     PipeID = "clients"
+	ProjectsPipe    PipeID = "projects"
+	TasksPipe       PipeID = "tasks"
+	TodoListsPipe   PipeID = "todolists"
+	TodosPipe       PipeID = "todos"
+	TimeEntriesPipe PipeID = "timeentries"
+	AccountsPipe    PipeID = "accounts"
+)
+
+// Integration interface for external integrations
 // Example implementation: github.go
-//go:generate mockery -name ExternalService -case underscore -inpkg
-type ExternalService interface {
+//go:generate mockery -name Integration -case underscore -inpkg
+type Integration interface {
 	// ID of the service
-	ID() ExternalServiceID
+	ID() ID
 
 	// WorkspaceID helper function, should just return workspaceID
 	GetWorkspaceID() int
 
 	// setSince takes the provided time.Time
-	// and adds it to ExternalService struct. This can be used
+	// and adds it to Integration struct. This can be used
 	// to fetch just the modified data from external services.
 	SetSince(*time.Time)
 
-	// setParams takes the necessary ExternalService params
+	// setParams takes the necessary Integration params
 	// (for example the selected account id) as JSON
-	// and adds them to ExternalService struct.
+	// and adds them to Integration struct.
 	SetParams([]byte) error
 
-	// SetAuthData adds the provided oauth token to ExternalService struct
+	// SetAuthData adds the provided oauth token to Integration struct
 	SetAuthData([]byte) error
 
 	// keyFor should provide unique key for object type
@@ -62,26 +85,3 @@ type ExternalService interface {
 	// https://github.com/toggl/pipes-api/blob/master/model.go#L47-L61
 	ExportTimeEntry(*toggl.TimeEntry) (int, error)
 }
-
-type ExternalServiceID string
-
-const (
-	BaseCamp   ExternalServiceID = "basecamp"
-	FreshBooks ExternalServiceID = "freshbooks"
-	TeamWeek   ExternalServiceID = "teamweek"
-	Asana      ExternalServiceID = "asana"
-	GitHub     ExternalServiceID = "github"
-)
-
-type PipeID string
-
-const (
-	UsersPipe       PipeID = "users"
-	ClientsPipe     PipeID = "clients"
-	ProjectsPipe    PipeID = "projects"
-	TasksPipe       PipeID = "tasks"
-	TodoListsPipe   PipeID = "todolists"
-	TodosPipe       PipeID = "todos"
-	TimeEntriesPipe PipeID = "timeentries"
-	AccountsPipe    PipeID = "accounts"
-)

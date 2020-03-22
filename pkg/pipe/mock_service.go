@@ -2,7 +2,7 @@
 
 package pipe
 
-import integrations "github.com/toggl/pipes-api/pkg/integrations"
+import integration "github.com/toggl/pipes-api/pkg/integration"
 import mock "github.com/stretchr/testify/mock"
 import toggl "github.com/toggl/pipes-api/pkg/toggl"
 
@@ -12,11 +12,11 @@ type MockService struct {
 }
 
 // ClearIDMappings provides a mock function with given fields: workspaceID, sid, pid
-func (_m *MockService) ClearIDMappings(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error {
+func (_m *MockService) ClearIDMappings(workspaceID int, sid integration.ID, pid integration.PipeID) error {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID) error); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		r0 = ret.Error(0)
@@ -26,11 +26,11 @@ func (_m *MockService) ClearIDMappings(workspaceID int, sid integrations.Externa
 }
 
 // CreateAuthorization provides a mock function with given fields: workspaceID, sid, workspaceToken, params
-func (_m *MockService) CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, workspaceToken string, params AuthParams) error {
+func (_m *MockService) CreateAuthorization(workspaceID int, sid integration.ID, workspaceToken string, params AuthParams) error {
 	ret := _m.Called(workspaceID, sid, workspaceToken, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, string, AuthParams) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, string, AuthParams) error); ok {
 		r0 = rf(workspaceID, sid, workspaceToken, params)
 	} else {
 		r0 = ret.Error(0)
@@ -40,11 +40,11 @@ func (_m *MockService) CreateAuthorization(workspaceID int, sid integrations.Ext
 }
 
 // CreatePipe provides a mock function with given fields: workspaceID, sid, pid, params
-func (_m *MockService) CreatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error {
+func (_m *MockService) CreatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID, []byte) error); ok {
 		r0 = rf(workspaceID, sid, pid, params)
 	} else {
 		r0 = ret.Error(0)
@@ -54,11 +54,11 @@ func (_m *MockService) CreatePipe(workspaceID int, sid integrations.ExternalServ
 }
 
 // DeleteAuthorization provides a mock function with given fields: workspaceID, sid
-func (_m *MockService) DeleteAuthorization(workspaceID int, sid integrations.ExternalServiceID) error {
+func (_m *MockService) DeleteAuthorization(workspaceID int, sid integration.ID) error {
 	ret := _m.Called(workspaceID, sid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID) error); ok {
 		r0 = rf(workspaceID, sid)
 	} else {
 		r0 = ret.Error(0)
@@ -68,11 +68,11 @@ func (_m *MockService) DeleteAuthorization(workspaceID int, sid integrations.Ext
 }
 
 // DeletePipe provides a mock function with given fields: workspaceID, sid, pid
-func (_m *MockService) DeletePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error {
+func (_m *MockService) DeletePipe(workspaceID int, sid integration.ID, pid integration.PipeID) error {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID) error); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		r0 = ret.Error(0)
@@ -82,18 +82,18 @@ func (_m *MockService) DeletePipe(workspaceID int, sid integrations.ExternalServ
 }
 
 // GetAuthURL provides a mock function with given fields: sid, accountName, callbackURL
-func (_m *MockService) GetAuthURL(sid integrations.ExternalServiceID, accountName string, callbackURL string) (string, error) {
+func (_m *MockService) GetAuthURL(sid integration.ID, accountName string, callbackURL string) (string, error) {
 	ret := _m.Called(sid, accountName, callbackURL)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(integrations.ExternalServiceID, string, string) string); ok {
+	if rf, ok := ret.Get(0).(func(integration.ID, string, string) string); ok {
 		r0 = rf(sid, accountName, callbackURL)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.ExternalServiceID, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(integration.ID, string, string) error); ok {
 		r1 = rf(sid, accountName, callbackURL)
 	} else {
 		r1 = ret.Error(1)
@@ -126,11 +126,11 @@ func (_m *MockService) GetIntegrations(workspaceID int) ([]Integration, error) {
 }
 
 // GetPipe provides a mock function with given fields: workspaceID, sid, pid
-func (_m *MockService) GetPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error) {
+func (_m *MockService) GetPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error) {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 *Pipe
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID) *Pipe); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID) *Pipe); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		if ret.Get(0) != nil {
@@ -139,7 +139,7 @@ func (_m *MockService) GetPipe(workspaceID int, sid integrations.ExternalService
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, integrations.ExternalServiceID, integrations.PipeID) error); ok {
+	if rf, ok := ret.Get(1).(func(int, integration.ID, integration.PipeID) error); ok {
 		r1 = rf(workspaceID, sid, pid)
 	} else {
 		r1 = ret.Error(1)
@@ -149,11 +149,11 @@ func (_m *MockService) GetPipe(workspaceID int, sid integrations.ExternalService
 }
 
 // GetServiceAccounts provides a mock function with given fields: workspaceID, sid, forceImport
-func (_m *MockService) GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error) {
+func (_m *MockService) GetServiceAccounts(workspaceID int, sid integration.ID, forceImport bool) (*toggl.AccountsResponse, error) {
 	ret := _m.Called(workspaceID, sid, forceImport)
 
 	var r0 *toggl.AccountsResponse
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, bool) *toggl.AccountsResponse); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, bool) *toggl.AccountsResponse); ok {
 		r0 = rf(workspaceID, sid, forceImport)
 	} else {
 		if ret.Get(0) != nil {
@@ -162,7 +162,7 @@ func (_m *MockService) GetServiceAccounts(workspaceID int, sid integrations.Exte
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, integrations.ExternalServiceID, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(int, integration.ID, bool) error); ok {
 		r1 = rf(workspaceID, sid, forceImport)
 	} else {
 		r1 = ret.Error(1)
@@ -172,18 +172,18 @@ func (_m *MockService) GetServiceAccounts(workspaceID int, sid integrations.Exte
 }
 
 // GetServicePipeLog provides a mock function with given fields: workspaceID, sid, pid
-func (_m *MockService) GetServicePipeLog(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (string, error) {
+func (_m *MockService) GetServicePipeLog(workspaceID int, sid integration.ID, pid integration.PipeID) (string, error) {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID) string); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID) string); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, integrations.ExternalServiceID, integrations.PipeID) error); ok {
+	if rf, ok := ret.Get(1).(func(int, integration.ID, integration.PipeID) error); ok {
 		r1 = rf(workspaceID, sid, pid)
 	} else {
 		r1 = ret.Error(1)
@@ -193,11 +193,11 @@ func (_m *MockService) GetServicePipeLog(workspaceID int, sid integrations.Exter
 }
 
 // GetServiceUsers provides a mock function with given fields: workspaceID, sid, forceImport
-func (_m *MockService) GetServiceUsers(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error) {
+func (_m *MockService) GetServiceUsers(workspaceID int, sid integration.ID, forceImport bool) (*toggl.UsersResponse, error) {
 	ret := _m.Called(workspaceID, sid, forceImport)
 
 	var r0 *toggl.UsersResponse
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, bool) *toggl.UsersResponse); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, bool) *toggl.UsersResponse); ok {
 		r0 = rf(workspaceID, sid, forceImport)
 	} else {
 		if ret.Get(0) != nil {
@@ -206,7 +206,7 @@ func (_m *MockService) GetServiceUsers(workspaceID int, sid integrations.Externa
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, integrations.ExternalServiceID, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(int, integration.ID, bool) error); ok {
 		r1 = rf(workspaceID, sid, forceImport)
 	} else {
 		r1 = ret.Error(1)
@@ -237,11 +237,11 @@ func (_m *MockService) Run(_a0 *Pipe) {
 }
 
 // RunPipe provides a mock function with given fields: workspaceID, sid, pid, usersSelector
-func (_m *MockService) RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, usersSelector []byte) error {
+func (_m *MockService) RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, usersSelector)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID, []byte) error); ok {
 		r0 = rf(workspaceID, sid, pid, usersSelector)
 	} else {
 		r0 = ret.Error(0)
@@ -251,11 +251,11 @@ func (_m *MockService) RunPipe(workspaceID int, sid integrations.ExternalService
 }
 
 // UpdatePipe provides a mock function with given fields: workspaceID, sid, pid, params
-func (_m *MockService) UpdatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error {
+func (_m *MockService) UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integrations.ExternalServiceID, integrations.PipeID, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID, []byte) error); ok {
 		r0 = rf(workspaceID, sid, pid, params)
 	} else {
 		r0 = ret.Error(0)

@@ -6,7 +6,7 @@ import (
 	goauth2 "code.google.com/p/goauth2/oauth"
 	"github.com/tambet/oauthplain"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 const (
@@ -16,14 +16,14 @@ const (
 
 type Authorization struct {
 	WorkspaceID    int
-	ServiceID      integrations.ExternalServiceID
+	ServiceID      integration.ID
 	WorkspaceToken string
 	// Data can store 2 different structures encoded to JSON depends on Authorization type.
 	// For oAuth v1 it will store "*oauthplain.Token" and for oAuth v2 it will store "*goauth2.Token".
 	Data []byte
 }
 
-func NewAuthorization(workspaceID int, id integrations.ExternalServiceID, workspaceToken string) *Authorization {
+func NewAuthorization(workspaceID int, id integration.ID, workspaceToken string) *Authorization {
 	return &Authorization{
 		WorkspaceID:    workspaceID,
 		ServiceID:      id,

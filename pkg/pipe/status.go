@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 const (
@@ -22,14 +22,14 @@ type Status struct {
 	ObjectCounts  []string `json:"object_counts,omitempty"`
 	Notifications []string `json:"notifications,omitempty"`
 
-	WorkspaceID  int                            `json:"-"`
-	ServiceID    integrations.ExternalServiceID `json:"-"`
-	PipeID       integrations.PipeID            `json:"-"`
-	Key          string                         `json:"-"`
-	PipesApiHost string                         `json:"-"`
+	WorkspaceID  int                `json:"-"`
+	ServiceID    integration.ID     `json:"-"`
+	PipeID       integration.PipeID `json:"-"`
+	Key          string             `json:"-"`
+	PipesApiHost string             `json:"-"`
 }
 
-func NewPipeStatus(workspaceID int, externalServiceID integrations.ExternalServiceID, pipeID integrations.PipeID, pipesApiHost string) *Status {
+func NewPipeStatus(workspaceID int, externalServiceID integration.ID, pipeID integration.PipeID, pipesApiHost string) *Status {
 	return &Status{
 		Status:       StatusRunning,
 		SyncDate:     time.Now().Format(time.RFC3339),
@@ -46,7 +46,7 @@ func (p *Status) AddError(err error) {
 	p.Message = err.Error()
 }
 
-func (p *Status) Complete(objType integrations.PipeID, notifications []string, objCount int) {
+func (p *Status) Complete(objType integration.PipeID, notifications []string, objCount int) {
 	if p.Status == StatusError {
 		return
 	}

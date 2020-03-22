@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
@@ -57,12 +57,12 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveObject_LoadObject() {
 	b1, err := json.Marshal(o)
 	ts.NoError(err)
 
-	svc := pipe.NewExternalService(integrations.GitHub, 1)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
 
-	err = s.saveObject(svc, integrations.ProjectsPipe, b1)
+	err = s.saveObject(svc, integration.ProjectsPipe, b1)
 	ts.NoError(err)
 
-	b, err := s.loadObject(svc, integrations.ProjectsPipe)
+	b, err := s.loadObject(svc, integration.ProjectsPipe)
 	ts.NoError(err)
 
 	ts.Equal(`{"Name":"Test","Value":"Test2"}`, string(b))
@@ -70,7 +70,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveObject_LoadObject() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_ClearImportFor() {
 	s := NewImportsPostgresStorage(ts.db)
-	svc := pipe.NewExternalService(integrations.GitHub, 1)
+	svc := pipe.NewExternalService(integration.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
 }

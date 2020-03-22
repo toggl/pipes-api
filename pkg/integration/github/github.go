@@ -10,7 +10,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -19,15 +19,15 @@ type Service struct {
 	token       oauth.Token
 }
 
-func (s *Service) ID() integrations.ExternalServiceID {
-	return integrations.GitHub
+func (s *Service) ID() integration.ID {
+	return integration.GitHub
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integrations.PipeID) string {
+func (s *Service) KeyFor(objectType integration.PipeID) string {
 	return fmt.Sprintf("github:%s", objectType)
 }
 

@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -72,7 +72,7 @@ func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (c *TogglApiClient) PostClients(clientsPipeID integrations.PipeID, clients interface{}) (*toggl.ClientsImport, error) {
+func (c *TogglApiClient) PostClients(clientsPipeID integration.PipeID, clients interface{}) (*toggl.ClientsImport, error) {
 	b, err := c.postPipesAPI(clientsPipeID, clients)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (c *TogglApiClient) PostClients(clientsPipeID integrations.PipeID, clients 
 	return clientsImport, nil
 }
 
-func (c *TogglApiClient) PostProjects(projectsPipeID integrations.PipeID, projects interface{}) (*toggl.ProjectsImport, error) {
+func (c *TogglApiClient) PostProjects(projectsPipeID integration.PipeID, projects interface{}) (*toggl.ProjectsImport, error) {
 	b, err := c.postPipesAPI(projectsPipeID, projects)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (c *TogglApiClient) PostProjects(projectsPipeID integrations.PipeID, projec
 	return projectsImport, nil
 }
 
-func (c *TogglApiClient) PostTasks(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
+func (c *TogglApiClient) PostTasks(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func (c *TogglApiClient) PostTasks(tasksPipeID integrations.PipeID, tasks interf
 	return tasksImport, nil
 }
 
-func (c *TogglApiClient) PostTodoLists(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
+func (c *TogglApiClient) PostTodoLists(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (c *TogglApiClient) PostTodoLists(tasksPipeID integrations.PipeID, tasks in
 	return tasksImport, nil
 }
 
-func (c *TogglApiClient) PostUsers(usersPipeID integrations.PipeID, users interface{}) (*toggl.UsersImport, error) {
+func (c *TogglApiClient) PostUsers(usersPipeID integration.PipeID, users interface{}) (*toggl.UsersImport, error) {
 	b, err := c.postPipesAPI(usersPipeID, users)
 	if err != nil {
 		return nil, err
@@ -186,7 +186,7 @@ func (c *TogglApiClient) Ping() error {
 	return nil
 }
 
-func (c *TogglApiClient) postPipesAPI(pipeID integrations.PipeID, payload interface{}) ([]byte, error) {
+func (c *TogglApiClient) postPipesAPI(pipeID integration.PipeID, payload interface{}) ([]byte, error) {
 	start := time.Now()
 	url := fmt.Sprintf("%s/api/pipes/%s", c.togglApiUrl, pipeID)
 	b, err := json.Marshal(payload)

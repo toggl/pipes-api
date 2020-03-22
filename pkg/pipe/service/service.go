@@ -13,7 +13,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/tambet/oauthplain"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -70,7 +70,7 @@ func (svc *Service) Ready() []error {
 	return errs
 }
 
-func (svc *Service) GetPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (*pipe.Pipe, error) {
+func (svc *Service) GetPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) (*pipe.Pipe, error) {
 	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (svc *Service) GetPipe(workspaceID int, serviceID integrations.ExternalServ
 	return p, nil
 }
 
-func (svc *Service) CreatePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error {
+func (svc *Service) CreatePipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, params []byte) error {
 	p := pipe.NewPipe(workspaceID, serviceID, pipeID)
 
 	service := pipe.NewExternalService(serviceID, workspaceID)
@@ -103,7 +103,7 @@ func (svc *Service) CreatePipe(workspaceID int, serviceID integrations.ExternalS
 	return nil
 }
 
-func (svc *Service) UpdatePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, params []byte) error {
+func (svc *Service) UpdatePipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, params []byte) error {
 	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
@@ -120,7 +120,7 @@ func (svc *Service) UpdatePipe(workspaceID int, serviceID integrations.ExternalS
 	return nil
 }
 
-func (svc *Service) DeletePipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) error {
+func (svc *Service) DeletePipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) error {
 	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
@@ -136,7 +136,7 @@ func (svc *Service) DeletePipe(workspaceID int, serviceID integrations.ExternalS
 
 var ErrNoContent = errors.New("no content")
 
-func (svc *Service) GetServicePipeLog(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) (string, error) {
+func (svc *Service) GetServicePipeLog(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) (string, error) {
 	pipeStatus, err := svc.store.LoadPipeStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return "", err
@@ -148,7 +148,7 @@ func (svc *Service) GetServicePipeLog(workspaceID int, serviceID integrations.Ex
 }
 
 // TODO: Remove (Probably dead method).
-func (svc *Service) ClearIDMappings(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID) error {
+func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) error {
 	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integrations.Exte
 	return nil
 }
 
-func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error) {
+func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, forceImport bool) (*toggl.UsersResponse, error) {
 	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
 	if err != nil {
@@ -189,7 +189,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 		return nil, err
 	}
 
-	usersPipe, err := svc.store.LoadPipe(workspaceID, serviceID, integrations.UsersPipe)
+	usersPipe, err := svc.store.LoadPipe(workspaceID, serviceID, integration.UsersPipe)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integrations.Exte
 	return usersResponse, nil
 }
 
-func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error) {
+func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integration.ID, forceImport bool) (*toggl.AccountsResponse, error) {
 	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
 	if err != nil {
@@ -266,7 +266,7 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integrations.E
 	return accountsResponse, nil
 }
 
-func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, accountName, callbackURL string) (string, error) {
+func (svc *Service) GetAuthURL(serviceID integration.ID, accountName, callbackURL string) (string, error) {
 	config, found := svc.oauth.OAuth1Configs(serviceID)
 	if !found {
 		return "", LoadError{errors.New("env OAuth config not found")}
@@ -281,7 +281,7 @@ func (svc *Service) GetAuthURL(serviceID integrations.ExternalServiceID, account
 	return token.AuthorizeUrl, nil
 }
 
-func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.ExternalServiceID, workspaceToken string, params pipe.AuthParams) error {
+func (svc *Service) CreateAuthorization(workspaceID int, serviceID integration.ID, workspaceToken string, params pipe.AuthParams) error {
 	auth := pipe.NewAuthorization(workspaceID, serviceID, workspaceToken)
 	authType, err := svc.integrationsStore.LoadAuthorizationType(serviceID)
 	if err != nil {
@@ -315,7 +315,7 @@ func (svc *Service) CreateAuthorization(workspaceID int, serviceID integrations.
 	return nil
 }
 
-func (svc *Service) DeleteAuthorization(workspaceID int, serviceID integrations.ExternalServiceID) error {
+func (svc *Service) DeleteAuthorization(workspaceID int, serviceID integration.ID) error {
 	if err := svc.store.DeleteAuthorization(workspaceID, serviceID); err != nil {
 		return err
 	}
@@ -368,7 +368,7 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 	return igr, nil
 }
 
-func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServiceID, pipeID integrations.PipeID, usersSelector []byte) error {
+func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector []byte) error {
 	// make sure no race condition on fetching workspace lock
 	postPipeRunLock.Lock()
 	wsLock, exists := postPipeRunWorkspaceLock[workspaceID]
@@ -386,7 +386,7 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integrations.ExternalServ
 		return ErrPipeNotConfigured
 	}
 
-	if p.ID == integrations.UsersPipe {
+	if p.ID == integration.UsersPipe {
 		p.UsersSelector = usersSelector
 		if len(p.UsersSelector) == 0 {
 			return SetParamsError{errors.New("Missing request payload")}
@@ -447,15 +447,15 @@ func (svc *Service) Run(p *pipe.Pipe) {
 	svc.toggl.WithAuthToken(auth.WorkspaceToken)
 
 	switch p.ID {
-	case integrations.UsersPipe:
+	case integration.UsersPipe:
 		svc.syncUsers(p)
-	case integrations.ProjectsPipe:
+	case integration.ProjectsPipe:
 		svc.syncProjects(p)
-	case integrations.TodoListsPipe:
+	case integration.TodoListsPipe:
 		svc.syncTodoLists(p)
-	case integrations.TodosPipe, integrations.TasksPipe:
+	case integration.TodosPipe, integration.TasksPipe:
 		svc.syncTasks(p)
-	case integrations.TimeEntriesPipe:
+	case integration.TimeEntriesPipe:
 		svc.syncTEs(p)
 	default:
 		bugsnag.Notify(fmt.Errorf("unrecognized pipeID: %s", p.ID))
@@ -626,12 +626,12 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		}
 	}
 
-	usersImport, err := svc.toggl.PostUsers(integrations.UsersPipe, toggl.UsersRequest{Users: users})
+	usersImport, err := svc.toggl.PostUsers(integration.UsersPipe, toggl.UsersRequest{Users: users})
 	if err != nil {
 		return err
 	}
 
-	idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe))
+	idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe))
 	if err != nil {
 		return err
 	}
@@ -642,7 +642,7 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		return err
 	}
 
-	p.PipeStatus.Complete(integrations.UsersPipe, usersImport.Notifications, usersImport.Count())
+	p.PipeStatus.Complete(integration.UsersPipe, usersImport.Notifications, usersImport.Count())
 	return nil
 }
 
@@ -672,12 +672,12 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 	if len(clientsResponse.Clients) == 0 {
 		return nil
 	}
-	clientsImport, err := svc.toggl.PostClients(integrations.ClientsPipe, clients)
+	clientsImport, err := svc.toggl.PostClients(integration.ClientsPipe, clients)
 	if err != nil {
 		return err
 	}
 	var idMapping *pipe.IDMapping
-	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe)); err != nil {
+	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe)); err != nil {
 		return err
 	}
 	for _, client := range clientsImport.Clients {
@@ -686,7 +686,7 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 	if err := svc.store.SaveIDMapping(idMapping); err != nil {
 		return err
 	}
-	p.PipeStatus.Complete(integrations.ClientsPipe, clientsImport.Notifications, clientsImport.Count())
+	p.PipeStatus.Complete(integration.ClientsPipe, clientsImport.Notifications, clientsImport.Count())
 	return nil
 }
 
@@ -714,12 +714,12 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 	projects := toggl.ProjectRequest{
 		Projects: projectsResponse.Projects,
 	}
-	projectsImport, err := svc.toggl.PostProjects(integrations.ProjectsPipe, projects)
+	projectsImport, err := svc.toggl.PostProjects(integration.ProjectsPipe, projects)
 	if err != nil {
 		return err
 	}
 	var idMapping *pipe.IDMapping
-	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		return err
 	}
 	for _, project := range projectsImport.Projects {
@@ -728,7 +728,7 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 	if err := svc.store.SaveIDMapping(idMapping); err != nil {
 		return err
 	}
-	p.PipeStatus.Complete(integrations.ProjectsPipe, projectsImport.Notifications, projectsImport.Count())
+	p.PipeStatus.Complete(integration.ProjectsPipe, projectsImport.Notifications, projectsImport.Count())
 	return nil
 }
 
@@ -760,11 +760,11 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		tasksImport, err := svc.toggl.PostTodoLists(integrations.TasksPipe, tr) // TODO: WTF?? Why toggl.TasksPipe
+		tasksImport, err := svc.toggl.PostTodoLists(integration.TasksPipe, tr) // TODO: WTF?? Why toggl.TasksPipe
 		if err != nil {
 			return err
 		}
-		idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.TodoListsPipe))
+		idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe))
 		if err != nil {
 			return err
 		}
@@ -777,7 +777,7 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 		notifications = append(notifications, tasksImport.Notifications...)
 		count += tasksImport.Count()
 	}
-	p.PipeStatus.Complete(integrations.TodoListsPipe, notifications, count)
+	p.PipeStatus.Complete(integration.TodoListsPipe, notifications, count)
 	return nil
 }
 
@@ -808,11 +808,11 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		tasksImport, err := svc.toggl.PostTasks(integrations.TasksPipe, tr)
+		tasksImport, err := svc.toggl.PostTasks(integration.TasksPipe, tr)
 		if err != nil {
 			return err
 		}
-		idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe))
+		idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe))
 		if err != nil {
 			return err
 		}
@@ -829,23 +829,23 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 	return nil
 }
 
-func (svc *Service) postTimeEntries(p *pipe.Pipe, service integrations.ExternalService) error {
-	usersIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe))
+func (svc *Service) postTimeEntries(p *pipe.Pipe, service integration.Integration) error {
+	usersIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe))
 	if err != nil {
 		return err
 	}
 
-	tasksIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe))
+	tasksIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe))
 	if err != nil {
 		return err
 	}
 
-	projectsIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe))
+	projectsIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe))
 	if err != nil {
 		return err
 	}
 
-	entriesIDMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.TimeEntriesPipe))
+	entriesIDMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TimeEntriesPipe))
 	if err != nil {
 		return err
 	}
@@ -930,7 +930,7 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 		}
 
 		if err := svc.importsStore.SaveUsersFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.UsersPipe), err)
+			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe), err)
 			return
 		}
 	}()
@@ -972,7 +972,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 		}
 
 		if err := svc.importsStore.SaveClientsFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe), err)
+			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe), err)
 			return
 		}
 	}()
@@ -980,7 +980,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	clientsIDMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe))
+	clientsIDMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe))
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -1011,7 +1011,7 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 		}
 
 		if err := svc.importsStore.SaveProjectsFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe), err)
+			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe), err)
 			return
 		}
 	}()
@@ -1047,11 +1047,11 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 	response.Projects = trimSpacesFromName(projects)
 
 	var clientsIDMapping, projectsIDMapping *pipe.IDMapping
-	if clientsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ClientsPipe)); err != nil {
+	if clientsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1084,7 +1084,7 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 		}
 
 		if err := svc.importsStore.SaveTodoListsFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.TodoListsPipe), err)
+			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe), err)
 			return
 		}
 	}()
@@ -1118,11 +1118,11 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 
 	var projectsIDMapping, taskIDMapping *pipe.IDMapping
 
-	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.TodoListsPipe)); err != nil {
+	if taskIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1159,7 +1159,7 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 		}
 
 		if err := svc.importsStore.SaveTasksFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe), err)
+			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe), err)
 			return
 		}
 	}()
@@ -1193,11 +1193,11 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 	}
 	var projectsIDMapping, taskIDMapping *pipe.IDMapping
 
-	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integrations.TasksPipe)); err != nil {
+	if taskIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}

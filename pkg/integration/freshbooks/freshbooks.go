@@ -9,7 +9,7 @@ import (
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -19,15 +19,15 @@ type Service struct {
 	token       oauthplain.Token
 }
 
-func (s *Service) ID() integrations.ExternalServiceID {
-	return integrations.FreshBooks
+func (s *Service) ID() integration.ID {
+	return integration.FreshBooks
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integrations.PipeID) string {
+func (s *Service) KeyFor(objectType integration.PipeID) string {
 	return fmt.Sprintf("freshbooks:%s", objectType)
 }
 

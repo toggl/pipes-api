@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/pipe/service"
 )
@@ -288,20 +288,20 @@ func (c *Controller) GetStatusHandler(Request) Response {
 	return ok(map[string]string{"status": "OK"})
 }
 
-func (c *Controller) getIntegrationParams(req Request) (integrations.ExternalServiceID, integrations.PipeID, error) {
-	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
+func (c *Controller) getIntegrationParams(req Request) (integration.ID, integration.PipeID, error) {
+	serviceID := integration.ID(mux.Vars(req.r)["service"])
 	if !c.istore.IsValidService(serviceID) {
 		return "", "", errors.New("missing or invalid service")
 	}
-	pipeID := integrations.PipeID(mux.Vars(req.r)["pipe"])
+	pipeID := integration.PipeID(mux.Vars(req.r)["pipe"])
 	if !c.istore.IsValidPipe(pipeID) {
 		return "", "", errors.New("Missing or invalid pipe")
 	}
 	return serviceID, pipeID, nil
 }
 
-func (c *Controller) getServiceId(req Request) (integrations.ExternalServiceID, error) {
-	serviceID := integrations.ExternalServiceID(mux.Vars(req.r)["service"])
+func (c *Controller) getServiceId(req Request) (integration.ID, error) {
+	serviceID := integration.ID(mux.Vars(req.r)["service"])
 	if !c.istore.IsValidService(serviceID) {
 		return "", errors.New("missing or invalid service")
 	}

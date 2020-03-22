@@ -12,7 +12,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/range-labs/go-asana/asana"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -28,15 +28,15 @@ type AsanaParams struct {
 	AccountID int64 `json:"account_id"`
 }
 
-func (s *Service) ID() integrations.ExternalServiceID {
-	return integrations.Asana
+func (s *Service) ID() integration.ID {
+	return integration.Asana
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integrations.PipeID) string {
+func (s *Service) KeyFor(objectType integration.PipeID) string {
 	if s.AsanaParams == nil {
 		return fmt.Sprintf("asana:account:%s", objectType)
 	}

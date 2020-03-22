@@ -2,7 +2,7 @@
 
 package pipe
 
-import integrations "github.com/toggl/pipes-api/pkg/integrations"
+import integration "github.com/toggl/pipes-api/pkg/integration"
 import mock "github.com/stretchr/testify/mock"
 import time "time"
 import toggl "github.com/toggl/pipes-api/pkg/toggl"
@@ -94,11 +94,11 @@ func (_m *MockTogglClient) Ping() error {
 }
 
 // PostClients provides a mock function with given fields: clientsPipeID, clients
-func (_m *MockTogglClient) PostClients(clientsPipeID integrations.PipeID, clients interface{}) (*toggl.ClientsImport, error) {
+func (_m *MockTogglClient) PostClients(clientsPipeID integration.PipeID, clients interface{}) (*toggl.ClientsImport, error) {
 	ret := _m.Called(clientsPipeID, clients)
 
 	var r0 *toggl.ClientsImport
-	if rf, ok := ret.Get(0).(func(integrations.PipeID, interface{}) *toggl.ClientsImport); ok {
+	if rf, ok := ret.Get(0).(func(integration.PipeID, interface{}) *toggl.ClientsImport); ok {
 		r0 = rf(clientsPipeID, clients)
 	} else {
 		if ret.Get(0) != nil {
@@ -107,7 +107,7 @@ func (_m *MockTogglClient) PostClients(clientsPipeID integrations.PipeID, client
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.PipeID, interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(integration.PipeID, interface{}) error); ok {
 		r1 = rf(clientsPipeID, clients)
 	} else {
 		r1 = ret.Error(1)
@@ -117,11 +117,11 @@ func (_m *MockTogglClient) PostClients(clientsPipeID integrations.PipeID, client
 }
 
 // PostProjects provides a mock function with given fields: projectsPipeID, projects
-func (_m *MockTogglClient) PostProjects(projectsPipeID integrations.PipeID, projects interface{}) (*toggl.ProjectsImport, error) {
+func (_m *MockTogglClient) PostProjects(projectsPipeID integration.PipeID, projects interface{}) (*toggl.ProjectsImport, error) {
 	ret := _m.Called(projectsPipeID, projects)
 
 	var r0 *toggl.ProjectsImport
-	if rf, ok := ret.Get(0).(func(integrations.PipeID, interface{}) *toggl.ProjectsImport); ok {
+	if rf, ok := ret.Get(0).(func(integration.PipeID, interface{}) *toggl.ProjectsImport); ok {
 		r0 = rf(projectsPipeID, projects)
 	} else {
 		if ret.Get(0) != nil {
@@ -130,7 +130,7 @@ func (_m *MockTogglClient) PostProjects(projectsPipeID integrations.PipeID, proj
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.PipeID, interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(integration.PipeID, interface{}) error); ok {
 		r1 = rf(projectsPipeID, projects)
 	} else {
 		r1 = ret.Error(1)
@@ -140,11 +140,11 @@ func (_m *MockTogglClient) PostProjects(projectsPipeID integrations.PipeID, proj
 }
 
 // PostTasks provides a mock function with given fields: tasksPipeID, tasks
-func (_m *MockTogglClient) PostTasks(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
+func (_m *MockTogglClient) PostTasks(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
 	ret := _m.Called(tasksPipeID, tasks)
 
 	var r0 *toggl.TasksImport
-	if rf, ok := ret.Get(0).(func(integrations.PipeID, interface{}) *toggl.TasksImport); ok {
+	if rf, ok := ret.Get(0).(func(integration.PipeID, interface{}) *toggl.TasksImport); ok {
 		r0 = rf(tasksPipeID, tasks)
 	} else {
 		if ret.Get(0) != nil {
@@ -153,7 +153,7 @@ func (_m *MockTogglClient) PostTasks(tasksPipeID integrations.PipeID, tasks inte
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.PipeID, interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(integration.PipeID, interface{}) error); ok {
 		r1 = rf(tasksPipeID, tasks)
 	} else {
 		r1 = ret.Error(1)
@@ -163,11 +163,11 @@ func (_m *MockTogglClient) PostTasks(tasksPipeID integrations.PipeID, tasks inte
 }
 
 // PostTodoLists provides a mock function with given fields: tasksPipeID, tasks
-func (_m *MockTogglClient) PostTodoLists(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
+func (_m *MockTogglClient) PostTodoLists(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
 	ret := _m.Called(tasksPipeID, tasks)
 
 	var r0 *toggl.TasksImport
-	if rf, ok := ret.Get(0).(func(integrations.PipeID, interface{}) *toggl.TasksImport); ok {
+	if rf, ok := ret.Get(0).(func(integration.PipeID, interface{}) *toggl.TasksImport); ok {
 		r0 = rf(tasksPipeID, tasks)
 	} else {
 		if ret.Get(0) != nil {
@@ -176,7 +176,7 @@ func (_m *MockTogglClient) PostTodoLists(tasksPipeID integrations.PipeID, tasks 
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.PipeID, interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(integration.PipeID, interface{}) error); ok {
 		r1 = rf(tasksPipeID, tasks)
 	} else {
 		r1 = ret.Error(1)
@@ -186,11 +186,11 @@ func (_m *MockTogglClient) PostTodoLists(tasksPipeID integrations.PipeID, tasks 
 }
 
 // PostUsers provides a mock function with given fields: usersPipeID, users
-func (_m *MockTogglClient) PostUsers(usersPipeID integrations.PipeID, users interface{}) (*toggl.UsersImport, error) {
+func (_m *MockTogglClient) PostUsers(usersPipeID integration.PipeID, users interface{}) (*toggl.UsersImport, error) {
 	ret := _m.Called(usersPipeID, users)
 
 	var r0 *toggl.UsersImport
-	if rf, ok := ret.Get(0).(func(integrations.PipeID, interface{}) *toggl.UsersImport); ok {
+	if rf, ok := ret.Get(0).(func(integration.PipeID, interface{}) *toggl.UsersImport); ok {
 		r0 = rf(usersPipeID, users)
 	} else {
 		if ret.Get(0) != nil {
@@ -199,7 +199,7 @@ func (_m *MockTogglClient) PostUsers(usersPipeID integrations.PipeID, users inte
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(integrations.PipeID, interface{}) error); ok {
+	if rf, ok := ret.Get(1).(func(integration.PipeID, interface{}) error); ok {
 		r1 = rf(usersPipeID, users)
 	} else {
 		r1 = ret.Error(1)

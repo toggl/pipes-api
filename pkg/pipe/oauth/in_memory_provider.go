@@ -10,7 +10,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/tambet/oauthplain"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type InMemoryProvider struct {
@@ -36,7 +36,7 @@ func NewInMemoryProvider(envType, oauth1ConfigPath, oauth2ConfigPath string) *In
 	return svc
 }
 
-func (p *InMemoryProvider) OAuth2URL(sid integrations.ExternalServiceID) string {
+func (p *InMemoryProvider) OAuth2URL(sid integration.ID) string {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	config, ok := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -46,7 +46,7 @@ func (p *InMemoryProvider) OAuth2URL(sid integrations.ExternalServiceID) string 
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (p *InMemoryProvider) OAuth1Exchange(sid integrations.ExternalServiceID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
+func (p *InMemoryProvider) OAuth1Exchange(sid integration.ID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
 	if accountName == "" {
 		return nil, errors.New("missing account_name")
 	}
@@ -80,7 +80,7 @@ func (p *InMemoryProvider) OAuth1Exchange(sid integrations.ExternalServiceID, ac
 	return token, nil
 }
 
-func (p *InMemoryProvider) OAuth2Exchange(sid integrations.ExternalServiceID, code string) (*oauth.Token, error) {
+func (p *InMemoryProvider) OAuth2Exchange(sid integration.ID, code string) (*oauth.Token, error) {
 
 	p.mx.RLock()
 	config, res := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -98,14 +98,14 @@ func (p *InMemoryProvider) OAuth2Exchange(sid integrations.ExternalServiceID, co
 	return token, nil
 }
 
-func (p *InMemoryProvider) OAuth1Configs(sid integrations.ExternalServiceID) (*oauthplain.Config, bool) {
+func (p *InMemoryProvider) OAuth1Configs(sid integration.ID) (*oauthplain.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth1Configs[string(sid)]
 	return v, found
 }
 
-func (p *InMemoryProvider) OAuth2Configs(sid integrations.ExternalServiceID) (*oauth.Config, bool) {
+func (p *InMemoryProvider) OAuth2Configs(sid integration.ID) (*oauth.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth2Configs[string(sid)+"_"+p.envType]

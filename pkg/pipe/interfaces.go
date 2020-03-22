@@ -3,7 +3,7 @@ package pipe
 import (
 	"time"
 
-	"github.com/toggl/pipes-api/pkg/integrations"
+	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
@@ -11,11 +11,11 @@ import (
 type TogglClient interface {
 	WithAuthToken(authToken string)
 	GetWorkspaceIdByToken(token string) (int, error)
-	PostClients(clientsPipeID integrations.PipeID, clients interface{}) (*toggl.ClientsImport, error)
-	PostProjects(projectsPipeID integrations.PipeID, projects interface{}) (*toggl.ProjectsImport, error)
-	PostTasks(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error)
-	PostTodoLists(tasksPipeID integrations.PipeID, tasks interface{}) (*toggl.TasksImport, error)
-	PostUsers(usersPipeID integrations.PipeID, users interface{}) (*toggl.UsersImport, error)
+	PostClients(clientsPipeID integration.PipeID, clients interface{}) (*toggl.ClientsImport, error)
+	PostProjects(projectsPipeID integration.PipeID, projects interface{}) (*toggl.ProjectsImport, error)
+	PostTasks(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error)
+	PostTodoLists(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error)
+	PostUsers(usersPipeID integration.PipeID, users interface{}) (*toggl.UsersImport, error)
 	GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]toggl.TimeEntry, error)
 	AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error)
 	Ping() error
@@ -38,26 +38,26 @@ type Queue interface {
 type Service interface {
 	Runner
 
-	GetPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
-	CreatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
-	UpdatePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, params []byte) error
-	DeletePipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error
-	RunPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID, usersSelector []byte) error
-	GetServicePipeLog(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (string, error)
+	GetPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
+	CreatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
+	UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
+	DeletePipe(workspaceID int, sid integration.ID, pid integration.PipeID) error
+	RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector []byte) error
+	GetServicePipeLog(workspaceID int, sid integration.ID, pid integration.PipeID) (string, error)
 
-	ClearIDMappings(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) error // TODO: Remove (Probably dead method).
+	ClearIDMappings(workspaceID int, sid integration.ID, pid integration.PipeID) error // TODO: Remove (Probably dead method).
 
-	GetServiceUsers(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.UsersResponse, error)
+	GetServiceUsers(workspaceID int, sid integration.ID, forceImport bool) (*toggl.UsersResponse, error)
 
-	GetServiceAccounts(workspaceID int, sid integrations.ExternalServiceID, forceImport bool) (*toggl.AccountsResponse, error)
+	GetServiceAccounts(workspaceID int, sid integration.ID, forceImport bool) (*toggl.AccountsResponse, error)
 
-	GetAuthURL(sid integrations.ExternalServiceID, accountName, callbackURL string) (string, error)
+	GetAuthURL(sid integration.ID, accountName, callbackURL string) (string, error)
 	// CreateAuthorization creates new authorization for specified workspace and service and stores it in the persistent storage.
 	// workspaceToken - it is an "Toggl.Track" authorization token which is "user_name" field from BasicAuth HTTP Header. E.g.: "Authorization Bearer base64(user_name:password)".
-	CreateAuthorization(workspaceID int, sid integrations.ExternalServiceID, workspaceToken string, params AuthParams) error
+	CreateAuthorization(workspaceID int, sid integration.ID, workspaceToken string, params AuthParams) error
 	// DeleteAuthorization removes authorization for specified workspace and service from the persistent storage.
 	// It also delete all pipes for given service and workspace.
-	DeleteAuthorization(workspaceID int, sid integrations.ExternalServiceID) error
+	DeleteAuthorization(workspaceID int, sid integration.ID) error
 
 	GetIntegrations(workspaceID int) ([]Integration, error)
 
@@ -68,10 +68,10 @@ type Service interface {
 type Storage interface {
 	// Authorizations
 
-	LoadAuthorization(workspaceID int, sid integrations.ExternalServiceID) (*Authorization, error)
-	LoadWorkspaceAuthorizations(workspaceID int) (map[integrations.ExternalServiceID]bool, error)
+	LoadAuthorization(workspaceID int, sid integration.ID) (*Authorization, error)
+	LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error)
 	SaveAuthorization(a *Authorization) error
-	DeleteAuthorization(workspaceID int, externalServiceID integrations.ExternalServiceID) error
+	DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error
 
 	// ID Mappings (Connections)
 
@@ -82,16 +82,16 @@ type Storage interface {
 
 	// Pipes
 
-	LoadPipe(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Pipe, error)
+	LoadPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
 	LoadPipes(workspaceID int) (map[string]*Pipe, error)
 	Save(p *Pipe) error
 	Delete(p *Pipe, workspaceID int) error
-	DeletePipesByWorkspaceIDServiceID(workspaceID int, sid integrations.ExternalServiceID) error
+	DeletePipesByWorkspaceIDServiceID(workspaceID int, sid integration.ID) error
 	LoadLastSync(p *Pipe)
 
 	// Pipe statuses
 
-	LoadPipeStatus(workspaceID int, sid integrations.ExternalServiceID, pid integrations.PipeID) (*Status, error)
+	LoadPipeStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*Status, error)
 	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
 	SavePipeStatus(p *Status) error
 
@@ -101,33 +101,33 @@ type Storage interface {
 //go:generate mockery -name IntegrationsStorage -case underscore -inpkg
 type IntegrationsStorage interface {
 	LoadIntegrations() ([]*Integration, error)
-	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
-	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
+	LoadAuthorizationType(serviceID integration.ID) (string, error)
+	SaveAuthorizationType(serviceID integration.ID, authType string) error
 
-	IsValidPipe(pipeID integrations.PipeID) bool
-	IsValidService(serviceID integrations.ExternalServiceID) bool
+	IsValidPipe(pipeID integration.PipeID) bool
+	IsValidService(serviceID integration.ID) bool
 }
 
 //go:generate mockery -name ImportsStorage -case underscore -inpkg
 type ImportsStorage interface {
 	// Imports
-	LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error)
-	SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error
-	DeleteAccountsFor(s integrations.ExternalService) error
+	LoadAccountsFor(s integration.Integration) (*toggl.AccountsResponse, error)
+	SaveAccountsFor(s integration.Integration, res toggl.AccountsResponse) error
+	DeleteAccountsFor(s integration.Integration) error
 
-	LoadUsersFor(s integrations.ExternalService) (*toggl.UsersResponse, error)
-	SaveUsersFor(s integrations.ExternalService, res toggl.UsersResponse) error
-	DeleteUsersFor(s integrations.ExternalService) error
+	LoadUsersFor(s integration.Integration) (*toggl.UsersResponse, error)
+	SaveUsersFor(s integration.Integration, res toggl.UsersResponse) error
+	DeleteUsersFor(s integration.Integration) error
 
-	LoadClientsFor(s integrations.ExternalService) (*toggl.ClientsResponse, error)
-	SaveClientsFor(s integrations.ExternalService, res toggl.ClientsResponse) error
+	LoadClientsFor(s integration.Integration) (*toggl.ClientsResponse, error)
+	SaveClientsFor(s integration.Integration, res toggl.ClientsResponse) error
 
-	LoadProjectsFor(s integrations.ExternalService) (*toggl.ProjectsResponse, error)
-	SaveProjectsFor(s integrations.ExternalService, res toggl.ProjectsResponse) error
+	LoadProjectsFor(s integration.Integration) (*toggl.ProjectsResponse, error)
+	SaveProjectsFor(s integration.Integration, res toggl.ProjectsResponse) error
 
-	LoadTasksFor(s integrations.ExternalService) (*toggl.TasksResponse, error)
-	SaveTasksFor(s integrations.ExternalService, res toggl.TasksResponse) error
+	LoadTasksFor(s integration.Integration) (*toggl.TasksResponse, error)
+	SaveTasksFor(s integration.Integration, res toggl.TasksResponse) error
 
-	LoadTodoListsFor(s integrations.ExternalService) (*toggl.TasksResponse, error)
-	SaveTodoListsFor(s integrations.ExternalService, res toggl.TasksResponse) error
+	LoadTodoListsFor(s integration.Integration) (*toggl.TasksResponse, error)
+	SaveTodoListsFor(s integration.Integration, res toggl.TasksResponse) error
 }
