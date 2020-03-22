@@ -16,8 +16,8 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe/queue"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
@@ -286,7 +286,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 
 	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
-	op := &oauth.MockProvider{}
+	op := &MockOAuthProvider{}
 
 	svc := NewService(op, s, is, ims, q, api, "https://localhost")
 	err := svc.integrationsStore.SaveAuthorizationType("github", pipe.TypeOauth2)
@@ -323,7 +323,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
 	ims := storage.NewImportsPostgresStorage(ts.db)
 	q := &pipe.MockQueue{}
 	api := client.NewTogglApiClient("https://localhost")
-	op := &oauth.MockProvider{}
+	op := &MockOAuthProvider{}
 
 	is := &pipe.MockIntegrationsStorage{}
 	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
@@ -345,7 +345,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
 	s := storage.NewPostgresStorage(ts.db)
 	ims := storage.NewImportsPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	op := &oauth.MockProvider{}
+	op := &MockOAuthProvider{}
 	q := &pipe.MockQueue{}
 
 	is := &pipe.MockIntegrationsStorage{}
@@ -376,7 +376,7 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	s := storage.NewPostgresStorage(ts.db)
 	ims := storage.NewImportsPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	op := &oauth.MockProvider{}
+	op := &MockOAuthProvider{}
 	q := &pipe.MockQueue{}
 
 	is := &pipe.MockIntegrationsStorage{}

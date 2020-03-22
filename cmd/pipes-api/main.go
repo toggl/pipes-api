@@ -13,8 +13,8 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/toggl/pipes-api/pkg/config"
-	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe/autosync"
+	"github.com/toggl/pipes-api/pkg/pipe/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe/queue"
 	"github.com/toggl/pipes-api/pkg/pipe/server"
 	"github.com/toggl/pipes-api/pkg/pipe/service"

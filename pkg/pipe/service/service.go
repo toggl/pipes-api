@@ -14,7 +14,6 @@ import (
 	"github.com/tambet/oauthplain"
 
 	"github.com/toggl/pipes-api/pkg/integrations"
-	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -24,7 +23,7 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Service struct {
-	oauth             oauth.Provider
+	oauth             OAuthProvider
 	toggl             pipe.TogglClient
 	store             pipe.Storage
 	integrationsStore pipe.IntegrationsStorage
@@ -36,7 +35,7 @@ type Service struct {
 }
 
 func NewService(
-	oauth oauth.Provider,
+	oauth OAuthProvider,
 	store pipe.Storage,
 	integrationsStore pipe.IntegrationsStorage,
 	importsStore pipe.ImportsStorage,

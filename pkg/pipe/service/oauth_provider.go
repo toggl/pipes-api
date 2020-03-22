@@ -1,4 +1,4 @@
-package oauth
+package service
 
 import (
 	goauth2 "code.google.com/p/goauth2/oauth"
@@ -7,8 +7,8 @@ import (
 	"github.com/toggl/pipes-api/pkg/integrations"
 )
 
-//go:generate mockery -name Provider -case underscore -inpkg
-type Provider interface {
+//go:generate mockery -name OAuthProvider -case underscore -inpkg
+type OAuthProvider interface {
 	OAuth2URL(integrations.ExternalServiceID) string
 	OAuth1Configs(integrations.ExternalServiceID) (*oauthplain.Config, bool)
 	OAuth1Exchange(sid integrations.ExternalServiceID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error)
