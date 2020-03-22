@@ -78,7 +78,7 @@ type Storage interface {
 	LoadAuthorizationType(serviceID integrations.ExternalServiceID) (string, error)
 	SaveAuthorizationType(serviceID integrations.ExternalServiceID, authType string) error
 
-	// ID Mappings
+	// ID Mappings (Connections)
 
 	LoadIDMapping(workspaceID int, key string) (*IDMapping, error)
 	LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error)
@@ -100,7 +100,7 @@ type Storage interface {
 	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
 	SavePipeStatus(p *Status) error
 
-	// Objects
+	// Imports
 	LoadAccountsFor(s integrations.ExternalService) (*toggl.AccountsResponse, error)
 	SaveAccountsFor(s integrations.ExternalService, res toggl.AccountsResponse) error
 	DeleteAccountsFor(s integrations.ExternalService) error
