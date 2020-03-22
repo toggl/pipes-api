@@ -17,6 +17,8 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
+const maxPayloadSizeBytes = 800 * 1000
+
 var (
 	ErrApiNotHealthy = errors.New("toggl api is not healthy, got status code")
 )
@@ -184,6 +186,35 @@ func (c *TogglApiClient) Ping() error {
 		return fmt.Errorf("%w: %d", ErrApiNotHealthy, resp.StatusCode)
 	}
 	return nil
+}
+
+func (c *TogglApiClient) AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error) {
+	var trs []*toggl.TaskRequest
+	var size int
+	size = len(tasks) / split
+	for i := 0; i < split; i++ {
+		startIndex := i * size
+		endIndex := (i + 1) * size
+		if i == split-1 {
+			endIndex = len(tasks)
+		}
+		if endIndex > startIndex {
+			t := toggl.TaskRequest{
+				Tasks: tasks[startIndex:endIndex],
+			}
+			trs = append(trs, &t)
+		}
+	}
+	for _, tr := range trs {
+		j, err := json.Marshal(tr)
+		if err != nil {
+			return nil, err
+		}
+		if len(j) > maxPayloadSizeBytes {
+			return c.AdjustRequestSize(tasks, split+1)
+		}
+	}
+	return trs, nil
 }
 
 func (c *TogglApiClient) postPipesAPI(pipeID integration.PipeID, payload interface{}) ([]byte, error) {
