@@ -1,32 +1,135 @@
-// +build integration
-
 package asana
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
+	"time"
 
 	"code.google.com/p/goauth2/oauth"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/toggl/pipes-api/pkg/integration"
+	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-func resetAsanaLimit() {
-	asanaPerPageLimit = 100
+func TestAsana_WorkspaceID(t *testing.T) {
+	s := &Service{WorkspaceID: 1}
+	assert.Equal(t, 1, s.GetWorkspaceID())
 }
 
-func createAsanaService() Service {
+func TestAsana_ID(t *testing.T) {
+	s := &Service{}
+	assert.Equal(t, integration.Asana, s.ID())
+}
+
+func TestAsana_KeyFor(t *testing.T) {
+	s := &Service{}
+	assert.Equal(t, "asana:account:accounts", s.KeyFor(integration.AccountsPipe))
+
+	tests := []struct {
+		want string
+		got  integration.PipeID
+	}{
+		{want: "asana:account:1:users", got: integration.UsersPipe},
+		{want: "asana:account:1:clients", got: integration.ClientsPipe},
+		{want: "asana:account:1:projects", got: integration.ProjectsPipe},
+		{want: "asana:account:1:tasks", got: integration.TasksPipe},
+		{want: "asana:account:1:todolists", got: integration.TodoListsPipe},
+		{want: "asana:account:1:todos", got: integration.TodosPipe},
+		{want: "asana:account:1:timeentries", got: integration.TimeEntriesPipe},
+		{want: "asana:account:1:accounts", got: integration.AccountsPipe},
+	}
+
+	svc := &Service{AsanaParams: &AsanaParams{AccountID: 1}}
+	for _, v := range tests {
+		assert.Equal(t, v.want, svc.KeyFor(v.got))
+	}
+}
+
+func TestAsana_SetAuthData(t *testing.T) {
 	s := &Service{}
 	token := oauth.Token{
-		AccessToken: os.Getenv("ASANA_PERSONAL_TOKEN"),
+		AccessToken:  "test",
+		RefreshToken: "test2",
+		Expiry:       time.Time{},
+		Extra:        nil,
 	}
-	s.token = token
-	s.AsanaParams = &AsanaParams{
-		AccountID: numberStrToInt64(os.Getenv("ASANA_ACCOUNT_ID")),
-	}
-	return s
+	b, err := json.Marshal(token)
+	assert.NoError(t, err)
+
+	err = s.SetAuthData(b)
+	assert.NoError(t, err)
+	assert.Equal(t, token, s.token)
+
+	b2, err := json.Marshal("wrong_data")
+	assert.NoError(t, err)
+
+	err = s.SetAuthData(b2)
+	assert.Error(t, err)
 }
 
-func TestAsanaAccounts(t *testing.T) {
-	s := createAsanaService()
+func TestAsana_SetParams(t *testing.T) {
+	s := &Service{}
+	ap := AsanaParams{AccountID: 5}
+	b, err := json.Marshal(ap)
+	assert.NoError(t, err)
+
+	err = s.SetParams(b)
+	assert.NoError(t, err)
+	assert.Equal(t, ap, *s.AsanaParams)
+
+	b2, err := json.Marshal(AsanaParams{AccountID: 0})
+	assert.NoError(t, err)
+
+	s2 := &Service{}
+	err = s2.SetParams(b2)
+	assert.Error(t, err)
+
+	b3, err := json.Marshal("")
+	assert.NoError(t, err)
+
+	s3 := &Service{}
+	err = s3.SetParams(b3)
+	assert.Error(t, err)
+}
+
+func TestAsana_numberStrToInt64(t *testing.T) {
+	v := numberStrToInt64("10")
+	assert.Equal(t, int64(10), v)
+
+	v2 := numberStrToInt64("unknown")
+	assert.Equal(t, int64(0), v2)
+}
+
+func TestAsana_SetSince(t *testing.T) {
+	s := &Service{}
+	s.SetSince(&time.Time{})
+}
+
+func TestIntegration_Asana_Clients(t *testing.T) {
+	s := &Service{}
+	c, err := s.Clients()
+	assert.NoError(t, err)
+	assert.Equal(t, []*toggl.Client{}, c)
+}
+
+func TestIntegration_Asana_TodoLists(t *testing.T) {
+	s := &Service{}
+	tl, err := s.TodoLists()
+	assert.NoError(t, err)
+	assert.Equal(t, []*toggl.Task{}, tl)
+}
+
+func TestIntegration_Asana_ExportTimeEntry(t *testing.T) {
+	s := &Service{}
+	te, err := s.ExportTimeEntry(&toggl.TimeEntry{})
+	assert.NoError(t, err)
+	assert.Equal(t, 0, te)
+}
+
+func TestIntegration_Asana_Accounts(t *testing.T) {
+	s := createAsanaService(t)
 
 	accounts, err := s.Accounts()
 	if err != nil {
@@ -41,8 +144,8 @@ func TestAsanaAccounts(t *testing.T) {
 	}
 }
 
-func TestAsanaUsers(t *testing.T) {
-	s := createAsanaService()
+func TestIntegration_AsanaUsers(t *testing.T) {
+	s := createAsanaService(t)
 
 	users, err := s.Users()
 	if err != nil {
@@ -54,11 +157,11 @@ func TestAsanaUsers(t *testing.T) {
 	}
 }
 
-func TestAsanaProjects(t *testing.T) {
+func TestIntegration_AsanaProjects(t *testing.T) {
 	defer resetAsanaLimit()
 	asanaPerPageLimit = 10
 
-	s := createAsanaService()
+	s := createAsanaService(t)
 
 	projects, err := s.Projects()
 	if err != nil {
@@ -70,11 +173,11 @@ func TestAsanaProjects(t *testing.T) {
 	}
 }
 
-func TestAsanaTask(t *testing.T) {
+func TestIntegration_AsanaTask(t *testing.T) {
 	defer resetAsanaLimit()
 	asanaPerPageLimit = 10
 
-	s := createAsanaService()
+	s := createAsanaService(t)
 
 	tasks, err := s.Tasks()
 	if err != nil {
@@ -84,4 +187,27 @@ func TestAsanaTask(t *testing.T) {
 	if len(tasks) <= 10 {
 		t.Error("should get more than 10 tasks, please create at least 11 tasks and assign them to a project to test pagination")
 	}
+}
+
+func resetAsanaLimit() {
+	asanaPerPageLimit = 100
+}
+
+func createAsanaService(t *testing.T) *Service {
+	testToken := os.Getenv("ASANA_PERSONAL_TOKEN")
+	testAccountID := os.Getenv("ASANA_ACCOUNT_ID")
+
+	if testToken == "" || testAccountID == "" {
+		t.Skipf("Skipped, because required environment variables (ASANA_PERSONAL_TOKEN, ASANA_ACCOUNT_ID) haven't been set.")
+	}
+
+	s := &Service{}
+	s.token = oauth.Token{
+		AccessToken: testToken,
+	}
+	s.AsanaParams = &AsanaParams{
+		AccountID: numberStrToInt64(testAccountID),
+	}
+
+	return s
 }

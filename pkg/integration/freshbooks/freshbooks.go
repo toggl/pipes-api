@@ -43,9 +43,7 @@ func (s *Service) SetAuthData(b []byte) error {
 	return nil
 }
 
-func (s *Service) Accounts() ([]*toggl.Account, error) {
-	return nil, nil
-}
+func (s *Service) SetSince(*time.Time) {}
 
 func (s *Service) Users() ([]*toggl.User, error) {
 	foreignObjects, err := s.client().Users()
@@ -149,15 +147,9 @@ func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
 	return s.client().SaveTimeEntry(entry)
 }
 
-func numberStrToInt(s string) int {
-	res, err := strconv.Atoi(s)
-	if err != nil {
-		return 0
-	}
-	return res
+func (s *Service) Accounts() ([]*toggl.Account, error) {
+	return []*toggl.Account{}, nil
 }
-
-func (s *Service) SetSince(*time.Time) {}
 
 func (s *Service) TodoLists() ([]*toggl.Task, error) {
 	return []*toggl.Task{}, nil
@@ -165,4 +157,12 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 
 func (s *Service) client() *freshbooks.Api {
 	return freshbooks.NewApi(s.accountName, &s.token)
+}
+
+func numberStrToInt(s string) int {
+	res, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return res
 }

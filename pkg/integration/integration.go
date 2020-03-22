@@ -42,6 +42,7 @@ type Integration interface {
 	// SetSince takes the provided time.Time
 	// and adds it to Integration struct. This can be used
 	// to fetch just the modified data from external services.
+	// Implemented only for "basecamp" integration.
 	SetSince(*time.Time)
 
 	// SetParams takes the necessary Integration params
@@ -57,31 +58,25 @@ type Integration interface {
 	KeyFor(PipeID) string
 
 	// Accounts maps foreign account to Account models
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L9-L12
 	Accounts() ([]*toggl.Account, error)
 
 	// Users maps foreign users to User models
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L14-L19
 	Users() ([]*toggl.User, error)
 
 	// Clients maps foreign clients to Client models
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L21-L25
 	Clients() ([]*toggl.Client, error)
 
 	// Projects maps foreign projects to Project models
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L27-L36
 	Projects() ([]*toggl.Project, error)
 
 	// Tasks maps foreign tasks to Task models
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L38-L45
 	Tasks() ([]*toggl.Task, error)
 
 	// TodoLists maps foreign to do lists to Task models
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L38-45
 	TodoLists() ([]*toggl.Task, error)
 
 	// ExportTimeEntry exports time entry model to foreign service
 	// should return foreign id of saved time entry
-	// https://github.com/toggl/pipes-api/blob/master/model.go#L47-L61
+	// Implemented only for "freshbook" integration
 	ExportTimeEntry(*toggl.TimeEntry) (int, error)
 }

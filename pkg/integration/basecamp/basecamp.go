@@ -95,7 +95,7 @@ func (s *Service) Users() ([]*toggl.User, error) {
 
 // There are no clients in basecamp
 func (s *Service) Clients() ([]*toggl.Client, error) {
-	return nil, nil
+	return []*toggl.Client{}, nil
 }
 
 // Map basecamp projects to projects

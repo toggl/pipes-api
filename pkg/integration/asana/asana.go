@@ -53,6 +53,8 @@ func (s *Service) SetParams(b []byte) error {
 	return nil
 }
 
+// SetAuthData sets Asana API Authentication Token.
+// It should be `oauth.Token` structure from "code.google.com/p/goauth2/oauth"
 func (s *Service) SetAuthData(b []byte) error {
 	return json.Unmarshal(b, &s.token)
 }
