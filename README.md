@@ -46,7 +46,7 @@ To register application use this link: https://github.com/settings/developers
 ### BaseCamp
 
 **DOES NOT WORK**
-NOTE: Integration will work only for BaseCamp 2 account (Codename: bcx). It also use [Basecamp API v1](https://github.com/basecamp/basecamp-classic-api) which is DEPRECATED.
+NOTE: Integration will work only for BaseCamp 2 account (Codename: bcx). It also use [Basecamp API v2](https://github.com/basecamp/bcx-api/) which is DEPRECATED.
 To register application use this link: https://launchpad.37signals.com/integrations
 
 ### Freshbooks
