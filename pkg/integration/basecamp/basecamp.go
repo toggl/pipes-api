@@ -60,7 +60,7 @@ func (s *Service) SetSince(since *time.Time) {
 
 // Map basecamp accounts to local accounts
 func (s *Service) Accounts() ([]*toggl.Account, error) {
-	foreignObjects, err := s.client().GetAccounts()
+	foreignObjects, err := s.client().GetAccounts() // This will work only for Basecamp 2 account.
 	if err != nil {
 		return nil, err
 	}

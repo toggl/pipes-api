@@ -28,7 +28,7 @@ mocks:
 run:
 	mkdir -p bin
 	cp -r config bin/
-	go build -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
+	go build -gcflags="all=-N -l" -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
 
 .PHONY: dist
 dist:

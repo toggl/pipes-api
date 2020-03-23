@@ -30,3 +30,32 @@ to run integrations tests:
 	- create a file: `./config/asana_test_account.sh`
 	- add your personal token: `export ASANA_PERSONAL_TOKEN=my_token...`
 	- run `make test-integration`
+
+## Integrations
+
+### Asana
+
+**WORKS FINE**
+To register application use this link: https://app.asana.com/0/developer-console
+
+### GitHub
+
+**WORKS FINE**
+To register application use this link: https://github.com/settings/developers
+
+### BaseCamp
+
+**DOES NOT WORK**
+NOTE: Integration will work only for BaseCamp 2 account (Codename: bcx). It also use [Basecamp API v1](https://github.com/basecamp/basecamp-classic-api) which is DEPRECATED.
+To register application use this link: https://launchpad.37signals.com/integrations
+
+### Freshbooks
+
+**DOES NOT WORK**
+Login Form for classic version is here: https://classic.freshbooks.com/
+NOTE: Integration supports only Freshbook Classic. It use [Freshbooks Classic](https://www.freshbooks.com/classic-api) API which is DEPRECATED.
+
+### Toggl.Plan (Teamweek)
+
+**DOES NOT WORK**
+Outdated, because product name has been changed and API has been moved to different domain.
