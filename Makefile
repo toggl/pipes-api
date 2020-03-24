@@ -1,8 +1,12 @@
 APPNAME=pipes-api
 BUGSNAG_API_KEY:=0dd013f86222a229cc6116df663900c8
 BUGSNAG_DEPLOY_NOTIFY_URL:=https://notify.bugsnag.com/deploy
-REVISION:=$(shell git rev-parse HEAD)
+APP_REVISION:=$(shell git rev-parse HEAD)
+APP_VERSION:=$(shell git describe --tags --abbrev=0 HEAD)
+BUILD_TIME := $(shell date '+%Y%m%d-%H:%M:%S')
+BUILD_AUTHOR := $(shell git config --get user.email)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
+LD_FLAGS:=-ldflags="-X 'main.Version=$(APP_VERSION)' -X 'main.Revision=$(APP_REVISION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.BuildAuthor=$(BUILD_AUTHOR)'"
 
 all: init-dev-db build test
 
@@ -28,17 +32,17 @@ mocks:
 run:
 	mkdir -p bin
 	cp -r config bin/
-	go build -gcflags="all=-N -l" -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
+	go build $(LD_FLAGS) -gcflags="all=-N -l" -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
 
 .PHONY: dist
 dist:
 	rm -rf dist
 	mkdir -p dist
 	cp -r config dist/
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/$(APPNAME) ./cmd/pipes-api
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LD_FLAGS) -o dist/$(APPNAME) ./cmd/pipes-api
 
 build:
-	go build -o bin/$(APPNAME) ./cmd/pipes-api
+	go build $(LD_FLAGS) -o bin/$(APPNAME) ./cmd/pipes-api
 	go build -o bin/toggl_api_stub ./cmd/toggl_api_stub # This binary needs only for testing purposes. For more information see main.go of this binary.
 
 vendor: dist

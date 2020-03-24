@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -22,6 +23,13 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
+var (
+	Version     string
+	Revision    string
+	BuildTime   string
+	BuildAuthor string
+)
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	rand.Seed(time.Now().Unix())
@@ -29,6 +37,11 @@ func main() {
 	env := config.Flags{}
 	config.ParseFlags(&env, os.Args)
 	cfg := config.Load(&env)
+
+	if env.ShowVersion {
+		fmt.Printf("version: %s, revision: %s, build-time: %s, build-author: %s\n", Version, Revision, BuildTime, BuildAuthor)
+		os.Exit(0)
+	}
 
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:       env.BugsnagAPIKey,
@@ -77,7 +90,11 @@ func main() {
 	autosync.NewService(pipesQueue, pipesService).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
-		server.NewController(pipesService, integrationsStore),
+		server.NewController(pipesService, integrationsStore, server.Params{
+			Version:   Version,
+			Revision:  Revision,
+			BuildTime: BuildTime,
+		}),
 		server.NewMiddleware(togglApi, integrationsStore),
 	)
 	server.Start(env.Port, router)

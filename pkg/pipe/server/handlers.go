@@ -16,10 +16,17 @@ import (
 type Controller struct {
 	pipesSvc pipe.Service
 	istore   pipe.IntegrationsStorage
+	params   Params
 }
 
-func NewController(pipes pipe.Service, istore pipe.IntegrationsStorage) *Controller {
-	return &Controller{pipesSvc: pipes, istore: istore}
+type Params struct {
+	Version   string
+	Revision  string
+	BuildTime string
+}
+
+func NewController(pipes pipe.Service, istore pipe.IntegrationsStorage, params Params) *Controller {
+	return &Controller{pipesSvc: pipes, istore: istore, params: params}
 }
 
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
@@ -285,7 +292,12 @@ func (c *Controller) GetStatusHandler(Request) Response {
 	if len(resp.Reasons) > 0 {
 		return serviceUnavailable(resp)
 	}
-	return ok(map[string]string{"status": "OK"})
+	return ok(map[string]string{
+		"status":     "OK",
+		"version":    c.params.Version,
+		"revision":   c.params.Revision,
+		"build_time": c.params.BuildTime,
+	})
 }
 
 func (c *Controller) getIntegrationParams(req Request) (integration.ID, integration.PipeID, error) {
