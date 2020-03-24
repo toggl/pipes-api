@@ -16,8 +16,8 @@ var wg sync.WaitGroup
 
 const (
 	workersCount = 15
-	sleepMin     = 60
-	sleepMax     = 300
+	sleepMin     = 30
+	sleepMax     = 60
 )
 
 type Service struct {
@@ -37,14 +37,6 @@ func (s *Service) Start() {
 	go s.startQueue()
 }
 
-// run background workers
-func (s *Service) runPipes() {
-	wg.Add(workersCount)
-	for i := 0; i < workersCount; i++ {
-		go s.pipeWorker(i)
-	}
-}
-
 // background worker function
 func (s *Service) pipeWorker(id int) {
 	defer func() {
@@ -61,7 +53,7 @@ func (s *Service) pipeWorker(id int) {
 		// no more work, sleep then continue
 		if pipes == nil {
 			duration := time.Duration(30+rand.Int31n(30)) * time.Second
-			//log.Printf("[Worker %d] did not receive works, sleeping for %d\n", id, duration)
+			log.Printf("[Worker %d] did not receive works, sleeping for %d\n", id, duration)
 			time.Sleep(duration)
 
 			continue
@@ -96,8 +88,10 @@ func (s *Service) startRunner() {
 		time.Sleep(duration)
 
 		log.Println("-- Autosync started")
-		s.runPipes()
-
+		wg.Add(workersCount)
+		for i := 0; i < workersCount; i++ {
+			go s.pipeWorker(i)
+		}
 		wg.Wait()
 		log.Println("-- Autosync finished")
 	}
