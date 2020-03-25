@@ -2,7 +2,7 @@
 
 Backend for the Toggl Pipes project.
 
-![](https://github.com/toggl/pipes-api/workflows/CI/badge.svg)
+![https://github.com/toggl/pipes-api/actions?query=workflow%3ACI](https://github.com/toggl/pipes-api/workflows/CI/badge.svg)
 
 Basically this is just job scheduler with REST-API. 
 It schedules job to do synchronization to a third party service.
