@@ -10,7 +10,7 @@ LD_FLAGS:=-ldflags="-X 'main.Version=$(APP_VERSION)' -X 'main.Revision=$(APP_REV
 
 all: init-dev-db build test
 
-test: init-test-db
+test:
 	go test -race -cover ./pkg/...
 
 test-integration: init-test-db

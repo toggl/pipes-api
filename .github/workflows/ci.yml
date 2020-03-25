@@ -43,5 +43,5 @@ jobs:
           TOKEN: ${{ secrets.PAT }}
         run: git config --global url."https://DexterHD:${TOKEN}@github.com".insteadOf "https://github.com"
 
-      - name: Build an application
+      - name: Run unit tests
         run: make test
