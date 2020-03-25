@@ -46,6 +46,7 @@ func main() {
 	bugsnag.Configure(bugsnag.Configuration{
 		APIKey:       env.BugsnagAPIKey,
 		ReleaseStage: env.Environment,
+		AppVersion:   Version,
 		NotifyReleaseStages: []string{
 			config.EnvTypeProduction,
 			config.EnvTypeStaging,
