@@ -19,14 +19,15 @@ jobs:
 
       - name: Configure git for private modules
         env:
-          TOKEN: ${{ secrets.PAT }}
-        run: git config --global url."https://DexterHD:${TOKEN}@github.com".insteadOf "https://github.com"
+          ACTION_GIT_USER: DexterHD
+          ACTION_GIT_TOKEN: ${{ secrets.PAT }}
+        run: git config --global url."https://${ACTION_GIT_USER}:${ACTION_GIT_TOKEN}@github.com".insteadOf "https://github.com"
 
       - name: Build an application
         run: make build
 
   test:
-    name: Unit tests
+    name: Run unit tests
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
@@ -40,8 +41,9 @@ jobs:
 
       - name: Configure git for private modules
         env:
-          TOKEN: ${{ secrets.PAT }}
-        run: git config --global url."https://DexterHD:${TOKEN}@github.com".insteadOf "https://github.com"
+          ACTION_GIT_USER: DexterHD
+          ACTION_GIT_TOKEN: ${{ secrets.PAT }}
+        run: git config --global url."https://${ACTION_GIT_USER}:${ACTION_GIT_TOKEN}@github.com".insteadOf "https://github.com"
 
       - name: Run unit tests
         run: make test
