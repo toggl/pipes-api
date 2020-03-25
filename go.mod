@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.5.1
 	github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701
 	github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d
-	github.com/toggl/go-teamweek v0.0.0-20190812140547-f3996a352cd2
+	github.com/toggl/go-teamweek v0.3.0 // indirect
 )
 
 go 1.13

@@ -47,8 +47,8 @@ github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701 h1:gPK6+Vr+O9Ldw
 github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701/go.mod h1:JAZs1u1S6Ze+pLZ/DvPyul+8uh5bQIbZIMcoGCun8ok=
 github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d h1:zyDpPPCCH0xPLxuDiCMZpHpjt4t6KteM7kLQDD2XWt4=
 github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d/go.mod h1:t2USv7kvpEAs0rQ9yq/eehOnLGpNp8PFg8hyzx4uA04=
-github.com/toggl/go-teamweek v0.0.0-20190812140547-f3996a352cd2 h1:wzUZPeQ85M8gQe7Rsasemj5yo5UUuCWHANqeo6e9u4Y=
-github.com/toggl/go-teamweek v0.0.0-20190812140547-f3996a352cd2/go.mod h1:d97W0udyEsJZ7pXfB0MSe9VVNRyIQwoEnaCA8CUwyRs=
+github.com/toggl/go-teamweek v0.3.0 h1:P1PvY5vRBaLjcfrI/VMvA3jSXuHg9NpxaZopDGs+VoE=
+github.com/toggl/go-teamweek v0.3.0/go.mod h1:YK8EpPrTWjzk7LgpK/FsCpyz9nWDRlfeW2H73MRyny4=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
