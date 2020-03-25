@@ -75,9 +75,14 @@ func (h *stubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 var port string
+var server bool
 
 func main() {
+	flag.BoolVar(&server, "server", false, "")
 	flag.StringVar(&port, "address", ":8888", "Listen address")
 	flag.Parse()
-	log.Fatal(http.ListenAndServe(port, &stubHandler{}))
+
+	if server {
+		log.Fatal(http.ListenAndServe(port, &stubHandler{}))
+	}
 }
