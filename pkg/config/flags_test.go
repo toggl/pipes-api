@@ -16,7 +16,7 @@ func TestParseFlags(t *testing.T) {
 		"./test",
 		"-bugsnag_key",
 		"TEST_BUGSNAP_KEY",
-		"-EnvType",
+		"-environment",
 		"development",
 		"-db_conn_string",
 		"dbname=pipes host=localhost port=5432",
