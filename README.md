@@ -45,6 +45,12 @@ To register application use this link: https://app.asana.com/0/developer-console
 **WORKS FINE**
 To register application use this link: https://github.com/settings/developers
 
+### Toggl.Plan
+
+To register application use this link: https://developers.plan.toggl.com/applications
+
+**WORKS FINE**
+
 ### BaseCamp
 
 **DOES NOT WORK**
@@ -56,8 +62,3 @@ To register application use this link: https://launchpad.37signals.com/integrati
 **DOES NOT WORK**
 Login Form for classic version is here: https://classic.freshbooks.com/
 NOTE: Integration supports only Freshbook Classic. It use [Freshbooks Classic](https://www.freshbooks.com/classic-api) API which is DEPRECATED.
-
-### Toggl.Plan (Teamweek)
-
-**DOES NOT WORK**
-Outdated, because product name has been changed and API has been moved to different domain.
