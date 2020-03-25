@@ -5,23 +5,43 @@ on: [push, pull_request]
 jobs:
 
   build:
-    name: Build
+    name: Build an application
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
 
-      - name: Set up Go
+      - name: Set up proper version of Go
         uses: actions/setup-go@v1
         with:
           go-version: 1.14.1
         id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
 
       - name: Configure git for private modules
         env:
           TOKEN: ${{ secrets.PAT }}
         run: git config --global url."https://DexterHD:${TOKEN}@github.com".insteadOf "https://github.com"
 
-      - name: Build
+      - name: Build an application
         run: make build
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up proper version of Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.1
+        id: go
+
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.PAT }}
+        run: git config --global url."https://DexterHD:${TOKEN}@github.com".insteadOf "https://github.com"
+
+      - name: Build an application
+        run: make test
