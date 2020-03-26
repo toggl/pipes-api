@@ -3,6 +3,7 @@ package oauth
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"sync"
@@ -86,14 +87,14 @@ func (p *InMemoryProvider) OAuth2Exchange(sid integration.ID, code string) (*oau
 	config, res := p.oAuth2Configs[string(sid)+"_"+p.envType]
 	if !res {
 		p.mx.RUnlock()
-		return nil, errors.New("service OAuth config not found")
+		return nil, errors.New("OAuth config was not found for '" + string(sid) + "' service")
 	}
 	p.mx.RUnlock()
 
 	transport := &oauth.Transport{Config: config}
 	token, err := transport.Exchange(code)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not get OAuth Access Token from '%s', reason: %e", config.TokenURL, err)
 	}
 	return token, nil
 }
