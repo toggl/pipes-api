@@ -394,11 +394,11 @@ func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string) (*pipe.P
 	if !rows.Next() {
 		return nil, rows.Err()
 	}
-	var p *pipe.Pipe
-	if err := ps.load(rows, p); err != nil {
+	var p pipe.Pipe
+	if err := ps.load(rows, &p); err != nil {
 		return nil, err
 	}
-	return p, nil
+	return &p, nil
 }
 
 func (ps *PostgresStorage) load(rows *sql.Rows, p *pipe.Pipe) error {
