@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	gouuid "github.com/nu7hatch/gouuid"
@@ -97,7 +98,8 @@ func (router *Router) isWhiteListedCorsOrigin(r *http.Request) (string, bool) {
 
 func Start(port int, routes *Router) {
 	http.Handle("/", routes)
+
 	listenAddress := fmt.Sprintf(":%d", port)
 	log.Printf("pipes (PID: %d) is starting on %s\n=> Ctrl-C to shutdown server\n", os.Getpid(), listenAddress)
-	log.Fatal(http.ListenAndServe(listenAddress, http.DefaultServeMux))
+	log.Fatal(http.ListenAndServe(listenAddress, bugsnag.Handler(http.DefaultServeMux)))
 }

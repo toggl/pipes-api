@@ -353,10 +353,10 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 		for i := range integration.Pipes {
 			var p = *integration.Pipes[i]
 			key := pipe.PipesKey(integration.ID, p.ID)
-			existingPipe := workspacePipes[key]
-			if existingPipe != nil {
-				p.Automatic = existingPipe.Automatic
-				p.Configured = existingPipe.Configured
+			var ep = workspacePipes[key]
+			if ep != nil {
+				p.Automatic = ep.Automatic
+				p.Configured = ep.Configured
 			}
 
 			p.PipeStatus = pipeStatuses[key]
