@@ -912,6 +912,12 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 	if err != nil {
 		return err
 	}
+
+	err = svc.refreshAuthorization(auth)
+	if err != nil {
+		return err
+	}
+
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
