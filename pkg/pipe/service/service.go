@@ -339,33 +339,37 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 		return nil, err
 	}
 
-	allIntegrations, err := svc.integrationsStore.LoadIntegrations()
+	availableIntegrations, err := svc.integrationsStore.LoadIntegrations()
 	if err != nil {
 		return nil, err
 	}
 
-	var igr []pipe.Integration
-	for _, current := range allIntegrations {
-		var integration = current
-		integration.AuthURL = svc.oauth.OAuth2URL(integration.ID)
-		integration.Authorized = authorizations[integration.ID]
+	var resultIntegrations []pipe.Integration
+	for _, current := range availableIntegrations {
+
+		var ci = current
+		ci.AuthURL = svc.oauth.OAuth2URL(ci.ID)
+		ci.Authorized = authorizations[ci.ID]
+
 		var pipes []*pipe.Pipe
-		for i := range integration.Pipes {
-			var p = *integration.Pipes[i]
-			key := pipe.PipesKey(integration.ID, p.ID)
-			var ep = workspacePipes[key]
-			if ep != nil {
-				p.Automatic = ep.Automatic
-				p.Configured = ep.Configured
+		for i := range ci.Pipes {
+
+			var p = *ci.Pipes[i]
+			key := pipe.PipesKey(ci.ID, p.ID)
+			var existing = workspacePipes[key]
+
+			if existing != nil {
+				p.Automatic = existing.Automatic
+				p.Configured = existing.Configured
 			}
 
 			p.PipeStatus = pipeStatuses[key]
 			pipes = append(pipes, &p)
 		}
-		integration.Pipes = pipes
-		igr = append(igr, *integration)
+		ci.Pipes = pipes
+		resultIntegrations = append(resultIntegrations, *ci)
 	}
-	return igr, nil
+	return resultIntegrations, nil
 }
 
 func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector []byte) error {
