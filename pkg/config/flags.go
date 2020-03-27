@@ -17,6 +17,7 @@ type Flags struct {
 	Environment   string
 	DbConnString  string
 	ShowVersion   bool
+	Debug         bool
 }
 
 func ParseFlags(flags *Flags, args []string) {
@@ -26,6 +27,7 @@ func ParseFlags(flags *Flags, args []string) {
 
 	fs := flag.NewFlagSetWithEnvPrefix(args[0], "PIPES_API", flag.ExitOnError)
 
+	fs.BoolVar(&flags.Debug, "debug", false, "Shod debug application logs")
 	fs.BoolVar(&flags.ShowVersion, "version", false, "Show application version")
 	fs.IntVar(&flags.Port, "port", 8100, "port")
 	fs.StringVar(&flags.WorkDir, "workdir", ".", "Workdir of server")

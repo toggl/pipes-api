@@ -88,7 +88,7 @@ func main() {
 		cfg.PipesAPIHost,
 	)
 
-	autosync.NewService(pipesQueue, pipesService).Start()
+	autosync.NewService(pipesQueue, pipesService, env.Debug).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
 		server.NewController(pipesService, integrationsStore, server.Params{

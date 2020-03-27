@@ -20,6 +20,7 @@ func TestParseFlags(t *testing.T) {
 		"development",
 		"-db_conn_string",
 		"dbname=pipes host=localhost port=5432",
+		"-debug",
 	}
 	ParseFlags(f, args)
 
@@ -28,6 +29,7 @@ func TestParseFlags(t *testing.T) {
 	assert.Equal(t, "TEST_BUGSNAP_KEY", f.BugsnagAPIKey)
 	assert.Equal(t, "development", f.Environment)
 	assert.Equal(t, "dbname=pipes host=localhost port=5432", f.DbConnString)
+	assert.Equal(t, true, f.Debug)
 }
 
 func TestParseFlagsDefaults(t *testing.T) {

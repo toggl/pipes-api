@@ -21,14 +21,16 @@ const (
 )
 
 type Service struct {
+	debug  bool
 	queue  pipe.Queue
 	runner pipe.Runner
 }
 
-func NewService(p pipe.Queue, r pipe.Runner) *Service {
+func NewService(p pipe.Queue, r pipe.Runner, debug bool) *Service {
 	return &Service{
 		queue:  p,
 		runner: r,
+		debug:  debug,
 	}
 }
 
@@ -40,7 +42,7 @@ func (s *Service) Start() {
 // background worker function
 func (s *Service) pipeWorker(id int) {
 	defer func() {
-		log.Printf("[Workder %d] died\n", id)
+		s.debugf("[Worker %d] died\n", id)
 		wg.Done()
 	}()
 	for {
@@ -53,7 +55,7 @@ func (s *Service) pipeWorker(id int) {
 		// no more work, sleep then continue
 		if pipes == nil {
 			duration := time.Duration(30+rand.Int31n(30)) * time.Second
-			log.Printf("[Worker %d] did not receive works, sleeping for %d\n", id, duration)
+			s.debugf("[Worker %d] did not receive works, sleeping for %d\n", id, duration)
 			time.Sleep(duration)
 
 			continue
@@ -61,7 +63,7 @@ func (s *Service) pipeWorker(id int) {
 
 		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
-			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
+			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
 			s.runner.Run(pipe)
 
 			err := s.queue.SetQueuedPipeSynced(pipe)
@@ -76,7 +78,7 @@ func (s *Service) pipeWorker(id int) {
 					},
 				})
 			}
-			log.Printf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key, err != nil)
+			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key, err != nil)
 		}
 	}
 }
@@ -84,16 +86,16 @@ func (s *Service) pipeWorker(id int) {
 func (s *Service) startRunner() {
 	for {
 		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
-		log.Println("-- Autosync sleeping for ", duration)
+		s.debugf("-- Autosync sleeping for %s", duration)
 		time.Sleep(duration)
 
-		log.Println("-- Autosync started")
+		s.debugf("-- Autosync started\n")
 		wg.Add(workersCount)
 		for i := 0; i < workersCount; i++ {
 			go s.pipeWorker(i)
 		}
 		wg.Wait()
-		log.Println("-- Autosync finished")
+		s.debugf("-- Autosync finished\n")
 	}
 }
 
@@ -103,16 +105,22 @@ func (s *Service) startQueue() {
 		// making sleep longer to not trigger auto sync too fast
 		// between 600s until 3000s
 		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second * 10
-		log.Println("-- startQueue sleeping for ", duration)
+		s.debugf("-- startQueue sleeping for %s", duration)
 		time.Sleep(duration)
 
-		log.Println("-- startQueue started")
+		s.debugf("-- startQueue started\n")
 
 		if err := s.queue.QueueAutomaticPipes(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}
 		}
-		log.Println("-- startQueue finished")
+		s.debugf("-- startQueue finished\n")
+	}
+}
+
+func (s *Service) debugf(format string, v ...interface{}) {
+	if s.debug {
+		log.Printf(format, v...)
 	}
 }
