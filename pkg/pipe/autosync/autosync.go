@@ -89,13 +89,13 @@ func (s *Service) startRunner() {
 		s.debugf("-- Autosync sleeping for %s", duration)
 		time.Sleep(duration)
 
-		s.debugf("-- Autosync started\n")
+		log.Println("-- Autosync started")
 		wg.Add(workersCount)
 		for i := 0; i < workersCount; i++ {
 			go s.pipeWorker(i)
 		}
 		wg.Wait()
-		s.debugf("-- Autosync finished\n")
+		log.Println("-- Autosync finished")
 	}
 }
 
@@ -108,14 +108,14 @@ func (s *Service) startQueue() {
 		s.debugf("-- startQueue sleeping for %s", duration)
 		time.Sleep(duration)
 
-		s.debugf("-- startQueue started\n")
+		log.Println("-- startQueue started")
 
 		if err := s.queue.QueueAutomaticPipes(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}
 		}
-		s.debugf("-- startQueue finished\n")
+		log.Println("-- startQueue finished")
 	}
 }
 
