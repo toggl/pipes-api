@@ -164,6 +164,10 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 	if err != nil {
 		return err
 	}
+	err = svc.refreshAuthorization(auth)
+	if err != nil {
+		return err
+	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -184,6 +188,9 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, f
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
 	if err != nil {
 		return nil, LoadError{err}
+	}
+	if err := svc.refreshAuthorization(auth); err != nil {
+		return nil, RefreshError{errors.New("oAuth refresh failed!")}
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return nil, err
@@ -231,12 +238,11 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integration.ID
 	if err != nil {
 		return nil, LoadError{err}
 	}
-	if err := service.SetAuthData(auth.Data); err != nil {
-		return nil, err
-	}
-
 	if err := svc.refreshAuthorization(auth); err != nil {
 		return nil, RefreshError{errors.New("oAuth refresh failed!")}
+	}
+	if err := service.SetAuthData(auth.Data); err != nil {
+		return nil, err
 	}
 	if forceImport {
 		if err := svc.importsStore.DeleteAccountsFor(service); err != nil {
@@ -600,6 +606,10 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 	if err != nil {
 		return err
 	}
+	err = svc.refreshAuthorization(auth)
+	if err != nil {
+		return err
+	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -704,6 +714,10 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 	if err != nil {
 		return err
 	}
+	err = svc.refreshAuthorization(auth)
+	if err != nil {
+		return err
+	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -743,6 +757,10 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 	}
 
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return err
+	}
+	err = svc.refreshAuthorization(auth)
 	if err != nil {
 		return err
 	}
@@ -791,6 +809,10 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 		return err
 	}
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return err
+	}
+	err = svc.refreshAuthorization(auth)
 	if err != nil {
 		return err
 	}
@@ -960,6 +982,10 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 	if err != nil {
 		return err
 	}
+	err = svc.refreshAuthorization(auth)
+	if err != nil {
+		return err
+	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -1043,6 +1069,10 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 	if err != nil {
 		return err
 	}
+	err = svc.refreshAuthorization(auth)
+	if err != nil {
+		return err
+	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -1112,6 +1142,10 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 		return err
 	}
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return err
+	}
+	err = svc.refreshAuthorization(auth)
 	if err != nil {
 		return err
 	}
@@ -1188,6 +1222,10 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 	}
 
 	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
+	if err != nil {
+		return err
+	}
+	err = svc.refreshAuthorization(auth)
 	if err != nil {
 		return err
 	}
