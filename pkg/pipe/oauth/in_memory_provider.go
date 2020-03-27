@@ -59,7 +59,7 @@ func (p *InMemoryProvider) OAuth1Exchange(sid integration.ID, accountName, oAuth
 	}
 
 	p.mx.RLock()
-	config, res := p.oAuth1Configs[string(sid)]
+	config, res := p.oAuth1Configs[string(sid)+"_"+p.envType]
 	if !res {
 		p.mx.RUnlock()
 		return nil, errors.New("service OAuth config not found")
@@ -102,7 +102,7 @@ func (p *InMemoryProvider) OAuth2Exchange(sid integration.ID, code string) (*oau
 func (p *InMemoryProvider) OAuth1Configs(sid integration.ID) (*oauthplain.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
-	v, found := p.oAuth1Configs[string(sid)]
+	v, found := p.oAuth1Configs[string(sid)+"_"+p.envType]
 	return v, found
 }
 
