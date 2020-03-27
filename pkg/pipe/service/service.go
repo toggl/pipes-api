@@ -571,7 +571,7 @@ func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
 		return errors.New("service OAuth config not found")
 	}
 	if err := svc.oauth.OAuth2Refresh(config, &token); err != nil {
-		return err
+		return fmt.Errorf("unable to refresh oAuth2 token, reason: %e", err)
 	}
 	if err := a.SetOAuth2Token(&token); err != nil {
 		return err
