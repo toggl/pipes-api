@@ -6,15 +6,21 @@ APP_VERSION:=$(shell git describe --tags --abbrev=0 HEAD)
 BUILD_TIME := $(shell date '+%Y%m%d-%H:%M:%S')
 BUILD_AUTHOR := $(shell git config --get user.email)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
-LD_FLAGS:=-ldflags="-X 'main.Version=$(APP_VERSION)' -X 'main.Revision=$(APP_REVISION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.BuildAuthor=$(BUILD_AUTHOR)'"
+LD_FLAGS:=-X 'main.Version=$(APP_VERSION)' -X 'main.Revision=$(APP_REVISION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.BuildAuthor=$(BUILD_AUTHOR)'
 
-all: init-dev-db build test
+# Used for debugging purposes. To have possibility connect to a process with Delve debugger
+GC_FLAGS:=all=-N -l
+
+all: init-dev-db init-test-db build test
+
+clean:
+	rm -Rf ./bin ./dist ./out
+
+mocks:
+	go generate ./pkg/...
 
 test:
 	go test -race -cover ./pkg/...
-
-test-integration: init-test-db
-	source config/test_accounts.sh && go test -v -race -cover -tags=integration ./pkg/...
 
 init-test-db:
 	psql -c 'DROP DATABASE IF EXISTS pipes_test;' -U postgres
@@ -26,23 +32,20 @@ init-dev-db:
 	psql -c 'CREATE DATABASE pipes_development;' -U postgres
 	psql pipes_development < db/schema.sql
 
-mocks:
-	go generate ./pkg/...
-
 run:
 	mkdir -p bin
 	cp -r config bin/
-	go build $(LD_FLAGS) -gcflags="all=-N -l" -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
+	go build -ldflags="$(LD_FLAGS)" -gcflags="$(GC_FLAGS)" -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
 
 .PHONY: dist
 dist:
 	rm -rf dist
 	mkdir -p dist
 	cp -r config dist/
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LD_FLAGS) -o dist/$(APPNAME) ./cmd/pipes-api
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$(LD_FLAGS)" -o dist/$(APPNAME) ./cmd/pipes-api
 
 build:
-	go build $(LD_FLAGS) -o bin/$(APPNAME) ./cmd/pipes-api
+	go build -ldflags="$(LD_FLAGS)" -o bin/$(APPNAME) ./cmd/pipes-api
 	go build -o bin/toggl_api_stub ./cmd/toggl_api_stub # This binary needs only for testing purposes. For more information see main.go of this binary.
 
 vendor: dist

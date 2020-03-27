@@ -24,38 +24,43 @@ THIS IS REFACTORED VERSION. To original version see [legacy](https://github.com/
 * Fill in needed oauth tokens and URL-s under config json files
 * Start the server with `make run`
 
-## Tests
-to run pipes test: `make test`
+## Testing
 
-to run integrations tests:
-	- get a token: https://app.asana.com/0/developer-console
-	- create a file: `./config/asana_test_account.sh`
-	- add your personal token: `export ASANA_PERSONAL_TOKEN=my_token...`
-	- run `make test-integration`
+```bash
+# Firstly make testing database. This can be done only once.
+$ make init-test-db
+
+# Then just run tests. You also can use Goland IDE for testing.
+$ make test
+```
 
 ## Integrations
 
 ### Asana
 
 **WORKS FINE**
+
 To register application use this link: https://app.asana.com/0/developer-console
 
 ### GitHub
 
 **WORKS FINE**
-To register application use this link: https://github.com/settings/developers
+
+To register OAuth2 application: https://github.com/settings/developers
 
 ### Toggl.Plan
 
-To register application use this link: https://developers.plan.toggl.com/applications
+**WORKS FINE**
+
+To register OAuth2 application: https://developers.plan.toggl.com/applications
+
+
+### BaseCamp 2
 
 **WORKS FINE**
 
-### BaseCamp
-
-**DOES NOT WORK**
-NOTE: Integration will work only for BaseCamp 2 account (Codename: bcx). It also use [Basecamp API v2](https://github.com/basecamp/bcx-api/) which is DEPRECATED.
-To register application use this link: https://launchpad.37signals.com/integrations
+To register OAuth2 application: https://launchpad.37signals.com/integrations
+To register test BaseCamp 2 account: https://billing.37signals.com/bcx/trial/signup/
 
 ### Freshbooks
 
