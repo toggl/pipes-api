@@ -23,21 +23,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
-var (
-	workspaceID = 1
-	pipeID      = integration.UsersPipe
-	serviceID   = integration.BaseCamp
-)
-
-func TestNewClient(t *testing.T) {
-	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
-	expectedKey := "basecamp:users"
-	p := pipe.NewPipe(workspaceID, serviceID, pipeID)
-
-	if p.Key != expectedKey {
-		t.Errorf("NewPipe Key = %v, want %v", p.Key, expectedKey)
-	}
-}
+var workspaceID = 1
 
 func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	t.Skipf("DEPRECATED TEST: Should be removed after new will be created")
