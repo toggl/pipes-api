@@ -25,13 +25,13 @@ type Authorization struct {
 	Data []byte
 
 	IntegrationsStorage
-	Storage
+	AuthorizationsStorage
 	OAuthProvider
 }
 
 type AuthorizationFactory struct {
 	IntegrationsStorage
-	Storage
+	AuthorizationsStorage
 	OAuthProvider
 }
 
@@ -41,11 +41,11 @@ func (f *AuthorizationFactory) Create(workspaceID int, id integration.ID) *Autho
 		panic("AuthorizationFactory.IntegrationsStorage should not be nil")
 	}
 
-	if f.Storage == nil {
+	if f.AuthorizationsStorage == nil {
 		panic("AuthorizationFactory.Storage should not be nil")
 	}
 
-	if f.Storage == nil {
+	if f.OAuthProvider == nil {
 		panic("AuthorizationFactory.OAuthProvider should not be nil")
 	}
 
@@ -54,9 +54,9 @@ func (f *AuthorizationFactory) Create(workspaceID int, id integration.ID) *Autho
 		ServiceID:   id,
 		Data:        []byte("{}"),
 
-		IntegrationsStorage: f.IntegrationsStorage,
-		Storage:             f.Storage,
-		OAuthProvider:       f.OAuthProvider,
+		IntegrationsStorage:   f.IntegrationsStorage,
+		AuthorizationsStorage: f.AuthorizationsStorage,
+		OAuthProvider:         f.OAuthProvider,
 	}
 }
 
@@ -103,7 +103,7 @@ func (a *Authorization) Refresh() error {
 	if err := a.SetOAuth2Token(&token); err != nil {
 		return err
 	}
-	if err := a.Storage.SaveAuthorization(a); err != nil {
+	if err := a.AuthorizationsStorage.SaveAuthorization(a); err != nil {
 		return err
 	}
 	return nil

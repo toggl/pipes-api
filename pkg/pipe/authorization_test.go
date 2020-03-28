@@ -12,9 +12,9 @@ import (
 
 func TestNewAuthorization(t *testing.T) {
 	af := AuthorizationFactory{
-		IntegrationsStorage: &MockIntegrationsStorage{},
-		Storage:             &MockStorage{},
-		OAuthProvider:       &MockOAuthProvider{},
+		IntegrationsStorage:   &MockIntegrationsStorage{},
+		AuthorizationsStorage: &MockAuthorizationsStorage{},
+		OAuthProvider:         &MockOAuthProvider{},
 	}
 	a := af.Create(1, integration.GitHub)
 	assert.Equal(t, 1, a.WorkspaceID)
@@ -31,9 +31,9 @@ func TestSetOauth2Token(t *testing.T) {
 	}
 
 	af := AuthorizationFactory{
-		IntegrationsStorage: &MockIntegrationsStorage{},
-		Storage:             &MockStorage{},
-		OAuthProvider:       &MockOAuthProvider{},
+		IntegrationsStorage:   &MockIntegrationsStorage{},
+		AuthorizationsStorage: &MockAuthorizationsStorage{},
+		OAuthProvider:         &MockOAuthProvider{},
 	}
 
 	a := af.Create(1, "test")

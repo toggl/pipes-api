@@ -79,16 +79,19 @@ func main() {
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
 
+	authorizationsStore := storage.NewAuthorizationsPostgresStorage(db)
+
 	authFactory := &pipe.AuthorizationFactory{
-		IntegrationsStorage: integrationsStore,
-		Storage:             pipesStore,
-		OAuthProvider:       oauthProvider,
+		IntegrationsStorage:   integrationsStore,
+		AuthorizationsStorage: authorizationsStore,
+		OAuthProvider:         oauthProvider,
 	}
 
 	pipesService := service.NewService(
 		oauthProvider,
 		pipesStore,
 		integrationsStore,
+		authorizationsStore,
 		importsStore,
 		pipesQueue,
 		togglApi,

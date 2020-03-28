@@ -69,15 +69,7 @@ type Service interface {
 
 //go:generate mockery -name Storage -case underscore -inpkg
 type Storage interface {
-	// Authorizations
-
-	LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error
-	LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error)
-	SaveAuthorization(a *Authorization) error
-	DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error
-
 	// ID Mappings (Connections)
-
 	LoadIDMapping(workspaceID int, key string) (*IDMapping, error)
 	LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error)
 	SaveIDMapping(c *IDMapping) error
@@ -99,6 +91,14 @@ type Storage interface {
 	SavePipeStatus(p *Status) error
 
 	IsDown() bool
+}
+
+//go:generate mockery -name AuthorizationsStorage -case underscore -inpkg
+type AuthorizationsStorage interface {
+	LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error
+	LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error)
+	SaveAuthorization(a *Authorization) error
+	DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error
 }
 
 //go:generate mockery -name IntegrationsStorage -case underscore -inpkg

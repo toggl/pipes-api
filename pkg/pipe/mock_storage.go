@@ -26,20 +26,6 @@ func (_m *MockStorage) Delete(p *Pipe, workspaceID int) error {
 	return r0
 }
 
-// DeleteAuthorization provides a mock function with given fields: workspaceID, externalServiceID
-func (_m *MockStorage) DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error {
-	ret := _m.Called(workspaceID, externalServiceID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integration.ID) error); ok {
-		r0 = rf(workspaceID, externalServiceID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // DeleteIDMappings provides a mock function with given fields: workspaceID, pipeConnectionKey, pipeStatusKey
 func (_m *MockStorage) DeleteIDMappings(workspaceID int, pipeConnectionKey string, pipeStatusKey string) error {
 	ret := _m.Called(workspaceID, pipeConnectionKey, pipeStatusKey)
@@ -77,20 +63,6 @@ func (_m *MockStorage) IsDown() bool {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// LoadAuthorization provides a mock function with given fields: workspaceID, externalServiceID, a
-func (_m *MockStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error {
-	ret := _m.Called(workspaceID, externalServiceID, a)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integration.ID, *Authorization) error); ok {
-		r0 = rf(workspaceID, externalServiceID, a)
-	} else {
-		r0 = ret.Error(0)
 	}
 
 	return r0
@@ -239,29 +211,6 @@ func (_m *MockStorage) LoadReversedIDMapping(workspaceID int, key string) (*Reve
 	return r0, r1
 }
 
-// LoadWorkspaceAuthorizations provides a mock function with given fields: workspaceID
-func (_m *MockStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error) {
-	ret := _m.Called(workspaceID)
-
-	var r0 map[integration.ID]bool
-	if rf, ok := ret.Get(0).(func(int) map[integration.ID]bool); ok {
-		r0 = rf(workspaceID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[integration.ID]bool)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(int) error); ok {
-		r1 = rf(workspaceID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Save provides a mock function with given fields: p
 func (_m *MockStorage) Save(p *Pipe) error {
 	ret := _m.Called(p)
@@ -269,20 +218,6 @@ func (_m *MockStorage) Save(p *Pipe) error {
 	var r0 error
 	if rf, ok := ret.Get(0).(func(*Pipe) error); ok {
 		r0 = rf(p)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// SaveAuthorization provides a mock function with given fields: a
-func (_m *MockStorage) SaveAuthorization(a *Authorization) error {
-	ret := _m.Called(a)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(*Authorization) error); ok {
-		r0 = rf(a)
 	} else {
 		r0 = ret.Error(0)
 	}
