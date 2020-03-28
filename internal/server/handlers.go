@@ -16,17 +16,14 @@ import (
 type Controller struct {
 	domain.PipeService
 	domain.IntegrationsStorage
-	params Params
+	domain.Queue
+	Params
 }
 
 type Params struct {
 	Version   string
 	Revision  string
 	BuildTime string
-}
-
-func NewController(pipes domain.PipeService, istore domain.IntegrationsStorage, params Params) *Controller {
-	return &Controller{PipeService: pipes, IntegrationsStorage: istore, params: params}
 }
 
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
@@ -273,7 +270,7 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 		}
 	}
 
-	err := c.PipeService.RunPipe(workspaceID, serviceID, pipeID, selector)
+	err := c.Queue.SchedulePipeSynchronization(workspaceID, serviceID, pipeID, selector)
 	if err != nil {
 		if errors.Is(err, domain.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
@@ -301,9 +298,9 @@ func (c *Controller) GetStatusHandler(Request) Response {
 	}
 	return ok(map[string]string{
 		"status":     "OK",
-		"version":    c.params.Version,
-		"revision":   c.params.Revision,
-		"build_time": c.params.BuildTime,
+		"version":    c.Params.Version,
+		"revision":   c.Params.Revision,
+		"build_time": c.Params.BuildTime,
 	})
 }
 

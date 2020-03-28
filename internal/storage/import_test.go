@@ -38,21 +38,21 @@ func (ts *ImportsStorageTestSuite) SetupTest() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteAccountsFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 	err := s.DeleteAccountsFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteUsersFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.AccountsResponse{
@@ -72,7 +72,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor()
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.UsersResponse{
@@ -92,7 +92,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.ClientsResponse{
@@ -112,7 +112,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.ProjectsResponse{
@@ -144,7 +144,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor()
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.TasksResponse{
@@ -174,7 +174,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTodoListsFor_LoadTodoListsFor() {
-	s := NewImportStorage(ts.db)
+	s := &ImportStorage{DB: ts.db}
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.TasksResponse{

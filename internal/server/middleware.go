@@ -15,13 +15,6 @@ type Middleware struct {
 	domain.TogglClient
 }
 
-func NewMiddleware(clt domain.TogglClient, istore domain.IntegrationsStorage) *Middleware {
-	return &Middleware{
-		IntegrationsStorage: istore,
-		TogglClient:         clt,
-	}
-}
-
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := integration.ID(mux.Vars(r)["service"])

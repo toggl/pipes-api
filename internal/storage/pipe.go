@@ -60,15 +60,11 @@ const (
 )
 
 type PipeStorage struct {
-	db *sql.DB
-}
-
-func NewPipeStorage(db *sql.DB) *PipeStorage {
-	return &PipeStorage{db: db}
+	DB *sql.DB
 }
 
 func (ps *PipeStorage) IsDown() bool {
-	if _, err := ps.db.Exec("SELECT 1"); err != nil {
+	if _, err := ps.DB.Exec("SELECT 1"); err != nil {
 		return true
 	}
 	return false
@@ -85,7 +81,7 @@ func (ps *PipeStorage) Save(p *domain.Pipe) error {
 	if err != nil {
 		return err
 	}
-	_, err = ps.db.Exec(insertPipesSQL, p.WorkspaceID, p.Key, b)
+	_, err = ps.DB.Exec(insertPipesSQL, p.WorkspaceID, p.Key, b)
 	if err != nil {
 		return err
 	}
@@ -93,7 +89,7 @@ func (ps *PipeStorage) Save(p *domain.Pipe) error {
 }
 
 func (ps *PipeStorage) Delete(p *domain.Pipe, workspaceID int) error {
-	tx, err := ps.db.Begin()
+	tx, err := ps.DB.Begin()
 	if err != nil {
 		return err
 	}
@@ -116,7 +112,7 @@ func (ps *PipeStorage) Delete(p *domain.Pipe, workspaceID int) error {
 
 func (ps *PipeStorage) LoadStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*domain.Status, error) {
 	key := domain.PipesKey(sid, pid)
-	rows, err := ps.db.Query(singlePipeStatusSQL, workspaceID, key)
+	rows, err := ps.DB.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
 	}
@@ -139,13 +135,13 @@ func (ps *PipeStorage) LoadStatus(workspaceID int, sid integration.ID, pid integ
 }
 
 func (ps *PipeStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
-	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
+	_, err := ps.DB.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
 
 func (ps *PipeStorage) LoadAll(workspaceID int) (map[string]*domain.Pipe, error) {
 	pipes := make(map[string]*domain.Pipe)
-	rows, err := ps.db.Query(selectPipesSQL, workspaceID)
+	rows, err := ps.DB.Query(selectPipesSQL, workspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +157,7 @@ func (ps *PipeStorage) LoadAll(workspaceID int) (map[string]*domain.Pipe, error)
 }
 
 func (ps *PipeStorage) LoadLastSyncFor(p *domain.Pipe) {
-	err := ps.db.QueryRow(lastSyncSQL, p.WorkspaceID, p.Key).Scan(&p.LastSync)
+	err := ps.DB.QueryRow(lastSyncSQL, p.WorkspaceID, p.Key).Scan(&p.LastSync)
 	if err != nil {
 		var err error
 		t := time.Now()
@@ -177,7 +173,7 @@ func (ps *PipeStorage) LoadLastSyncFor(p *domain.Pipe) {
 
 func (ps *PipeStorage) LoadAllStatuses(workspaceID int) (map[string]*domain.Status, error) {
 	pipeStatuses := make(map[string]*domain.Status)
-	rows, err := ps.db.Query(selectPipeStatusSQL, workspaceID)
+	rows, err := ps.DB.Query(selectPipeStatusSQL, workspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +207,7 @@ func (ps *PipeStorage) SaveStatus(p *domain.Status) error {
 	if err != nil {
 		return err
 	}
-	_, err = ps.db.Exec(insertPipeStatusSQL, p.WorkspaceID, p.Key, b)
+	_, err = ps.DB.Exec(insertPipeStatusSQL, p.WorkspaceID, p.Key, b)
 	if err != nil {
 		return err
 	}
@@ -219,7 +215,7 @@ func (ps *PipeStorage) SaveStatus(p *domain.Status) error {
 }
 
 func (ps *PipeStorage) loadPipeWithKey(workspaceID int, key string, p *domain.Pipe) error {
-	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
+	rows, err := ps.DB.Query(singlePipesSQL, workspaceID, key)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ import (
 func TestApiClient_Ping(t *testing.T) {
 	t.Run("Api Ok", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {}))
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		err := client.Ping()
 
 		assert.NoError(t, err)
@@ -25,7 +25,7 @@ func TestApiClient_Ping(t *testing.T) {
 
 	t.Run("Api Not Healthy", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(500) }))
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		err := client.Ping()
 
 		assert.Error(t, err)
@@ -33,7 +33,7 @@ func TestApiClient_Ping(t *testing.T) {
 	})
 
 	t.Run("Api Bad Url", func(t *testing.T) {
-		client := NewTogglApiClient("UnknownUrl")
+		client := &TogglApiClient{URL: "UnknownUrl"}
 		err := client.Ping()
 
 		assert.Error(t, err)
@@ -49,7 +49,7 @@ func TestApiClient_stringify(t *testing.T) {
 }
 
 func TestApiClient_WithAuthToken(t *testing.T) {
-	client := NewTogglApiClient("http://localhost")
+	client := &TogglApiClient{URL: "http://localhost"}
 	client.WithAuthToken("token")
 
 	assert.Equal(t, "token", client.autoToken)
@@ -97,7 +97,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 			}
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		client.WithAuthToken("test")
 		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
 
@@ -108,7 +108,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 	t.Run("GetTimeEntries Server Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(500) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
@@ -119,7 +119,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 	t.Run("GetTimeEntries Error Read Body", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
@@ -131,7 +131,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 		srv.Close()
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
@@ -140,7 +140,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 	})
 
 	t.Run("GetTimeEntries Bad Url", func(t *testing.T) {
-		client := NewTogglApiClient("http://bad\\wtf")
+		client := &TogglApiClient{URL: "http://bad\\wtf"}
 		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
@@ -179,7 +179,7 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 			}
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		id, err := client.GetWorkspaceIdByToken("test123")
 
 		assert.NoError(t, err)
@@ -189,7 +189,7 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 	t.Run("GetWorkspaceIdByToken Server Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(500) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		id, err := client.GetWorkspaceIdByToken("test123")
 
 		assert.Error(t, err)
@@ -200,7 +200,7 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 	t.Run("GetWorkspaceIdByToken Error Read Body", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		id, err := client.GetWorkspaceIdByToken("test123")
 
 		assert.Error(t, err)
@@ -212,7 +212,7 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 		srv.Close()
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		id, err := client.GetWorkspaceIdByToken("test123")
 
 		assert.Error(t, err)
@@ -221,7 +221,7 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 	})
 
 	t.Run("GetWorkspaceIdByToken Bad Url", func(t *testing.T) {
-		client := NewTogglApiClient("http://bad\\wtf")
+		client := &TogglApiClient{URL: "http://bad\\wtf"}
 		id, err := client.GetWorkspaceIdByToken("test123")
 
 		assert.Error(t, err)
@@ -244,7 +244,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 			res.Write([]byte("test"))
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		client.WithAuthToken("test123")
 		res, err := client.postPipesAPI("test", nil)
 
@@ -255,7 +255,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 	t.Run("postPipesAPI Server Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(500) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.postPipesAPI("test", nil)
 
 		assert.Error(t, err)
@@ -265,7 +265,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 	t.Run("postPipesAPI Error Read Body", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.postPipesAPI("test", nil)
 
 		assert.NoError(t, err)
@@ -276,7 +276,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 		srv.Close()
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.postPipesAPI("test", nil)
 
 		assert.Error(t, err)
@@ -288,7 +288,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 		srv.Close()
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.postPipesAPI("test", func() {})
 
 		assert.Error(t, err)
@@ -297,7 +297,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 	})
 
 	t.Run("postPipesAPI Bad Url", func(t *testing.T) {
-		client := NewTogglApiClient("http://bad\\wtf")
+		client := &TogglApiClient{URL: "http://bad\\wtf"}
 		res, err := client.postPipesAPI("test", nil)
 
 		assert.Error(t, err)
@@ -326,7 +326,7 @@ func TestApiClient_PostClients(t *testing.T) {
 			res.Write(b)
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		out, err := client.PostClients("clients", nil)
 		assert.NoError(t, err)
 		assert.Equal(t, in, out)
@@ -335,7 +335,7 @@ func TestApiClient_PostClients(t *testing.T) {
 	t.Run("PostClients Response Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.PostClients("clients", nil)
 
 		assert.Error(t, err)
@@ -366,7 +366,7 @@ func TestApiClient_PostProjects(t *testing.T) {
 			res.Write(b)
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		out, err := client.PostProjects("projects", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
@@ -375,7 +375,7 @@ func TestApiClient_PostProjects(t *testing.T) {
 	t.Run("PostProjects Response Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.PostProjects("projects", nil)
 
 		assert.Error(t, err)
@@ -405,7 +405,7 @@ func TestApiClient_PostTasks(t *testing.T) {
 			res.Write(b)
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		out, err := client.PostTasks("tasks", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
@@ -414,7 +414,7 @@ func TestApiClient_PostTasks(t *testing.T) {
 	t.Run("PostTasks Response Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.PostTasks("tasks", nil)
 
 		assert.Error(t, err)
@@ -444,7 +444,7 @@ func TestApiClient_PostTodoLists(t *testing.T) {
 			res.Write(b)
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		out, err := client.PostTodoLists("todos", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
@@ -453,7 +453,7 @@ func TestApiClient_PostTodoLists(t *testing.T) {
 	t.Run("PostTodoLists Response Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.PostTodoLists("todos", nil)
 
 		assert.Error(t, err)
@@ -483,7 +483,7 @@ func TestApiClient_PostUsers(t *testing.T) {
 			res.Write(b)
 		}))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		out, err := client.PostUsers("users", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
@@ -492,7 +492,7 @@ func TestApiClient_PostUsers(t *testing.T) {
 	t.Run("PostUsers Response Error", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
-		client := NewTogglApiClient(srv.URL)
+		client := &TogglApiClient{URL: srv.URL}
 		res, err := client.PostUsers("users", nil)
 
 		assert.Error(t, err)
@@ -511,7 +511,7 @@ func generateTasks(nr int) []*toggl.Task {
 }
 
 func TestTaskSplitting(t *testing.T) {
-	c := NewTogglApiClient("")
+	c := &TogglApiClient{URL: ""}
 
 	taskCount := 9007
 	for i := 1; i < 5; i++ {
@@ -534,7 +534,7 @@ func TestTaskSplitting(t *testing.T) {
 }
 
 func TestTaskSplittingSmallCount(t *testing.T) {
-	c := NewTogglApiClient("")
+	c := &TogglApiClient{URL: ""}
 
 	ts := generateTasks(3)
 	trs, err := c.AdjustRequestSize(ts, 3)
@@ -552,7 +552,7 @@ func TestTaskSplittingSmallCount(t *testing.T) {
 }
 
 func TestTaskSplittingSmallDifferent(t *testing.T) {
-	cl := NewTogglApiClient("")
+	cl := &TogglApiClient{URL: ""}
 
 	counts := []int{3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997}
 	for _, c := range counts {

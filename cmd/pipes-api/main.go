@@ -13,11 +13,10 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	_ "github.com/lib/pq"
 
-	"github.com/toggl/pipes-api/internal/autosync"
 	"github.com/toggl/pipes-api/internal/config"
 	"github.com/toggl/pipes-api/internal/oauth"
-	"github.com/toggl/pipes-api/internal/queue"
 	"github.com/toggl/pipes-api/internal/server"
+	"github.com/toggl/pipes-api/internal/sync"
 
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
@@ -89,52 +88,69 @@ func main() {
 		log.Fatalf("couldn't create oauth provider, reason: %v", err)
 	}
 
-	togglApi := client.NewTogglApiClient(cfg.TogglAPIHost)
-	ps := storage.NewPipeStorage(db)
-	ims := storage.NewImportStorage(db)
-	idms := storage.NewIdMappingStorageStorage(db)
-	is := storage.NewIntegrationStorage(integrationsConfig)
-	as := storage.NewAuthorizationStorage(db)
+	togglApiClient := &client.TogglApiClient{URL: cfg.TogglAPIHost}
+	pipeStorage := &storage.PipeStorage{DB: db}
+	importStorage := &storage.ImportStorage{DB: db}
+	idMappingStorage := &storage.IdMappingStorage{DB: db}
+	authorizationStorage := &storage.AuthorizationStorage{DB: db}
+
+	integrationStorage := storage.NewIntegrationStorage(integrationsConfig)
 
 	authFactory := &domain.AuthorizationFactory{
-		IntegrationsStorage:   is,
-		AuthorizationsStorage: as,
+		IntegrationsStorage:   integrationStorage,
+		AuthorizationsStorage: authorizationStorage,
 		OAuthProvider:         oauthProvider,
 	}
 
 	pipeFactory := &domain.PipeFactory{
 		AuthorizationFactory:  authFactory,
-		AuthorizationsStorage: as,
-		PipesStorage:          ps,
-		ImportsStorage:        ims,
-		IDMappingsStorage:     idms,
-		TogglClient:           togglApi,
+		AuthorizationsStorage: authorizationStorage,
+		PipesStorage:          pipeStorage,
+		ImportsStorage:        importStorage,
+		IDMappingsStorage:     idMappingStorage,
+		TogglClient:           togglApiClient,
 	}
 
-	qe := queue.NewPipesQueue(db, pipeFactory, ps)
+	pipesQueue := &sync.Queue{
+		DB:           db,
+		PipeFactory:  pipeFactory,
+		PipesStorage: pipeStorage,
+	}
 
 	pipesService := &domain.Service{
 		AuthorizationFactory:  authFactory,
 		PipeFactory:           pipeFactory,
-		PipesStorage:          ps,
-		AuthorizationsStorage: as,
-		IntegrationsStorage:   is,
-		IDMappingsStorage:     idms,
-		ImportsStorage:        ims,
+		PipesStorage:          pipeStorage,
+		AuthorizationsStorage: authorizationStorage,
+		IntegrationsStorage:   integrationStorage,
+		IDMappingsStorage:     idMappingStorage,
+		ImportsStorage:        importStorage,
 		OAuthProvider:         oauthProvider,
-		TogglClient:           togglApi,
-		Queue:                 qe,
+		TogglClient:           togglApiClient,
 	}
 
-	autosync.NewService(qe, env.Debug).Start()
+	syncService := sync.WorkerPool{
+		Debug: env.Debug,
+		Queue: pipesQueue,
+	}
+	syncService.Start()
 
-	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
-		server.NewController(pipesService, is, server.Params{
+	controller := &server.Controller{
+		PipeService:         pipesService,
+		IntegrationsStorage: integrationStorage,
+		Queue:               pipesQueue,
+		Params: server.Params{
 			Version:   Version,
 			Revision:  Revision,
 			BuildTime: BuildTime,
-		}),
-		server.NewMiddleware(togglApi, is),
-	)
+		},
+	}
+
+	middleware := &server.Middleware{
+		IntegrationsStorage: integrationStorage,
+		TogglClient:         togglApiClient,
+	}
+
+	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(controller, middleware)
 	server.Start(env.Port, router)
 }

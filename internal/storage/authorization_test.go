@@ -46,7 +46,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	}
 	a := af.Create(1, integration.GitHub)
 
-	s := NewAuthorizationStorage(ts.db)
+	s := &AuthorizationStorage{DB: ts.db}
 	err := s.Save(a)
 	ts.NoError(err)
 
@@ -61,7 +61,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewAuthorizationStorage(cdb)
+	s := &AuthorizationStorage{DB: cdb}
 
 	af := &domain.AuthorizationFactory{
 		IntegrationsStorage:   &mocks.IntegrationsStorage{},
@@ -77,7 +77,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
-	s := NewAuthorizationStorage(ts.db)
+	s := &AuthorizationStorage{DB: ts.db}
 
 	af := &domain.AuthorizationFactory{
 		IntegrationsStorage:   &mocks.IntegrationsStorage{},
@@ -94,7 +94,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyA
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
-	s := NewAuthorizationStorage(ts.db)
+	s := &AuthorizationStorage{DB: ts.db}
 
 	af := &domain.AuthorizationFactory{
 		IntegrationsStorage:   &mocks.IntegrationsStorage{},

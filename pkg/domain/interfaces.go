@@ -29,7 +29,7 @@ type Queue interface {
 	ScheduleAutomaticPipesSynchronization() error
 	LoadScheduledPipes() ([]*Pipe, error)
 	MarkPipeSynchronized(*Pipe) error
-	SchedulePipeSynchronization(*Pipe) error
+	SchedulePipeSynchronization(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector UserParams) error
 }
 
 //go:generate mockery -name PipeService -case underscore -outpkg mocks
@@ -38,7 +38,6 @@ type PipeService interface {
 	CreatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	DeletePipe(workspaceID int, sid integration.ID, pid integration.PipeID) error
-	RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector UserParams) error
 	GetServicePipeLog(workspaceID int, sid integration.ID, pid integration.PipeID) (string, error)
 
 	ClearIDMappings(workspaceID int, sid integration.ID, pid integration.PipeID) error // TODO: Remove (Probably dead method).

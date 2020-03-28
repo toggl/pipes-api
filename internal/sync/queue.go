@@ -1,4 +1,4 @@
-package queue
+package sync
 
 import (
 	"database/sql"
@@ -22,27 +22,19 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Queue struct {
-	db *sql.DB
+	*sql.DB
 	*domain.PipeFactory
 	domain.PipesStorage
 }
 
-func NewPipesQueue(db *sql.DB, factory *domain.PipeFactory, store domain.PipesStorage) *Queue {
-	return &Queue{
-		db:           db,
-		PipeFactory:  factory,
-		PipesStorage: store,
-	}
-}
-
 func (pq *Queue) ScheduleAutomaticPipesSynchronization() error {
-	_, err := pq.db.Exec(queueAutomaticPipesSQL)
+	_, err := pq.DB.Exec(queueAutomaticPipesSQL)
 	return err
 }
 
 func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 	var pipes []*domain.Pipe
-	rows, err := pq.db.Query(selectPipesFromQueueSQL)
+	rows, err := pq.DB.Query(selectPipesFromQueueSQL)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -73,34 +65,48 @@ func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 }
 
 func (pq *Queue) MarkPipeSynchronized(pipe *domain.Pipe) error {
-	_, err := pq.db.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key)
+	_, err := pq.DB.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key)
 	return err
 }
 
-func (pq *Queue) SchedulePipeSynchronization(pipe *domain.Pipe) error {
+func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector domain.UserParams) error {
+	p := pq.PipeFactory.Create(workspaceID, serviceID, pipeID)
+	if err := pq.PipesStorage.Load(p); err != nil {
+		return err
+	}
+	if p == nil {
+		return domain.ErrPipeNotConfigured
+	}
+
+	p.UsersSelector = usersSelector
+
 	// make sure no race condition on fetching workspace lock
 	postPipeRunLock.Lock()
-	wsLock, exists := postPipeRunWorkspaceLock[pipe.WorkspaceID]
+	wsLock, exists := postPipeRunWorkspaceLock[p.WorkspaceID]
 	if !exists {
 		wsLock = &sync.Mutex{}
-		postPipeRunWorkspaceLock[pipe.WorkspaceID] = wsLock
+		postPipeRunWorkspaceLock[p.WorkspaceID] = wsLock
 	}
 	postPipeRunLock.Unlock()
 
-	if pipe.ID == integration.UsersPipe {
-		if len(pipe.UsersSelector.IDs) == 0 {
+	if p.ID == integration.UsersPipe {
+		if len(p.UsersSelector.IDs) == 0 {
 			return domain.SetParamsError{errors.New("Missing request payload")}
 		}
 
 		go func() {
 			wsLock.Lock()
-			pipe.Synchronize()
+			p.Synchronize()
 			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
 		return nil
 	}
 
-	_, err := pq.db.Exec(queuePipeAsFirstSQL, pipe.WorkspaceID, pipe.Key)
+	return pq.queuePipeAsFirst(p.WorkspaceID, p.Key)
+}
+
+func (pq *Queue) queuePipeAsFirst(workspaceId int, key string) error {
+	_, err := pq.DB.Exec(queuePipeAsFirstSQL, workspaceId, key)
 	return err
 }

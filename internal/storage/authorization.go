@@ -38,15 +38,11 @@ const (
 )
 
 type AuthorizationStorage struct {
-	db *sql.DB
-}
-
-func NewAuthorizationStorage(db *sql.DB) *AuthorizationStorage {
-	return &AuthorizationStorage{db: db}
+	DB *sql.DB
 }
 
 func (as *AuthorizationStorage) Save(a *domain.Authorization) error {
-	_, err := as.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
+	_, err := as.DB.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
 	}
@@ -54,7 +50,7 @@ func (as *AuthorizationStorage) Save(a *domain.Authorization) error {
 }
 
 func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID integration.ID, a *domain.Authorization) error {
-	rows, err := as.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
+	rows, err := as.DB.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return err
 	}
@@ -70,7 +66,7 @@ func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID integrat
 }
 
 func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID integration.ID) error {
-	_, err := as.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
+	_, err := as.DB.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
 
@@ -78,7 +74,7 @@ func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID integr
 // Map format: map[externalServiceID]isAuthorized
 func (as *AuthorizationStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error) {
 	authorizations := make(map[integration.ID]bool)
-	rows, err := as.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
+	rows, err := as.DB.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return authorizations, err
 	}

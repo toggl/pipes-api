@@ -23,7 +23,6 @@ type Service struct {
 
 	OAuthProvider
 	TogglClient
-	Queue
 }
 
 func (svc *Service) Ready() []error {
@@ -349,20 +348,4 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]Integration, error) {
 		resultIntegrations = append(resultIntegrations, *ci)
 	}
 	return resultIntegrations, nil
-}
-
-func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector UserParams) error {
-	p := svc.PipeFactory.Create(workspaceID, serviceID, pipeID)
-	if err := svc.PipesStorage.Load(p); err != nil {
-		return err
-	}
-	if p == nil {
-		return ErrPipeNotConfigured
-	}
-
-	p.UsersSelector = usersSelector
-	if err := svc.Queue.SchedulePipeSynchronization(p); err != nil {
-		return err
-	}
-	return nil
 }

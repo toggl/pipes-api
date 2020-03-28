@@ -25,7 +25,6 @@ func (ts *ServiceTestSuite) SetupTest() {
 	togglClient := &mocks.TogglClient{}
 	authorizationStorage := &mocks.AuthorizationsStorage{}
 	oauthProvider := &mocks.OAuthProvider{}
-	queue := &mocks.Queue{}
 
 	authFactory := &domain.AuthorizationFactory{
 		IntegrationsStorage:   integrationStorage,
@@ -52,7 +51,6 @@ func (ts *ServiceTestSuite) SetupTest() {
 		ImportsStorage:        importStorage,
 		OAuthProvider:         oauthProvider,
 		TogglClient:           togglClient,
-		Queue:                 queue,
 	}
 }
 

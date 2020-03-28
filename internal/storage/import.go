@@ -33,11 +33,7 @@ const (
 )
 
 type ImportStorage struct {
-	db *sql.DB
-}
-
-func NewImportStorage(db *sql.DB) *ImportStorage {
-	return &ImportStorage{db: db}
+	DB *sql.DB
 }
 
 func (is *ImportStorage) SaveAccountsFor(s integration.Integration, res toggl.AccountsResponse) error {
@@ -179,18 +175,18 @@ func (is *ImportStorage) LoadTasksFor(s integration.Integration) (*toggl.TasksRe
 }
 
 func (is *ImportStorage) DeleteAccountsFor(s integration.Integration) error {
-	_, err := is.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integration.AccountsPipe))
+	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integration.AccountsPipe))
 	return err
 }
 
 func (is *ImportStorage) DeleteUsersFor(s integration.Integration) error {
-	_, err := is.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integration.UsersPipe))
+	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integration.UsersPipe))
 	return err
 }
 
 func (is *ImportStorage) loadObject(s integration.Integration, pid integration.PipeID) ([]byte, error) {
 	var result []byte
-	rows, err := is.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
+	rows, err := is.DB.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +201,7 @@ func (is *ImportStorage) loadObject(s integration.Integration, pid integration.P
 }
 
 func (is *ImportStorage) saveObject(s integration.Integration, pid integration.PipeID, b []byte) error {
-	_, err := is.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
+	_, err := is.DB.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err

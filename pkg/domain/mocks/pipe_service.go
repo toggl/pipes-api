@@ -236,20 +236,6 @@ func (_m *PipeService) Ready() []error {
 	return r0
 }
 
-// RunPipe provides a mock function with given fields: workspaceID, sid, pid, usersSelector
-func (_m *PipeService) RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector []byte) error {
-	ret := _m.Called(workspaceID, sid, pid, usersSelector)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID, []byte) error); ok {
-		r0 = rf(workspaceID, sid, pid, usersSelector)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UpdatePipe provides a mock function with given fields: workspaceID, sid, pid, params
 func (_m *PipeService) UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, params)

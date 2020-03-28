@@ -44,7 +44,7 @@ func (ts *StorageTestSuite) TestStorage_IsDown() {
 	cdb, err := sql.Open("postgres", getConnectionStringForTests())
 	require.NoError(ts.T(), err)
 
-	s := NewPipeStorage(cdb)
+	s := &PipeStorage{DB: cdb}
 	ts.False(s.IsDown())
 
 	cdb.Close()
@@ -52,7 +52,7 @@ func (ts *StorageTestSuite) TestStorage_IsDown() {
 }
 
 func (ts *StorageTestSuite) TestStorage_Save_Load() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 
 	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
@@ -65,7 +65,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Load() {
 }
 
 func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 
 	p1 := domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "")
 	p1.Status = domain.StatusSuccess
@@ -93,7 +93,7 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 }
 
 func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 
 	p1 := domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "")
 	p2 := domain.NewPipeStatus(1, integration.Asana, integration.UsersPipe, "")
@@ -110,7 +110,7 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
 }
 
 func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 
 	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
@@ -126,7 +126,7 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 }
 
 func (ts *StorageTestSuite) TestStorage_Save_Delete() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 
 	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
@@ -149,7 +149,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 }
 
 func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 
 	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
@@ -172,7 +172,7 @@ func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() 
 }
 
 func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
-	s := NewPipeStorage(ts.db)
+	s := &PipeStorage{DB: ts.db}
 	t := time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC)
 
 	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)

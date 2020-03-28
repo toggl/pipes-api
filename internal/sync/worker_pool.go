@@ -1,4 +1,4 @@
-package autosync
+package sync
 
 import (
 	"log"
@@ -20,31 +20,24 @@ const (
 	sleepMax     = 60
 )
 
-type Service struct {
-	debug bool
-	queue domain.Queue
+type WorkerPool struct {
+	Debug bool
+	domain.Queue
 }
 
-func NewService(p domain.Queue, debug bool) *Service {
-	return &Service{
-		queue: p,
-		debug: debug,
-	}
-}
-
-func (s *Service) Start() {
+func (s *WorkerPool) Start() {
 	go s.startRunner()
 	go s.startQueue()
 }
 
 // background worker function
-func (s *Service) pipeWorker(id int) {
+func (s *WorkerPool) pipeWorker(id int) {
 	defer func() {
 		s.debugf("[Worker %d] died\n", id)
 		wg.Done()
 	}()
 	for {
-		pipes, err := s.queue.LoadScheduledPipes()
+		pipes, err := s.Queue.LoadScheduledPipes()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -65,7 +58,7 @@ func (s *Service) pipeWorker(id int) {
 
 			pipe.Synchronize()
 
-			err := s.queue.MarkPipeSynchronized(pipe)
+			err := s.Queue.MarkPipeSynchronized(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
@@ -82,7 +75,7 @@ func (s *Service) pipeWorker(id int) {
 	}
 }
 
-func (s *Service) startRunner() {
+func (s *WorkerPool) startRunner() {
 	for {
 		duration := time.Duration(rand.Intn(sleepMax-sleepMin)+sleepMin) * time.Second
 		s.debugf("-- Autosync sleeping for %s", duration)
@@ -99,7 +92,7 @@ func (s *Service) startRunner() {
 }
 
 // schedule background job for each integration with auto sync enabled
-func (s *Service) startQueue() {
+func (s *WorkerPool) startQueue() {
 	for {
 		// making sleep longer to not trigger auto sync too fast
 		// between 600s until 3000s
@@ -109,7 +102,7 @@ func (s *Service) startQueue() {
 
 		log.Println("-- startQueue started")
 
-		if err := s.queue.ScheduleAutomaticPipesSynchronization(); err != nil {
+		if err := s.Queue.ScheduleAutomaticPipesSynchronization(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}
@@ -118,8 +111,8 @@ func (s *Service) startQueue() {
 	}
 }
 
-func (s *Service) debugf(format string, v ...interface{}) {
-	if s.debug {
+func (s *WorkerPool) debugf(format string, v ...interface{}) {
+	if s.Debug {
 		log.Printf(format, v...)
 	}
 }

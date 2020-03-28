@@ -24,14 +24,10 @@ var (
 )
 
 type TogglApiClient struct {
-	togglApiUrl string
+	URL string
 
 	autoToken string
 	mx        sync.Mutex
-}
-
-func NewTogglApiClient(url string) *TogglApiClient {
-	return &TogglApiClient{togglApiUrl: url}
 }
 
 func (c *TogglApiClient) WithAuthToken(authToken string) {
@@ -44,7 +40,7 @@ func (c *TogglApiClient) WithAuthToken(authToken string) {
 func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	c.WithAuthToken(token)
 
-	url := fmt.Sprintf("%s/api/pipes/workspace", c.togglApiUrl)
+	url := fmt.Sprintf("%s/api/pipes/workspace", c.URL)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return 0, err
@@ -145,7 +141,7 @@ func (c *TogglApiClient) PostUsers(usersPipeID integration.PipeID, users interfa
 
 func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]toggl.TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
-		c.togglApiUrl, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
+		c.URL, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -177,7 +173,7 @@ func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs
 func (c *TogglApiClient) Ping() error {
 	var client = &http.Client{Timeout: 3 * time.Second}
 
-	url := fmt.Sprintf("%s/api/v9/status", c.togglApiUrl)
+	url := fmt.Sprintf("%s/api/v9/status", c.URL)
 	resp, err := client.Get(url)
 	if err != nil {
 		return fmt.Errorf("error checking toggl api, reason: %w", err)
@@ -219,7 +215,7 @@ func (c *TogglApiClient) AdjustRequestSize(tasks []*toggl.Task, split int) ([]*t
 
 func (c *TogglApiClient) postPipesAPI(pipeID integration.PipeID, payload interface{}) ([]byte, error) {
 	start := time.Now()
-	url := fmt.Sprintf("%s/api/pipes/%s", c.togglApiUrl, pipeID)
+	url := fmt.Sprintf("%s/api/pipes/%s", c.URL, pipeID)
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
