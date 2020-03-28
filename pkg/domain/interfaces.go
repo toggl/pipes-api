@@ -38,7 +38,7 @@ type PipeService interface {
 	CreatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	DeletePipe(workspaceID int, sid integration.ID, pid integration.PipeID) error
-	RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector *UserParams) error
+	RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector UserParams) error
 	GetServicePipeLog(workspaceID int, sid integration.ID, pid integration.PipeID) (string, error)
 
 	ClearIDMappings(workspaceID int, sid integration.ID, pid integration.PipeID) error // TODO: Remove (Probably dead method).

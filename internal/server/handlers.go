@@ -266,9 +266,9 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	var selector *domain.UserParams
+	var selector domain.UserParams
 	if pipeID == integration.UsersPipe {
-		if err := json.Unmarshal(req.body, selector); err != nil {
+		if err := json.Unmarshal(req.body, &selector); err != nil {
 			return badRequest(fmt.Errorf("unable to parse users list, reason: %w", err))
 		}
 	}

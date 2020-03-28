@@ -88,7 +88,7 @@ func (pq *Queue) SchedulePipeSynchronization(pipe *domain.Pipe) error {
 	postPipeRunLock.Unlock()
 
 	if pipe.ID == integration.UsersPipe {
-		if pipe.UsersSelector == nil {
+		if len(pipe.UsersSelector.IDs) == 0 {
 			return domain.SetParamsError{errors.New("Missing request payload")}
 		}
 

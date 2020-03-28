@@ -68,7 +68,7 @@ type Pipe struct {
 	WorkspaceID     int                `json:"-"`
 	ServiceID       integration.ID     `json:"-"`
 	Key             string             `json:"-"`
-	UsersSelector   *UserParams        `json:"-"`
+	UsersSelector   UserParams         `json:"-"`
 	LastSync        *time.Time         `json:"-"`
 
 	*AuthorizationFactory `json:"-"`
@@ -250,7 +250,7 @@ func (p *Pipe) postUsers() error {
 		return errors.New("service users not found")
 	}
 
-	if p.UsersSelector == nil {
+	if len(p.UsersSelector.IDs) == 0 {
 		return errors.New("unable to get selected users")
 	}
 

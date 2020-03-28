@@ -351,7 +351,7 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]Integration, error) {
 	return resultIntegrations, nil
 }
 
-func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector *UserParams) error {
+func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector UserParams) error {
 	p := svc.PipeFactory.Create(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
