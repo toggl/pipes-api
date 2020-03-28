@@ -16,19 +16,6 @@ const (
 	TypeOauth1 = "oauth1"
 )
 
-type Authorization struct {
-	WorkspaceID    int
-	ServiceID      integration.ID
-	WorkspaceToken string
-	// Data can store 2 different structures encoded to JSON depends on Authorization type.
-	// For oAuth v1 it will store "*oauthplain.Token" and for oAuth v2 it will store "*goauth2.Token".
-	Data []byte
-
-	IntegrationsStorage
-	AuthorizationsStorage
-	OAuthProvider
-}
-
 type AuthorizationFactory struct {
 	IntegrationsStorage
 	AuthorizationsStorage
@@ -58,6 +45,19 @@ func (f *AuthorizationFactory) Create(workspaceID int, id integration.ID) *Autho
 		AuthorizationsStorage: f.AuthorizationsStorage,
 		OAuthProvider:         f.OAuthProvider,
 	}
+}
+
+type Authorization struct {
+	WorkspaceID    int
+	ServiceID      integration.ID
+	WorkspaceToken string
+	// Data can store 2 different structures encoded to JSON depends on Authorization type.
+	// For oAuth v1 it will store "*oauthplain.Token" and for oAuth v2 it will store "*goauth2.Token".
+	Data []byte
+
+	IntegrationsStorage
+	AuthorizationsStorage
+	OAuthProvider
 }
 
 func (a *Authorization) SetOAuth2Token(t *goauth2.Token) error {

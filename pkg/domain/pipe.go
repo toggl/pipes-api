@@ -19,6 +19,31 @@ import (
 // ErrJSONParsing hides json marshalling errors from users
 var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
 
+type PipeFactory struct {
+	*AuthorizationFactory
+	AuthorizationsStorage
+	PipesStorage
+	ImportsStorage
+	IDMappingsStorage
+	TogglClient
+}
+
+func (pf *PipeFactory) Create(workspaceID int, sid integration.ID, pid integration.PipeID) *Pipe {
+	return &Pipe{
+		ID:          pid,
+		Key:         PipesKey(sid, pid),
+		ServiceID:   sid,
+		WorkspaceID: workspaceID,
+
+		AuthorizationFactory:  pf.AuthorizationFactory,
+		AuthorizationsStorage: pf.AuthorizationsStorage,
+		PipesStorage:          pf.PipesStorage,
+		ImportsStorage:        pf.ImportsStorage,
+		IDMappingsStorage:     pf.IDMappingsStorage,
+		TogglClient:           pf.TogglClient,
+	}
+}
+
 type Integration struct {
 	ID         integration.ID `json:"id"`
 	Name       string         `json:"name"`
@@ -55,31 +80,6 @@ type Pipe struct {
 
 	pipesApiHost string       `json:"-"`
 	mx           sync.RWMutex `json:"-"`
-}
-
-type PipeFactory struct {
-	*AuthorizationFactory
-	AuthorizationsStorage
-	PipesStorage
-	ImportsStorage
-	IDMappingsStorage
-	TogglClient
-}
-
-func (pf *PipeFactory) Create(workspaceID int, sid integration.ID, pid integration.PipeID) *Pipe {
-	return &Pipe{
-		ID:          pid,
-		Key:         PipesKey(sid, pid),
-		ServiceID:   sid,
-		WorkspaceID: workspaceID,
-
-		AuthorizationFactory:  pf.AuthorizationFactory,
-		AuthorizationsStorage: pf.AuthorizationsStorage,
-		PipesStorage:          pf.PipesStorage,
-		ImportsStorage:        pf.ImportsStorage,
-		IDMappingsStorage:     pf.IDMappingsStorage,
-		TogglClient:           pf.TogglClient,
-	}
 }
 
 func PipesKey(sid integration.ID, pid integration.PipeID) string {
