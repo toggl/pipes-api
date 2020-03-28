@@ -7,7 +7,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/bugsnag/bugsnag-go"
@@ -78,8 +77,7 @@ type Pipe struct {
 	IDMappingsStorage     `json:"-"`
 	TogglClient           `json:"-"`
 
-	pipesApiHost string       `json:"-"`
-	mx           sync.RWMutex `json:"-"`
+	pipesApiHost string `json:"-"`
 }
 
 func PipesKey(sid integration.ID, pid integration.PipeID) string {
@@ -107,13 +105,9 @@ func (p *Pipe) Synchronize() {
 		}
 	}()
 
-	p.mx.RLock()
-	host := p.pipesApiHost
-	p.mx.RUnlock()
-
 	p.PipesStorage.LoadLastSyncFor(p)
 
-	p.PipeStatus = NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, host)
+	p.PipeStatus = NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, p.pipesApiHost)
 	if err = p.PipesStorage.SaveStatus(p.PipeStatus); err != nil {
 		p.notifyBugsnag(err)
 		return
