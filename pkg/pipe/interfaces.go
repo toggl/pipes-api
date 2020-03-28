@@ -67,38 +67,38 @@ type Service interface {
 	Ready() []error
 }
 
-//go:generate mockery -name Storage -case underscore -inpkg
-type Storage interface {
-	// ID Mappings (Connections)
-	LoadIDMapping(workspaceID int, key string) (*IDMapping, error)
-	LoadReversedIDMapping(workspaceID int, key string) (*ReversedIDMapping, error)
-	SaveIDMapping(c *IDMapping) error
-	DeleteIDMappings(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
-
+//go:generate mockery -name PipesStorage -case underscore -inpkg
+type PipesStorage interface {
 	// Pipes
-
-	LoadPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
-	LoadPipes(workspaceID int) (map[string]*Pipe, error)
+	Load(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
+	LoadAll(workspaceID int) (map[string]*Pipe, error)
 	Save(p *Pipe) error
 	Delete(p *Pipe, workspaceID int) error
-	DeletePipesByWorkspaceIDServiceID(workspaceID int, sid integration.ID) error
-	LoadLastSync(p *Pipe)
+	DeleteByWorkspaceIDServiceID(workspaceID int, sid integration.ID) error
+	LoadLastSyncFor(p *Pipe)
 
-	// Pipe statuses
-
-	LoadPipeStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*Status, error)
-	LoadPipeStatuses(workspaceID int) (map[string]*Status, error)
-	SavePipeStatus(p *Status) error
+	// Pipe Statuses
+	LoadStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*Status, error)
+	LoadAllStatuses(workspaceID int) (map[string]*Status, error)
+	SaveStatus(p *Status) error
 
 	IsDown() bool
 }
 
+//go:generate mockery -name IDMappingsStorage -case underscore -inpkg
+type IDMappingsStorage interface {
+	Load(workspaceID int, key string) (*IDMapping, error)
+	LoadReversed(workspaceID int, key string) (*ReversedIDMapping, error)
+	Save(c *IDMapping) error
+	Delete(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
+}
+
 //go:generate mockery -name AuthorizationsStorage -case underscore -inpkg
 type AuthorizationsStorage interface {
-	LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error
+	Load(workspaceID int, externalServiceID integration.ID, a *Authorization) error
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error)
-	SaveAuthorization(a *Authorization) error
-	DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error
+	Save(a *Authorization) error
+	Delete(workspaceID int, externalServiceID integration.ID) error
 }
 
 //go:generate mockery -name IntegrationsStorage -case underscore -inpkg

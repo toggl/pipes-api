@@ -52,62 +52,14 @@ func (ts *StorageTestSuite) TearDownSuite() {
 
 func (ts *StorageTestSuite) SetupTest() {
 	_, err1 := ts.db.Exec(truncateAuthorizationSQL)
-	_, err2 := ts.db.Exec(truncateConnectionSQL)
 	_, err3 := ts.db.Exec(truncatePipesStatusSQL)
 	_, err4 := ts.db.Exec(truncatePipesSQL)
 	_, err5 := ts.db.Exec(truncateImportsSQL)
 
 	ts.NoError(err1)
-	ts.NoError(err2)
 	ts.NoError(err3)
 	ts.NoError(err4)
 	ts.NoError(err5)
-}
-
-func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
-	s := NewPostgresStorage(ts.db)
-	c := pipe.NewIDMapping(1, "test1")
-
-	err := s.SaveIDMapping(c)
-	ts.NoError(err)
-
-	cFromDb, err := s.LoadIDMapping(1, "test1")
-	ts.NoError(err)
-	ts.Equal(c, cFromDb)
-}
-
-func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed() {
-	cdb, err := sql.Open("postgres", getDbConnString())
-	require.NoError(ts.T(), err)
-	cdb.Close()
-
-	s := NewPostgresStorage(cdb)
-	c := pipe.NewIDMapping(2, "test2")
-
-	err = s.SaveIDMapping(c)
-	ts.Error(err)
-
-	con, err := s.LoadIDMapping(2, "test2")
-	ts.Error(err)
-	ts.Nil(con)
-}
-
-func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
-	s := NewPostgresStorage(ts.db)
-	c := pipe.NewIDMapping(3, "test3")
-	c.Data["1-test"] = 10
-	c.Data["2-test"] = 20
-
-	err := s.SaveIDMapping(c)
-	ts.NoError(err)
-
-	cFromDb, err := s.LoadReversedIDMapping(3, "test3")
-	ts.NoError(err)
-	ts.Contains(cFromDb.GetKeys(), 10)
-	ts.Contains(cFromDb.GetKeys(), 20)
-
-	ts.Equal(1, cFromDb.GetForeignID(10))
-	ts.Equal(2, cFromDb.GetForeignID(20))
 }
 
 func (ts *StorageTestSuite) TestStorage_IsDown() {
@@ -128,7 +80,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Load() {
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2, err := s.LoadPipe(1, integration.GitHub, integration.UsersPipe)
+	p2, err := s.Load(1, integration.GitHub, integration.UsersPipe)
 	ts.NoError(err)
 	ts.Equal(p1, p2)
 }
@@ -140,10 +92,10 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 	p1.Status = pipe.StatusSuccess
 	p1.ObjectCounts = []string{"obj1", "obj2"}
 
-	err := s.SavePipeStatus(p1)
+	err := s.SaveStatus(p1)
 	ts.NoError(err)
 
-	p2, err := s.LoadPipeStatus(1, integration.GitHub, integration.UsersPipe)
+	p2, err := s.LoadStatus(1, integration.GitHub, integration.UsersPipe)
 	ts.NoError(err)
 	ts.Equal(p1.WorkspaceID, p2.WorkspaceID)
 	ts.Equal(p1.ServiceID, p2.ServiceID)
@@ -152,10 +104,10 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 
 	p3 := pipe.NewPipeStatus(2, integration.GitHub, integration.UsersPipe, "")
 	p3.Status = pipe.StatusSuccess
-	err = s.SavePipeStatus(p3)
+	err = s.SaveStatus(p3)
 	ts.NoError(err)
 
-	p4, err := s.LoadPipeStatus(2, integration.GitHub, integration.UsersPipe)
+	p4, err := s.LoadStatus(2, integration.GitHub, integration.UsersPipe)
 	ts.NoError(err)
 
 	ts.Contains(p4.Message, "No new")
@@ -167,12 +119,12 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
 	p1 := pipe.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "")
 	p2 := pipe.NewPipeStatus(1, integration.Asana, integration.UsersPipe, "")
 
-	err := s.SavePipeStatus(p1)
+	err := s.SaveStatus(p1)
 	ts.NoError(err)
-	err = s.SavePipeStatus(p2)
+	err = s.SaveStatus(p2)
 	ts.NoError(err)
 
-	ss, err := s.LoadPipeStatuses(1)
+	ss, err := s.LoadAllStatuses(1)
 	ts.NoError(err)
 
 	ts.Equal(2, len(ss))
@@ -189,7 +141,7 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 	err = s.Save(p2)
 	ts.NoError(err)
 
-	ps, err := s.LoadPipes(1)
+	ps, err := s.LoadAll(1)
 	ts.NoError(err)
 	ts.Equal(2, len(ps))
 }
@@ -205,14 +157,14 @@ func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 	err = s.Save(p2)
 	ts.NoError(err)
 
-	ps, err := s.LoadPipes(1)
+	ps, err := s.LoadAll(1)
 	ts.NoError(err)
 	ts.Equal(2, len(ps))
 
 	err = s.Delete(p1, 1)
 	ts.NoError(err)
 
-	ps, err = s.LoadPipes(1)
+	ps, err = s.LoadAll(1)
 	ts.NoError(err)
 	ts.Equal(1, len(ps))
 }
@@ -228,14 +180,14 @@ func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() 
 	err = s.Save(p2)
 	ts.NoError(err)
 
-	ps, err := s.LoadPipes(1)
+	ps, err := s.LoadAll(1)
 	ts.NoError(err)
 	ts.Equal(2, len(ps))
 
-	err = s.DeletePipesByWorkspaceIDServiceID(1, integration.GitHub)
+	err = s.DeleteByWorkspaceIDServiceID(1, integration.GitHub)
 	ts.NoError(err)
 
-	ps, err = s.LoadPipes(1)
+	ps, err = s.LoadAll(1)
 	ts.NoError(err)
 	ts.Equal(0, len(ps))
 }
@@ -249,20 +201,9 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	s.LoadLastSync(p1)
+	s.LoadLastSyncFor(p1)
 	ts.NotNil(p1.LastSync)
 	ts.Equal(t, *p1.LastSync)
-}
-
-func (ts *StorageTestSuite) TestStorage_DeletePipeConnections() {
-	s := NewPostgresStorage(ts.db)
-
-	p1 := pipe.NewPipe(1, integration.GitHub, integration.UsersPipe)
-	p1.PipeStatus = pipe.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "test")
-	svc := pipe.NewExternalService(integration.GitHub, 1)
-
-	err := s.DeleteIDMappings(1, svc.KeyFor(p1.ID), p1.PipeStatus.Key)
-	ts.NoError(err)
 }
 
 // In order for 'go test' to run this suite, we need to create

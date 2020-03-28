@@ -46,11 +46,11 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	a := af.Create(1, integration.GitHub)
 
 	s := NewAuthorizationsPostgresStorage(ts.db)
-	err := s.SaveAuthorization(a)
+	err := s.Save(a)
 	ts.NoError(err)
 
 	aFromDb := af.Create(0, integration.GitHub)
-	err = s.LoadAuthorization(1, integration.GitHub, aFromDb)
+	err = s.Load(1, integration.GitHub, aFromDb)
 	ts.NoError(err)
 	ts.Equal(a, aFromDb)
 }
@@ -68,10 +68,10 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 		OAuthProvider:         &pipe.MockOAuthProvider{},
 	}
 	a := af.Create(2, integration.Asana)
-	err = s.SaveAuthorization(a)
+	err = s.Save(a)
 	ts.Error(err)
 
-	err = s.LoadAuthorization(2, integration.Asana, a)
+	err = s.Load(2, integration.Asana, a)
 	ts.Error(err)
 }
 
@@ -85,10 +85,10 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyA
 	}
 	a := af.Create(1, integration.GitHub)
 
-	err := s.SaveAuthorization(a)
+	err := s.Save(a)
 	ts.NoError(err)
 
-	err = s.DeleteAuthorization(1, integration.GitHub)
+	err = s.Delete(1, integration.GitHub)
 	ts.NoError(err)
 }
 
@@ -104,10 +104,10 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWork
 	a1 := af.Create(1, integration.GitHub)
 	a2 := af.Create(1, integration.Asana)
 
-	err := s.SaveAuthorization(a1)
+	err := s.Save(a1)
 	ts.NoError(err)
 
-	err = s.SaveAuthorization(a2)
+	err = s.Save(a2)
 	ts.NoError(err)
 
 	auth, err := s.LoadWorkspaceAuthorizations(1)

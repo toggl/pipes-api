@@ -34,8 +34,7 @@ const (
     UNION
     SELECT * FROM existing_pipe
   `
-	deletePipeConnectionsSQL = `DELETE FROM connections WHERE workspace_id = $1 AND Key = $2`
-	truncatePipesSQL         = `DELETE FROM pipes WHERE 1=1`
+	truncatePipesSQL = `DELETE FROM pipes WHERE 1=1`
 
 	selectPipeStatusSQL = `SELECT Key, data FROM pipes_status WHERE workspace_id = $1`
 	singlePipeStatusSQL = `SELECT data FROM pipes_status WHERE workspace_id = $1 AND Key = $2 LIMIT 1`
@@ -58,25 +57,6 @@ const (
     SELECT * FROM existing_status
   `
 	truncatePipesStatusSQL = `TRUNCATE TABLE pipes_status`
-
-	selectConnectionSQL = `SELECT Key, data FROM connections WHERE workspace_id = $1 AND Key = $2 LIMIT 1`
-	insertConnectionSQL = `
-    WITH existing_connection AS (
-      UPDATE connections SET data = $3
-      WHERE workspace_id = $1 AND Key = $2
-      RETURNING Key
-    ),
-    inserted_connection AS (
-      INSERT INTO connections(workspace_id, Key, data)
-      SELECT $1, $2, $3
-      WHERE NOT EXISTS (SELECT 1 FROM existing_connection)
-      RETURNING Key
-    )
-    SELECT * FROM inserted_connection
-    UNION
-    SELECT * FROM existing_connection
-  `
-	truncateConnectionSQL = `TRUNCATE TABLE connections`
 )
 
 type PostgresStorage struct {
@@ -94,7 +74,7 @@ func (ps *PostgresStorage) IsDown() bool {
 	return false
 }
 
-func (ps *PostgresStorage) LoadPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*pipe.Pipe, error) {
+func (ps *PostgresStorage) Load(workspaceID int, sid integration.ID, pid integration.PipeID) (*pipe.Pipe, error) {
 	key := pipe.PipesKey(sid, pid)
 	return ps.loadPipeWithKey(workspaceID, key)
 }
@@ -134,31 +114,7 @@ func (ps *PostgresStorage) Delete(p *pipe.Pipe, workspaceID int) error {
 	return tx.Commit()
 }
 
-func (ps *PostgresStorage) DeleteIDMappings(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
-	tx, err := ps.db.Begin()
-	if err != nil {
-		return
-	}
-	_, err = tx.Exec(deletePipeConnectionsSQL, workspaceID, pipeConnectionKey)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			err = rollbackErr
-		}
-		return
-	}
-	_, err = tx.Exec(deletePipeStatusSQL, workspaceID, pipeStatusKey)
-	if err != nil {
-		rollbackErr := tx.Rollback()
-		if rollbackErr != nil {
-			err = rollbackErr
-		}
-
-	}
-	return tx.Commit()
-}
-
-func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*pipe.Status, error) {
+func (ps *PostgresStorage) LoadStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*pipe.Status, error) {
 	key := pipe.PipesKey(sid, pid)
 	rows, err := ps.db.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
@@ -182,40 +138,12 @@ func (ps *PostgresStorage) LoadPipeStatus(workspaceID int, sid integration.ID, p
 	return &pipeStatus, nil
 }
 
-func (ps *PostgresStorage) DeletePipesByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
+func (ps *PostgresStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
 
-func (ps *PostgresStorage) SaveIDMapping(c *pipe.IDMapping) error {
-	b, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-	_, err = ps.db.Exec(insertConnectionSQL, c.WorkspaceID, c.Key, b)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (ps *PostgresStorage) LoadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
-	return ps.loadIDMapping(workspaceID, key)
-}
-
-func (ps *PostgresStorage) LoadReversedIDMapping(workspaceID int, key string) (*pipe.ReversedIDMapping, error) {
-	connection, err := ps.loadIDMapping(workspaceID, key)
-	if err != nil {
-		return nil, err
-	}
-	reversed := pipe.NewReversedConnection()
-	for key, value := range connection.Data {
-		reversed.Data[value] = key
-	}
-	return reversed, nil
-}
-
-func (ps *PostgresStorage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, error) {
+func (ps *PostgresStorage) LoadAll(workspaceID int) (map[string]*pipe.Pipe, error) {
 	pipes := make(map[string]*pipe.Pipe)
 	rows, err := ps.db.Query(selectPipesSQL, workspaceID)
 	if err != nil {
@@ -232,7 +160,7 @@ func (ps *PostgresStorage) LoadPipes(workspaceID int) (map[string]*pipe.Pipe, er
 	return pipes, nil
 }
 
-func (ps *PostgresStorage) LoadLastSync(p *pipe.Pipe) {
+func (ps *PostgresStorage) LoadLastSyncFor(p *pipe.Pipe) {
 	err := ps.db.QueryRow(lastSyncSQL, p.WorkspaceID, p.Key).Scan(&p.LastSync)
 	if err != nil {
 		var err error
@@ -247,7 +175,7 @@ func (ps *PostgresStorage) LoadLastSync(p *pipe.Pipe) {
 	}
 }
 
-func (ps *PostgresStorage) LoadPipeStatuses(workspaceID int) (map[string]*pipe.Status, error) {
+func (ps *PostgresStorage) LoadAllStatuses(workspaceID int) (map[string]*pipe.Status, error) {
 	pipeStatuses := make(map[string]*pipe.Status)
 	rows, err := ps.db.Query(selectPipeStatusSQL, workspaceID)
 	if err != nil {
@@ -271,7 +199,7 @@ func (ps *PostgresStorage) LoadPipeStatuses(workspaceID int) (map[string]*pipe.S
 	return pipeStatuses, nil
 }
 
-func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
+func (ps *PostgresStorage) SaveStatus(p *pipe.Status) error {
 	if p.Status == "success" {
 		if len(p.ObjectCounts) > 0 {
 			p.Message = fmt.Sprintf("%s successfully imported/exported", strings.Join(p.ObjectCounts, ", "))
@@ -288,27 +216,6 @@ func (ps *PostgresStorage) SavePipeStatus(p *pipe.Status) error {
 		return err
 	}
 	return nil
-}
-
-func (ps *PostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
-	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	connection := pipe.NewIDMapping(workspaceID, key)
-	if rows.Next() {
-		var b []byte
-		if err := rows.Scan(&connection.Key, &b); err != nil {
-			return nil, err
-		}
-		err := json.Unmarshal(b, connection)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return connection, nil
 }
 
 func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string) (*pipe.Pipe, error) {

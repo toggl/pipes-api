@@ -12,8 +12,8 @@ type MockAuthorizationsStorage struct {
 	mock.Mock
 }
 
-// DeleteAuthorization provides a mock function with given fields: workspaceID, externalServiceID
-func (_m *MockAuthorizationsStorage) DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error {
+// Delete provides a mock function with given fields: workspaceID, externalServiceID
+func (_m *MockAuthorizationsStorage) Delete(workspaceID int, externalServiceID integration.ID) error {
 	ret := _m.Called(workspaceID, externalServiceID)
 
 	var r0 error
@@ -26,8 +26,8 @@ func (_m *MockAuthorizationsStorage) DeleteAuthorization(workspaceID int, extern
 	return r0
 }
 
-// LoadAuthorization provides a mock function with given fields: workspaceID, externalServiceID, a
-func (_m *MockAuthorizationsStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error {
+// Load provides a mock function with given fields: workspaceID, externalServiceID, a
+func (_m *MockAuthorizationsStorage) Load(workspaceID int, externalServiceID integration.ID, a *Authorization) error {
 	ret := _m.Called(workspaceID, externalServiceID, a)
 
 	var r0 error
@@ -63,8 +63,8 @@ func (_m *MockAuthorizationsStorage) LoadWorkspaceAuthorizations(workspaceID int
 	return r0, r1
 }
 
-// SaveAuthorization provides a mock function with given fields: a
-func (_m *MockAuthorizationsStorage) SaveAuthorization(a *Authorization) error {
+// Save provides a mock function with given fields: a
+func (_m *MockAuthorizationsStorage) Save(a *Authorization) error {
 	ret := _m.Called(a)
 
 	var r0 error

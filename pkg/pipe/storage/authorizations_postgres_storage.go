@@ -45,7 +45,7 @@ func NewAuthorizationsPostgresStorage(db *sql.DB) *AuthorizationsPostgresStorage
 	return &AuthorizationsPostgresStorage{db: db}
 }
 
-func (ps *AuthorizationsPostgresStorage) SaveAuthorization(a *pipe.Authorization) error {
+func (ps *AuthorizationsPostgresStorage) Save(a *pipe.Authorization) error {
 	_, err := ps.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
@@ -53,7 +53,7 @@ func (ps *AuthorizationsPostgresStorage) SaveAuthorization(a *pipe.Authorization
 	return nil
 }
 
-func (ps *AuthorizationsPostgresStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *pipe.Authorization) error {
+func (ps *AuthorizationsPostgresStorage) Load(workspaceID int, externalServiceID integration.ID, a *pipe.Authorization) error {
 	rows, err := ps.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return err
@@ -69,7 +69,7 @@ func (ps *AuthorizationsPostgresStorage) LoadAuthorization(workspaceID int, exte
 	return nil
 }
 
-func (ps *AuthorizationsPostgresStorage) DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error {
+func (ps *AuthorizationsPostgresStorage) Delete(workspaceID int, externalServiceID integration.ID) error {
 	_, err := ps.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }

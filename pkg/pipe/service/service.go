@@ -24,9 +24,10 @@ var postPipeRunLock sync.Mutex
 type Service struct {
 	oauth               pipe.OAuthProvider
 	toggl               pipe.TogglClient
-	store               pipe.Storage
+	store               pipe.PipesStorage
 	authorizationsStore pipe.AuthorizationsStorage
 	integrationsStore   pipe.IntegrationsStorage
+	idMappingsStore     pipe.IDMappingsStorage
 	importsStore        pipe.ImportsStorage
 	queue               pipe.Queue
 	authFactory         *pipe.AuthorizationFactory
@@ -37,9 +38,10 @@ type Service struct {
 
 func NewService(
 	oauth pipe.OAuthProvider,
-	store pipe.Storage,
+	store pipe.PipesStorage,
 	integrationsStore pipe.IntegrationsStorage,
 	authorizationsStore pipe.AuthorizationsStorage,
+	idMappingsStore pipe.IDMappingsStorage,
 	importsStore pipe.ImportsStorage,
 	queue pipe.Queue,
 	togglClient pipe.TogglClient,
@@ -52,6 +54,7 @@ func NewService(
 		store:               store,
 		integrationsStore:   integrationsStore,
 		authorizationsStore: authorizationsStore,
+		idMappingsStore:     idMappingsStore,
 		importsStore:        importsStore,
 		queue:               queue,
 		authFactory:         authFactory,
@@ -76,7 +79,7 @@ func (svc *Service) Ready() []error {
 }
 
 func (svc *Service) GetPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) (*pipe.Pipe, error) {
-	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
+	p, err := svc.store.Load(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +87,7 @@ func (svc *Service) GetPipe(workspaceID int, serviceID integration.ID, pipeID in
 		p = pipe.NewPipe(workspaceID, serviceID, pipeID)
 	}
 
-	p.PipeStatus, err = svc.store.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	p.PipeStatus, err = svc.store.LoadStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +112,7 @@ func (svc *Service) CreatePipe(workspaceID int, serviceID integration.ID, pipeID
 }
 
 func (svc *Service) UpdatePipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, params []byte) error {
-	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
+	p, err := svc.store.Load(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
 	}
@@ -126,7 +129,7 @@ func (svc *Service) UpdatePipe(workspaceID int, serviceID integration.ID, pipeID
 }
 
 func (svc *Service) DeletePipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) error {
-	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
+	p, err := svc.store.Load(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
 	}
@@ -142,7 +145,7 @@ func (svc *Service) DeletePipe(workspaceID int, serviceID integration.ID, pipeID
 var ErrNoContent = errors.New("no content")
 
 func (svc *Service) GetServicePipeLog(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) (string, error) {
-	pipeStatus, err := svc.store.LoadPipeStatus(workspaceID, serviceID, pipeID)
+	pipeStatus, err := svc.store.LoadStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return "", err
 	}
@@ -154,7 +157,7 @@ func (svc *Service) GetServicePipeLog(workspaceID int, serviceID integration.ID,
 
 // TODO: Remove (Probably dead method).
 func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, pipeID integration.PipeID) error {
-	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
+	p, err := svc.store.Load(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
 	}
@@ -166,7 +169,7 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 		return err
 	}
 	auth := svc.authFactory.Create(workspaceID, serviceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -175,12 +178,12 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
-	pipeStatus, err := svc.store.LoadPipeStatus(p.WorkspaceID, p.ServiceID, p.ID)
+	pipeStatus, err := svc.store.LoadStatus(p.WorkspaceID, p.ServiceID, p.ID)
 	if err != nil {
 		return err
 	}
 
-	err = svc.store.DeleteIDMappings(p.WorkspaceID, service.KeyFor(p.ID), pipeStatus.Key)
+	err = svc.idMappingsStore.Delete(p.WorkspaceID, service.KeyFor(p.ID), pipeStatus.Key)
 	if err != nil {
 		return err
 	}
@@ -190,7 +193,7 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, forceImport bool) (*toggl.UsersResponse, error) {
 	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth := svc.authFactory.Create(workspaceID, serviceID)
-	err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth)
+	err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth)
 	if err != nil {
 		return nil, LoadError{err}
 	}
@@ -201,7 +204,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, f
 		return nil, err
 	}
 
-	usersPipe, err := svc.store.LoadPipe(workspaceID, serviceID, integration.UsersPipe)
+	usersPipe, err := svc.store.Load(workspaceID, serviceID, integration.UsersPipe)
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +243,7 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, f
 func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integration.ID, forceImport bool) (*toggl.AccountsResponse, error) {
 	service := pipe.NewExternalService(serviceID, workspaceID)
 	auth := svc.authFactory.Create(workspaceID, serviceID)
-	err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth)
+	err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth)
 	if err != nil {
 		return nil, LoadError{err}
 	}
@@ -323,17 +326,17 @@ func (svc *Service) CreateAuthorization(workspaceID int, serviceID integration.I
 		}
 	}
 
-	if err := svc.authorizationsStore.SaveAuthorization(auth); err != nil {
+	if err := svc.authorizationsStore.Save(auth); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (svc *Service) DeleteAuthorization(workspaceID int, serviceID integration.ID) error {
-	if err := svc.authorizationsStore.DeleteAuthorization(workspaceID, serviceID); err != nil {
+	if err := svc.authorizationsStore.Delete(workspaceID, serviceID); err != nil {
 		return err
 	}
-	if err := svc.store.DeletePipesByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
+	if err := svc.store.DeleteByWorkspaceIDServiceID(workspaceID, serviceID); err != nil {
 		return err
 	}
 	return nil
@@ -344,11 +347,11 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]pipe.Integration, error)
 	if err != nil {
 		return nil, err
 	}
-	workspacePipes, err := svc.store.LoadPipes(workspaceID)
+	workspacePipes, err := svc.store.LoadAll(workspaceID)
 	if err != nil {
 		return nil, err
 	}
-	pipeStatuses, err := svc.store.LoadPipeStatuses(workspaceID)
+	pipeStatuses, err := svc.store.LoadAllStatuses(workspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -396,7 +399,7 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID in
 	}
 	postPipeRunLock.Unlock()
 
-	p, err := svc.store.LoadPipe(workspaceID, serviceID, pipeID)
+	p, err := svc.store.Load(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return err
 	}
@@ -435,7 +438,7 @@ func (svc *Service) Run(p *pipe.Pipe) {
 			}
 			p.PipeStatus.AddError(err)
 		}
-		if e := svc.store.SavePipeStatus(p.PipeStatus); e != nil {
+		if e := svc.store.SaveStatus(p.PipeStatus); e != nil {
 			svc.notifyBugsnag(e, p)
 			log.Println(e)
 		}
@@ -445,16 +448,16 @@ func (svc *Service) Run(p *pipe.Pipe) {
 	host := svc.pipesApiHost
 	svc.mx.RUnlock()
 
-	svc.store.LoadLastSync(p)
+	svc.store.LoadLastSyncFor(p)
 
 	p.PipeStatus = pipe.NewPipeStatus(p.WorkspaceID, p.ServiceID, p.ID, host)
-	if err = svc.store.SavePipeStatus(p.PipeStatus); err != nil {
+	if err = svc.store.SaveStatus(p.PipeStatus); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(p.WorkspaceID, p.ServiceID, auth); err != nil {
+	if err := svc.authorizationsStore.Load(p.WorkspaceID, p.ServiceID, auth); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
@@ -544,7 +547,7 @@ func (svc *Service) syncTEs(p *pipe.Pipe) {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 		return
 	}
@@ -580,7 +583,7 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -621,14 +624,14 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		return err
 	}
 
-	idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe))
+	idMapping, err := svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe))
 	if err != nil {
 		return err
 	}
 	for _, user := range usersImport.WorkspaceUsers {
 		idMapping.Data[user.ForeignID] = user.ID
 	}
-	if err := svc.store.SaveIDMapping(idMapping); err != nil {
+	if err := svc.idMappingsStore.Save(idMapping); err != nil {
 		return err
 	}
 
@@ -643,7 +646,7 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -668,13 +671,13 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 		return err
 	}
 	var idMapping *pipe.IDMapping
-	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe)); err != nil {
+	if idMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe)); err != nil {
 		return err
 	}
 	for _, client := range clientsImport.Clients {
 		idMapping.Data[client.ForeignID] = client.ID
 	}
-	if err := svc.store.SaveIDMapping(idMapping); err != nil {
+	if err := svc.idMappingsStore.Save(idMapping); err != nil {
 		return err
 	}
 	p.PipeStatus.Complete(integration.ClientsPipe, clientsImport.Notifications, clientsImport.Count())
@@ -688,7 +691,7 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -713,13 +716,13 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 		return err
 	}
 	var idMapping *pipe.IDMapping
-	if idMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
+	if idMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		return err
 	}
 	for _, project := range projectsImport.Projects {
 		idMapping.Data[project.ForeignID] = project.ID
 	}
-	if err := svc.store.SaveIDMapping(idMapping); err != nil {
+	if err := svc.idMappingsStore.Save(idMapping); err != nil {
 		return err
 	}
 	p.PipeStatus.Complete(integration.ProjectsPipe, projectsImport.Notifications, projectsImport.Count())
@@ -733,7 +736,7 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -761,14 +764,14 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 		if err != nil {
 			return err
 		}
-		idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe))
+		idMapping, err := svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe))
 		if err != nil {
 			return err
 		}
 		for _, task := range tasksImport.Tasks {
 			idMapping.Data[task.ForeignID] = task.ID
 		}
-		if err := svc.store.SaveIDMapping(idMapping); err != nil {
+		if err := svc.idMappingsStore.Save(idMapping); err != nil {
 			return err
 		}
 		notifications = append(notifications, tasksImport.Notifications...)
@@ -784,7 +787,7 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 		return err
 	}
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -812,14 +815,14 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 		if err != nil {
 			return err
 		}
-		idMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe))
+		idMapping, err := svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe))
 		if err != nil {
 			return err
 		}
 		for _, task := range tasksImport.Tasks {
 			idMapping.Data[task.ForeignID] = task.ID
 		}
-		if err := svc.store.SaveIDMapping(idMapping); err != nil {
+		if err := svc.idMappingsStore.Save(idMapping); err != nil {
 			return err
 		}
 		notifications = append(notifications, tasksImport.Notifications...)
@@ -830,22 +833,22 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 }
 
 func (svc *Service) postTimeEntries(p *pipe.Pipe, service integration.Integration) error {
-	usersIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe))
+	usersIDMapping, err := svc.idMappingsStore.LoadReversed(service.GetWorkspaceID(), service.KeyFor(integration.UsersPipe))
 	if err != nil {
 		return err
 	}
 
-	tasksIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe))
+	tasksIDMapping, err := svc.idMappingsStore.LoadReversed(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe))
 	if err != nil {
 		return err
 	}
 
-	projectsIDMapping, err := svc.store.LoadReversedIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe))
+	projectsIDMapping, err := svc.idMappingsStore.LoadReversed(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe))
 	if err != nil {
 		return err
 	}
 
-	entriesIDMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TimeEntriesPipe))
+	entriesIDMapping, err := svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.TimeEntriesPipe))
 	if err != nil {
 		return err
 	}
@@ -891,7 +894,7 @@ func (svc *Service) postTimeEntries(p *pipe.Pipe, service integration.Integratio
 		}
 	}
 
-	if err := svc.store.SaveIDMapping(entriesIDMapping); err != nil {
+	if err := svc.idMappingsStore.Save(entriesIDMapping); err != nil {
 		return err
 	}
 	p.PipeStatus.Complete("timeentries", []string{}, len(timeEntries))
@@ -905,7 +908,7 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 
@@ -925,7 +928,7 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 			return
 		}
 		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+		if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -952,7 +955,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 		return err
 	}
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -970,7 +973,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 			return
 		}
 		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+		if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -988,7 +991,7 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 		response.Error = err.Error()
 		return err
 	}
-	clientsIDMapping, err := svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe))
+	clientsIDMapping, err := svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe))
 	if err != nil {
 		response.Error = err.Error()
 		return err
@@ -1009,7 +1012,7 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 			return
 		}
 		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+		if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1038,7 +1041,7 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -1058,11 +1061,11 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 	response.Projects = trimSpacesFromName(projects)
 
 	var clientsIDMapping, projectsIDMapping *pipe.IDMapping
-	if clientsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe)); err != nil {
+	if clientsIDMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ClientsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1085,7 +1088,7 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 			return
 		}
 		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+		if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1113,7 +1116,7 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 		return err
 	}
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -1132,11 +1135,11 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 
 	var projectsIDMapping, taskIDMapping *pipe.IDMapping
 
-	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe)); err != nil {
+	if taskIDMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.TodoListsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1163,7 +1166,7 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 		}
 
 		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+		if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1192,7 +1195,7 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 	}
 
 	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStore.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	if err := svc.authorizationsStore.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := auth.Refresh(); err != nil {
@@ -1210,11 +1213,11 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 	}
 	var projectsIDMapping, taskIDMapping *pipe.IDMapping
 
-	if projectsIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if taskIDMapping, err = svc.store.LoadIDMapping(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe)); err != nil {
+	if taskIDMapping, err = svc.idMappingsStore.Load(service.GetWorkspaceID(), service.KeyFor(integration.TasksPipe)); err != nil {
 		response.Error = err.Error()
 		return err
 	}

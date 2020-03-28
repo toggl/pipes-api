@@ -50,6 +50,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 	authorizationsStorage := storage.NewAuthorizationsPostgresStorage(db)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
+	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
 
 	authFactory := &pipe.AuthorizationFactory{
 		IntegrationsStorage:   integrationsStorage,
@@ -62,6 +63,7 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 		pipesStorage,
 		integrationsStorage,
 		authorizationsStorage,
+		idMappingsStore,
 		importsStorage,
 		pipesQueue,
 		api,
@@ -166,6 +168,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
 	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 	authorizationsStorage := storage.NewAuthorizationsPostgresStorage(db)
+	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	authFactory := &pipe.AuthorizationFactory{
@@ -178,6 +181,7 @@ func TestWorkspaceIntegrations(t *testing.T) {
 		pipesStorage,
 		integrationsStorage,
 		authorizationsStorage,
+		idMappingsStore,
 		importsStorage,
 		pipesQueue,
 		api,
@@ -239,6 +243,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	authorizationsStorage := storage.NewAuthorizationsPostgresStorage(db)
+	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
 
 	authFactory := &pipe.AuthorizationFactory{
 		IntegrationsStorage:   integrationsStorage,
@@ -250,6 +255,7 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 		pipesStorage,
 		integrationsStorage,
 		authorizationsStorage,
+		idMappingsStore,
 		importsStorage,
 		pipesQueue,
 		api,
@@ -316,8 +322,8 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	config.ParseFlags(&flags, os.Args)
 
 	as := &pipe.MockAuthorizationsStorage{}
-	as.On("LoadAuthorization", 1, integration.GitHub, mock.Anything).Return(nil)
-	as.On("SaveAuthorization", mock.Anything).Return(nil)
+	as.On("Load", 1, integration.GitHub, mock.Anything).Return(nil)
+	as.On("Save", mock.Anything).Return(nil)
 
 	is := &pipe.MockIntegrationsStorage{}
 	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
@@ -347,7 +353,7 @@ func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
 	err = a1.Refresh()
 	ts.NoError(err)
 
-	err = as.LoadAuthorization(1, integration.GitHub, a1)
+	err = as.Load(1, integration.GitHub, a1)
 	ts.NoError(err)
 	ts.NotEqual([]byte("{}"), a1.Data)
 }
@@ -408,6 +414,7 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 	s := storage.NewPostgresStorage(ts.db)
 	as := storage.NewAuthorizationsPostgresStorage(ts.db)
 	ims := storage.NewImportsPostgresStorage(ts.db)
+	idms := storage.NewIDMappingsPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &pipe.MockOAuthProvider{}
 	q := &pipe.MockQueue{}
@@ -423,7 +430,7 @@ func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 		OAuthProvider:         op,
 	}
 
-	svc := NewService(op, s, is, as, ims, q, api, af, "https://localhost")
+	svc := NewService(op, s, is, as, idms, ims, q, api, af, "https://localhost")
 
 	res, err := svc.integrationsStore.LoadAuthorizationType(integration.GitHub)
 	ts.NoError(err)

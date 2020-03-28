@@ -15,10 +15,10 @@ const (
 
 type PostgresQueue struct {
 	db    *sql.DB
-	store pipe.Storage
+	store pipe.PipesStorage
 }
 
-func NewPostgresQueue(db *sql.DB, store pipe.Storage) *PostgresQueue {
+func NewPostgresQueue(db *sql.DB, store pipe.PipesStorage) *PostgresQueue {
 	return &PostgresQueue{
 		db:    db,
 		store: store,
@@ -51,7 +51,7 @@ func (pq *PostgresQueue) GetPipesFromQueue() ([]*pipe.Pipe, error) {
 
 		if workspaceID > 0 && len(key) > 0 {
 			sid, pid := pipe.GetSidPidFromKey(key)
-			p, err := pq.store.LoadPipe(workspaceID, sid, pid)
+			p, err := pq.store.Load(workspaceID, sid, pid)
 			if err != nil {
 				return nil, err
 			}

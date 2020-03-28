@@ -73,6 +73,7 @@ func main() {
 
 	pipesStore := storage.NewPostgresStorage(db)
 	importsStore := storage.NewImportsPostgresStorage(db)
+	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
 	integrationsStore := storage.NewIntegrationsFileStorage(integrationsConfigPath)
@@ -92,6 +93,7 @@ func main() {
 		pipesStore,
 		integrationsStore,
 		authorizationsStore,
+		idMappingsStore,
 		importsStore,
 		pipesQueue,
 		togglApi,

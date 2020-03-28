@@ -103,7 +103,7 @@ func (a *Authorization) Refresh() error {
 	if err := a.SetOAuth2Token(&token); err != nil {
 		return err
 	}
-	if err := a.AuthorizationsStorage.SaveAuthorization(a); err != nil {
+	if err := a.AuthorizationsStorage.Save(a); err != nil {
 		return err
 	}
 	return nil
