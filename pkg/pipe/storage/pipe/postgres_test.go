@@ -1,4 +1,4 @@
-package storage
+package pipe
 
 import (
 	"database/sql"
@@ -51,15 +51,11 @@ func (ts *StorageTestSuite) TearDownSuite() {
 }
 
 func (ts *StorageTestSuite) SetupTest() {
-	_, err1 := ts.db.Exec(truncateAuthorizationSQL)
 	_, err3 := ts.db.Exec(truncatePipesStatusSQL)
 	_, err4 := ts.db.Exec(truncatePipesSQL)
-	_, err5 := ts.db.Exec(truncateImportsSQL)
 
-	ts.NoError(err1)
 	ts.NoError(err3)
 	ts.NoError(err4)
-	ts.NoError(err5)
 }
 
 func (ts *StorageTestSuite) TestStorage_IsDown() {

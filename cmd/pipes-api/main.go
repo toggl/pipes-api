@@ -19,9 +19,14 @@ import (
 	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/pipe/queue"
 	"github.com/toggl/pipes-api/pkg/pipe/service"
-	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/server"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
+
+	authorizationStorage "github.com/toggl/pipes-api/pkg/pipe/storage/authorization"
+	idMappingStorage "github.com/toggl/pipes-api/pkg/pipe/storage/idmapping"
+	importStorage "github.com/toggl/pipes-api/pkg/pipe/storage/import"
+	integrationStorage "github.com/toggl/pipes-api/pkg/pipe/storage/integration"
+	pipeStorage "github.com/toggl/pipes-api/pkg/pipe/storage/pipe"
 )
 
 var (
@@ -71,45 +76,44 @@ func main() {
 
 	togglApi := client.NewTogglApiClient(cfg.TogglAPIHost)
 
-	pipesStore := storage.NewPostgresStorage(db)
-	importsStore := storage.NewImportsPostgresStorage(db)
-	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
+	ps := pipeStorage.NewPostgresStorage(db)
+	ims := importStorage.NewPostgresStorage(db)
+	idms := idMappingStorage.NewPostgresStorage(db)
 
 	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
-	integrationsStore := storage.NewIntegrationsFileStorage(integrationsConfigPath)
+	is := integrationStorage.NewFileStorage(integrationsConfigPath)
+	as := authorizationStorage.NewPostgresStorage(db)
 
-	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
-
-	authorizationsStore := storage.NewAuthorizationsPostgresStorage(db)
+	qe := queue.NewPostgresQueue(db, ps)
 
 	authFactory := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   integrationsStore,
-		AuthorizationsStorage: authorizationsStore,
+		IntegrationsStorage:   is,
+		AuthorizationsStorage: as,
 		OAuthProvider:         oauthProvider,
 	}
 
 	pipesService := service.NewService(
 		oauthProvider,
-		pipesStore,
-		integrationsStore,
-		authorizationsStore,
-		idMappingsStore,
-		importsStore,
-		pipesQueue,
+		ps,
+		is,
+		as,
+		idms,
+		ims,
+		qe,
 		togglApi,
 		authFactory,
 		cfg.PipesAPIHost,
 	)
 
-	autosync.NewService(pipesQueue, pipesService, env.Debug).Start()
+	autosync.NewService(qe, pipesService, env.Debug).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
-		server.NewController(pipesService, integrationsStore, server.Params{
+		server.NewController(pipesService, is, server.Params{
 			Version:   Version,
 			Revision:  Revision,
 			BuildTime: BuildTime,
 		}),
-		server.NewMiddleware(togglApi, integrationsStore),
+		server.NewMiddleware(togglApi, is),
 	)
 	server.Start(env.Port, router)
 }

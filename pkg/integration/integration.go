@@ -31,7 +31,7 @@ const (
 
 // Integration interface for external integrations
 // Example implementation: github.go
-//go:generate mockery -name Integration -case underscore -inpkg
+//go:generate mockery -name Integration -case underscore -outpkg mocks
 type Integration interface {
 	// ID returns an ID of the service
 	ID() ID

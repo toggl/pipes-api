@@ -8,9 +8,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
-	goauth2 "code.google.com/p/goauth2/oauth"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
@@ -18,9 +16,15 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/mocks"
 	"github.com/toggl/pipes-api/pkg/pipe/queue"
-	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
+
+	authorizationStorage "github.com/toggl/pipes-api/pkg/pipe/storage/authorization"
+	idMappingStorage "github.com/toggl/pipes-api/pkg/pipe/storage/idmapping"
+	importStorage "github.com/toggl/pipes-api/pkg/pipe/storage/import"
+	integrationStorage "github.com/toggl/pipes-api/pkg/pipe/storage/integration"
+	pipeStorage "github.com/toggl/pipes-api/pkg/pipe/storage/pipe"
 )
 
 var workspaceID = 1
@@ -44,13 +48,13 @@ func TestGetPipesFromQueue_DoesNotReturnMultipleSameWorkspace(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	importsStorage := storage.NewImportsPostgresStorage(db)
-	pipesStorage := storage.NewPostgresStorage(db)
+	importsStorage := importStorage.NewPostgresStorage(db)
+	pipesStorage := pipeStorage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
-	authorizationsStorage := storage.NewAuthorizationsPostgresStorage(db)
+	integrationsStorage := integrationStorage.NewFileStorage(integrationsConfigPath)
+	authorizationsStorage := authorizationStorage.NewPostgresStorage(db)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
-	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
+	idMappingsStore := idMappingStorage.NewPostgresStorage(db)
 
 	authFactory := &pipe.AuthorizationFactory{
 		IntegrationsStorage:   integrationsStorage,
@@ -163,12 +167,12 @@ func TestWorkspaceIntegrations(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	importsStorage := storage.NewImportsPostgresStorage(db)
-	pipesStorage := storage.NewPostgresStorage(db)
+	importsStorage := importStorage.NewPostgresStorage(db)
+	pipesStorage := pipeStorage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
-	authorizationsStorage := storage.NewAuthorizationsPostgresStorage(db)
-	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
+	integrationsStorage := integrationStorage.NewFileStorage(integrationsConfigPath)
+	authorizationsStorage := authorizationStorage.NewPostgresStorage(db)
+	idMappingsStore := idMappingStorage.NewPostgresStorage(db)
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
 	authFactory := &pipe.AuthorizationFactory{
@@ -237,13 +241,13 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 	oAuth2ConfigPath := filepath.Join(cfg.WorkDir, "config", "oauth2.json")
 	oauthProvider := oauth.NewInMemoryProvider(cfg.EnvType, oAuth1ConfigPath, oAuth2ConfigPath)
 
-	importsStorage := storage.NewImportsPostgresStorage(db)
-	pipesStorage := storage.NewPostgresStorage(db)
+	importsStorage := importStorage.NewPostgresStorage(db)
+	pipesStorage := pipeStorage.NewPostgresStorage(db)
 	integrationsConfigPath := filepath.Join(cfg.WorkDir, "config", "integrations.json")
-	integrationsStorage := storage.NewIntegrationsFileStorage(integrationsConfigPath)
+	integrationsStorage := integrationStorage.NewFileStorage(integrationsConfigPath)
 	pipesQueue := queue.NewPostgresQueue(db, pipesStorage)
-	authorizationsStorage := storage.NewAuthorizationsPostgresStorage(db)
-	idMappingsStore := storage.NewIDMappingsPostgresStorage(db)
+	authorizationsStorage := authorizationStorage.NewPostgresStorage(db)
+	idMappingsStore := idMappingStorage.NewPostgresStorage(db)
 
 	authFactory := &pipe.AuthorizationFactory{
 		IntegrationsStorage:   integrationsStorage,
@@ -316,110 +320,17 @@ type ServiceTestSuite struct {
 	db *sql.DB
 }
 
-func (ts *ServiceTestSuite) TestService_Refresh_Load_Ok() {
-
-	flags := config.Flags{}
-	config.ParseFlags(&flags, os.Args)
-
-	as := &pipe.MockAuthorizationsStorage{}
-	as.On("Load", 1, integration.GitHub, mock.Anything).Return(nil)
-	as.On("Save", mock.Anything).Return(nil)
-
-	is := &pipe.MockIntegrationsStorage{}
-	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
-	is.On("LoadAuthorizationType", mock.Anything).Return(pipe.TypeOauth2, nil)
-
-	op := &pipe.MockOAuthProvider{}
-	op.On("OAuth2Configs", integration.GitHub).Return(&goauth2.Config{}, true)
-	op.On("OAuth2Refresh", mock.Anything, mock.Anything).Return(nil)
-
-	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   is,
-		AuthorizationsStorage: as,
-		OAuthProvider:         op,
-	}
-
-	a1 := af.Create(1, integration.GitHub)
-	t := goauth2.Token{
-		AccessToken:  "123",
-		RefreshToken: "456",
-		Expiry:       time.Now().Add(-time.Hour),
-		Extra:        nil,
-	}
-	b, err := json.Marshal(t)
-	ts.NoError(err)
-	a1.Data = b
-
-	err = a1.Refresh()
-	ts.NoError(err)
-
-	err = as.Load(1, integration.GitHub, a1)
-	ts.NoError(err)
-	ts.NotEqual([]byte("{}"), a1.Data)
-}
-
-func (ts *ServiceTestSuite) TestService_Refresh_Oauth1() {
-
-	op := &pipe.MockOAuthProvider{}
-	as := storage.NewAuthorizationsPostgresStorage(ts.db)
-
-	is := &pipe.MockIntegrationsStorage{}
-	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
-	is.On("LoadAuthorizationType", mock.Anything).Return(pipe.TypeOauth2, nil)
-
-	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   is,
-		AuthorizationsStorage: as,
-		OAuthProvider:         op,
-	}
-
-	a1 := af.Create(1, integration.GitHub)
-
-	err := a1.Refresh()
-	ts.NoError(err)
-}
-
-func (ts *ServiceTestSuite) TestService_Refresh_NotExpired() {
-
-	as := storage.NewAuthorizationsPostgresStorage(ts.db)
-	op := &pipe.MockOAuthProvider{}
-
-	is := &pipe.MockIntegrationsStorage{}
-	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
-	is.On("LoadAuthorizationType", mock.Anything).Return(pipe.TypeOauth2, nil)
-
-	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   is,
-		AuthorizationsStorage: as,
-		OAuthProvider:         op,
-	}
-
-	a1 := af.Create(1, integration.GitHub)
-	t := goauth2.Token{
-		AccessToken:  "123",
-		RefreshToken: "456",
-		Expiry:       time.Now().Add(time.Hour * 24),
-		Extra:        nil,
-	}
-	b, err := json.Marshal(t)
-	ts.NoError(err)
-	a1.Data = b
-
-	err = a1.Refresh()
-	ts.NoError(err)
-}
-
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
 
-	s := storage.NewPostgresStorage(ts.db)
-	as := storage.NewAuthorizationsPostgresStorage(ts.db)
-	ims := storage.NewImportsPostgresStorage(ts.db)
-	idms := storage.NewIDMappingsPostgresStorage(ts.db)
+	s := pipeStorage.NewPostgresStorage(ts.db)
+	as := authorizationStorage.NewPostgresStorage(ts.db)
+	ims := importStorage.NewPostgresStorage(ts.db)
+	idms := idMappingStorage.NewPostgresStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
-	op := &pipe.MockOAuthProvider{}
-	q := &pipe.MockQueue{}
+	op := &mocks.OAuthProvider{}
+	q := &mocks.Queue{}
 
-	is := &pipe.MockIntegrationsStorage{}
+	is := &mocks.IntegrationsStorage{}
 	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
 	is.On("LoadAuthorizationType", integration.GitHub).Return(pipe.TypeOauth2, nil)
 	is.On("LoadAuthorizationType", integration.Asana).Return(pipe.TypeOauth1, nil)

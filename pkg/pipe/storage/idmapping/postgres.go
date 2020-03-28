@@ -1,4 +1,4 @@
-package storage
+package idmapping
 
 import (
 	"database/sql"
@@ -29,18 +29,20 @@ const (
     UNION
     SELECT * FROM existing_connection
   `
-	truncateConnectionSQL = `TRUNCATE TABLE connections`
+	deletePipeStatusSQL    = `DELETE FROM pipes_status WHERE workspace_id = $1 AND Key LIKE $2`
+	truncateConnectionSQL  = `TRUNCATE TABLE connections`
+	truncatePipesStatusSQL = `TRUNCATE TABLE pipes_status`
 )
 
-type IDMappingsPostgresStorage struct {
+type PostgresStorage struct {
 	db *sql.DB
 }
 
-func NewIDMappingsPostgresStorage(db *sql.DB) *IDMappingsPostgresStorage {
-	return &IDMappingsPostgresStorage{db: db}
+func NewPostgresStorage(db *sql.DB) *PostgresStorage {
+	return &PostgresStorage{db: db}
 }
 
-func (ps *IDMappingsPostgresStorage) Delete(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
+func (ps *PostgresStorage) Delete(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
 	tx, err := ps.db.Begin()
 	if err != nil {
 		return
@@ -64,7 +66,7 @@ func (ps *IDMappingsPostgresStorage) Delete(workspaceID int, pipeConnectionKey, 
 	return tx.Commit()
 }
 
-func (ps *IDMappingsPostgresStorage) Save(c *pipe.IDMapping) error {
+func (ps *PostgresStorage) Save(c *pipe.IDMapping) error {
 	b, err := json.Marshal(c)
 	if err != nil {
 		return err
@@ -76,11 +78,11 @@ func (ps *IDMappingsPostgresStorage) Save(c *pipe.IDMapping) error {
 	return nil
 }
 
-func (ps *IDMappingsPostgresStorage) Load(workspaceID int, key string) (*pipe.IDMapping, error) {
+func (ps *PostgresStorage) Load(workspaceID int, key string) (*pipe.IDMapping, error) {
 	return ps.loadIDMapping(workspaceID, key)
 }
 
-func (ps *IDMappingsPostgresStorage) LoadReversed(workspaceID int, key string) (*pipe.ReversedIDMapping, error) {
+func (ps *PostgresStorage) LoadReversed(workspaceID int, key string) (*pipe.ReversedIDMapping, error) {
 	connection, err := ps.loadIDMapping(workspaceID, key)
 	if err != nil {
 		return nil, err
@@ -92,7 +94,7 @@ func (ps *IDMappingsPostgresStorage) LoadReversed(workspaceID int, key string) (
 	return reversed, nil
 }
 
-func (ps *IDMappingsPostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
+func (ps *PostgresStorage) loadIDMapping(workspaceID int, key string) (*pipe.IDMapping, error) {
 	rows, err := ps.db.Query(selectConnectionSQL, workspaceID, key)
 	if err != nil {
 		return nil, err

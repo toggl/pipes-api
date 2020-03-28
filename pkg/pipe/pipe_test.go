@@ -1,4 +1,4 @@
-package pipe
+package pipe_test
 
 import (
 	"testing"
@@ -6,32 +6,33 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/toggl/pipes-api/pkg/integration"
+	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
 func TestNewPipe(t *testing.T) {
-	p := NewPipe(1, integration.GitHub, integration.ProjectsPipe)
+	p := pipe.NewPipe(1, integration.GitHub, integration.ProjectsPipe)
 	assert.Equal(t, "github:projects", p.Key)
 	assert.Equal(t, integration.GitHub, p.ServiceID)
 	assert.Equal(t, 1, p.WorkspaceID)
 }
 
 func TestPipesKey(t *testing.T) {
-	pk := PipesKey(integration.GitHub, integration.ProjectsPipe)
+	pk := pipe.PipesKey(integration.GitHub, integration.ProjectsPipe)
 	assert.Equal(t, "github:projects", pk)
 }
 
 func TestGetSidPidFromKey(t *testing.T) {
-	sid, pid := GetSidPidFromKey("github:projects")
+	sid, pid := pipe.GetSidPidFromKey("github:projects")
 	assert.Equal(t, integration.GitHub, sid)
 	assert.Equal(t, integration.ProjectsPipe, pid)
 }
 
 func TestNewExternalService(t *testing.T) {
-	s1 := NewExternalService(integration.BaseCamp, 1)
-	s2 := NewExternalService(integration.Asana, 2)
-	s3 := NewExternalService(integration.GitHub, 3)
-	s4 := NewExternalService(integration.FreshBooks, 4)
-	s5 := NewExternalService(integration.TeamWeek, 5)
+	s1 := pipe.NewExternalService(integration.BaseCamp, 1)
+	s2 := pipe.NewExternalService(integration.Asana, 2)
+	s3 := pipe.NewExternalService(integration.GitHub, 3)
+	s4 := pipe.NewExternalService(integration.FreshBooks, 4)
+	s5 := pipe.NewExternalService(integration.TeamWeek, 5)
 
 	assert.Equal(t, integration.BaseCamp, s1.ID())
 	assert.Equal(t, integration.Asana, s2.ID())
@@ -41,6 +42,6 @@ func TestNewExternalService(t *testing.T) {
 }
 
 func TestNewExternalServicePanic(t *testing.T) {
-	pf := func() { NewExternalService("Unknown", 1) }
+	pf := func() { pipe.NewExternalService("Unknown", 1) }
 	assert.Panics(t, pf)
 }

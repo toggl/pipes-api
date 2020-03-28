@@ -1,7 +1,9 @@
-package storage
+package idmapping
 
 import (
 	"database/sql"
+	"flag"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +12,22 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
 )
+
+var (
+	dbConnString string
+	mx           sync.RWMutex
+)
+
+func getDbConnString() string {
+	mx.RLock()
+	defer mx.RUnlock()
+	return dbConnString
+}
+
+func init() {
+	// There is no need to call "flag.Parse()". See: https://golang.org/doc/go1.13#testing
+	flag.StringVar(&dbConnString, "db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "Database Connection String")
+}
 
 type IDMappingsStorageTestSuite struct {
 	suite.Suite
@@ -39,7 +57,7 @@ func (ts *IDMappingsStorageTestSuite) SetupTest() {
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
-	s := NewIDMappingsPostgresStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 	c := pipe.NewIDMapping(1, "test1")
 
 	err := s.Save(c)
@@ -55,7 +73,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewIDMappingsPostgresStorage(cdb)
+	s := NewPostgresStorage(cdb)
 	c := pipe.NewIDMapping(2, "test2")
 
 	err = s.Save(c)
@@ -67,7 +85,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
-	s := NewIDMappingsPostgresStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 	c := pipe.NewIDMapping(3, "test3")
 	c.Data["1-test"] = 10
 	c.Data["2-test"] = 20
@@ -85,7 +103,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedCon
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
-	s := NewIDMappingsPostgresStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 
 	p1 := pipe.NewPipe(1, integration.GitHub, integration.UsersPipe)
 	p1.PipeStatus = pipe.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "test")

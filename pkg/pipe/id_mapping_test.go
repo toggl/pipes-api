@@ -1,23 +1,25 @@
-package pipe
+package pipe_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
 func TestNewConnection(t *testing.T) {
-	c := NewIDMapping(1, "test")
+	c := pipe.NewIDMapping(1, "test")
 	assert.NotNil(t, c.Data)
 }
 
 func TestNewReversedConnection(t *testing.T) {
-	c := NewReversedConnection()
+	c := pipe.NewReversedConnection()
 	assert.NotNil(t, c.Data)
 }
 
 func TestReversedConnection_GetKeys(t *testing.T) {
-	c := NewReversedConnection()
+	c := pipe.NewReversedConnection()
 	c.Data[1] = "test1"
 	c.Data[2] = "test2"
 	c.Data[3] = "test3"
@@ -26,12 +28,12 @@ func TestReversedConnection_GetKeys(t *testing.T) {
 	assert.Contains(t, c.GetKeys(), 2)
 	assert.Contains(t, c.GetKeys(), 3)
 
-	c2 := NewReversedConnection()
+	c2 := pipe.NewReversedConnection()
 	assert.Equal(t, 0, len(c2.GetKeys()))
 }
 
 func TestReversedConnection_GetInt(t *testing.T) {
-	c := NewReversedConnection()
+	c := pipe.NewReversedConnection()
 	c.Data[1] = "5-task"
 	c.Data[2] = "10-user"
 	c.Data[3] = "15-project"

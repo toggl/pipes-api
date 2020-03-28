@@ -1,7 +1,9 @@
-package storage
+package authorization
 
 import (
 	"database/sql"
+	"flag"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -9,7 +11,24 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/pipe/mocks"
 )
+
+var (
+	dbConnString string
+	mx           sync.RWMutex
+)
+
+func getDbConnString() string {
+	mx.RLock()
+	defer mx.RUnlock()
+	return dbConnString
+}
+
+func init() {
+	// There is no need to call "flag.Parse()". See: https://golang.org/doc/go1.13#testing
+	flag.StringVar(&dbConnString, "db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "Database Connection String")
+}
 
 type AuthorizationsStorageTestSuite struct {
 	suite.Suite
@@ -39,13 +58,13 @@ func (ts *AuthorizationsStorageTestSuite) SetupTest() {
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 
 	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   &pipe.MockIntegrationsStorage{},
-		AuthorizationsStorage: &pipe.MockAuthorizationsStorage{},
-		OAuthProvider:         &pipe.MockOAuthProvider{},
+		IntegrationsStorage:   &mocks.IntegrationsStorage{},
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		OAuthProvider:         &mocks.OAuthProvider{},
 	}
 	a := af.Create(1, integration.GitHub)
 
-	s := NewAuthorizationsPostgresStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 	err := s.Save(a)
 	ts.NoError(err)
 
@@ -60,12 +79,12 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewAuthorizationsPostgresStorage(cdb)
+	s := NewPostgresStorage(cdb)
 
 	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   &pipe.MockIntegrationsStorage{},
-		AuthorizationsStorage: &pipe.MockAuthorizationsStorage{},
-		OAuthProvider:         &pipe.MockOAuthProvider{},
+		IntegrationsStorage:   &mocks.IntegrationsStorage{},
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		OAuthProvider:         &mocks.OAuthProvider{},
 	}
 	a := af.Create(2, integration.Asana)
 	err = s.Save(a)
@@ -76,12 +95,12 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
-	s := NewAuthorizationsPostgresStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 
 	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   &pipe.MockIntegrationsStorage{},
-		AuthorizationsStorage: &pipe.MockAuthorizationsStorage{},
-		OAuthProvider:         &pipe.MockOAuthProvider{},
+		IntegrationsStorage:   &mocks.IntegrationsStorage{},
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		OAuthProvider:         &mocks.OAuthProvider{},
 	}
 	a := af.Create(1, integration.GitHub)
 
@@ -93,12 +112,12 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyA
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
-	s := NewAuthorizationsPostgresStorage(ts.db)
+	s := NewPostgresStorage(ts.db)
 
 	af := &pipe.AuthorizationFactory{
-		IntegrationsStorage:   &pipe.MockIntegrationsStorage{},
-		AuthorizationsStorage: &pipe.MockAuthorizationsStorage{},
-		OAuthProvider:         &pipe.MockOAuthProvider{},
+		IntegrationsStorage:   &mocks.IntegrationsStorage{},
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		OAuthProvider:         &mocks.OAuthProvider{},
 	}
 
 	a1 := af.Create(1, integration.GitHub)

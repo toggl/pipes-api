@@ -1,4 +1,4 @@
-package storage
+package pipe
 
 import (
 	"database/sql"

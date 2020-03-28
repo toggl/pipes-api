@@ -10,7 +10,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-//go:generate mockery -name TogglClient -case underscore -inpkg
+//go:generate mockery -name TogglClient -case underscore -outpkg mocks
 type TogglClient interface {
 	WithAuthToken(authToken string)
 	GetWorkspaceIdByToken(token string) (int, error)
@@ -24,12 +24,12 @@ type TogglClient interface {
 	Ping() error
 }
 
-//go:generate mockery -name Runner -case underscore -inpkg
+//go:generate mockery -name Runner -case underscore -outpkg mocks
 type Runner interface {
 	Run(*Pipe)
 }
 
-//go:generate mockery -name Queue -case underscore -inpkg
+//go:generate mockery -name Queue -case underscore -outpkg mocks
 type Queue interface {
 	QueueAutomaticPipes() error
 	GetPipesFromQueue() ([]*Pipe, error)
@@ -37,7 +37,7 @@ type Queue interface {
 	QueuePipeAsFirst(*Pipe) error
 }
 
-//go:generate mockery -name Service -case underscore -inpkg
+//go:generate mockery -name Service -case underscore -outpkg mocks
 type Service interface {
 	Runner
 
@@ -67,7 +67,7 @@ type Service interface {
 	Ready() []error
 }
 
-//go:generate mockery -name PipesStorage -case underscore -inpkg
+//go:generate mockery -name PipesStorage -case underscore -outpkg mocks
 type PipesStorage interface {
 	// Pipes
 	Load(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
@@ -85,7 +85,7 @@ type PipesStorage interface {
 	IsDown() bool
 }
 
-//go:generate mockery -name IDMappingsStorage -case underscore -inpkg
+//go:generate mockery -name IDMappingsStorage -case underscore -outpkg mocks
 type IDMappingsStorage interface {
 	Load(workspaceID int, key string) (*IDMapping, error)
 	LoadReversed(workspaceID int, key string) (*ReversedIDMapping, error)
@@ -93,7 +93,7 @@ type IDMappingsStorage interface {
 	Delete(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error)
 }
 
-//go:generate mockery -name AuthorizationsStorage -case underscore -inpkg
+//go:generate mockery -name AuthorizationsStorage -case underscore -outpkg mocks
 type AuthorizationsStorage interface {
 	Load(workspaceID int, externalServiceID integration.ID, a *Authorization) error
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error)
@@ -101,7 +101,7 @@ type AuthorizationsStorage interface {
 	Delete(workspaceID int, externalServiceID integration.ID) error
 }
 
-//go:generate mockery -name IntegrationsStorage -case underscore -inpkg
+//go:generate mockery -name IntegrationsStorage -case underscore -outpkg mocks
 type IntegrationsStorage interface {
 	LoadIntegrations() ([]*Integration, error)
 	LoadAuthorizationType(serviceID integration.ID) (string, error)
@@ -111,7 +111,7 @@ type IntegrationsStorage interface {
 	IsValidService(serviceID integration.ID) bool
 }
 
-//go:generate mockery -name ImportsStorage -case underscore -inpkg
+//go:generate mockery -name ImportsStorage -case underscore -outpkg mocks
 type ImportsStorage interface {
 	// Imports
 	LoadAccountsFor(s integration.Integration) (*toggl.AccountsResponse, error)
@@ -135,7 +135,7 @@ type ImportsStorage interface {
 	SaveTodoListsFor(s integration.Integration, res toggl.TasksResponse) error
 }
 
-//go:generate mockery -name OAuthProvider -case underscore -inpkg
+//go:generate mockery -name OAuthProvider -case underscore -outpkg mocks
 type OAuthProvider interface {
 	OAuth2URL(integration.ID) string
 	OAuth1Configs(integration.ID) (*oauthplain.Config, bool)
