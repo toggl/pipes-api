@@ -43,10 +43,6 @@ func (svc *Service) GetPipe(workspaceID int, serviceID integration.ID, pipeID in
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return nil, err
 	}
-	if p == nil {
-		p = svc.PipeFactory.Create(workspaceID, serviceID, pipeID)
-	}
-
 	var err error
 	p.PipeStatus, err = svc.PipesStorage.LoadStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
@@ -77,7 +73,7 @@ func (svc *Service) UpdatePipe(workspaceID int, serviceID integration.ID, pipeID
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
 	}
-	if p == nil {
+	if !p.Configured {
 		return ErrPipeNotConfigured
 	}
 	if err := json.Unmarshal(params, &p); err != nil {
@@ -93,9 +89,6 @@ func (svc *Service) DeletePipe(workspaceID int, serviceID integration.ID, pipeID
 	p := svc.PipeFactory.Create(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
-	}
-	if p == nil {
-		return ErrPipeNotConfigured
 	}
 	if err := svc.PipesStorage.Delete(p, workspaceID); err != nil {
 		return err
@@ -122,7 +115,7 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
 	}
-	if p == nil {
+	if !p.Configured {
 		return ErrPipeNotConfigured
 	}
 	service := NewExternalService(p.ServiceID, p.WorkspaceID)
