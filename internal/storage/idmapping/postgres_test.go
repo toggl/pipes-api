@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/domain"
+	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
@@ -105,7 +106,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedCon
 func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
 	s := NewPostgresStorage(ts.db)
 
-	p1 := domain.NewPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
 	p1.PipeStatus = domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "test")
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
@@ -117,4 +118,23 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
 // a normal test function and pass our suite to suite.Run
 func TestIDMappingsStorageTestSuite(t *testing.T) {
 	suite.Run(t, new(IDMappingsStorageTestSuite))
+}
+
+func newPipe(workspaceID int, sid integration.ID, pid integration.PipeID) *domain.Pipe {
+	af := &domain.AuthorizationFactory{
+		IntegrationsStorage:   &mocks.IntegrationsStorage{},
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		OAuthProvider:         &mocks.OAuthProvider{},
+	}
+
+	pf := &domain.PipeFactory{
+		AuthorizationFactory:  af,
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		PipesStorage:          &mocks.PipesStorage{},
+		ImportsStorage:        &mocks.ImportsStorage{},
+		IDMappingsStorage:     &mocks.IDMappingsStorage{},
+		TogglClient:           &mocks.TogglClient{},
+	}
+
+	return pf.Create(workspaceID, sid, pid)
 }

@@ -74,9 +74,9 @@ func (ps *PostgresStorage) IsDown() bool {
 	return false
 }
 
-func (ps *PostgresStorage) Load(workspaceID int, sid integration.ID, pid integration.PipeID) (*domain.Pipe, error) {
-	key := domain.PipesKey(sid, pid)
-	return ps.loadPipeWithKey(workspaceID, key)
+func (ps *PostgresStorage) Load(p *domain.Pipe) error {
+	key := domain.PipesKey(p.ServiceID, p.ID)
+	return ps.loadPipeWithKey(p.WorkspaceID, key, p)
 }
 
 func (ps *PostgresStorage) Save(p *domain.Pipe) error {
@@ -218,20 +218,19 @@ func (ps *PostgresStorage) SaveStatus(p *domain.Status) error {
 	return nil
 }
 
-func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string) (*domain.Pipe, error) {
+func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string, p *domain.Pipe) error {
 	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, rows.Err()
+		return rows.Err()
 	}
-	var p domain.Pipe
-	if err := ps.load(rows, &p); err != nil {
-		return nil, err
+	if err := ps.load(rows, p); err != nil {
+		return err
 	}
-	return &p, nil
+	return nil
 }
 
 func (ps *PostgresStorage) load(rows *sql.Rows, p *domain.Pipe) error {

@@ -18,7 +18,6 @@ import (
 	"github.com/toggl/pipes-api/internal/oauth"
 	"github.com/toggl/pipes-api/internal/queue"
 	"github.com/toggl/pipes-api/internal/server"
-	"github.com/toggl/pipes-api/internal/service"
 
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
@@ -85,28 +84,37 @@ func main() {
 	is := integrationStorage.NewFileStorage(integrationsConfigPath)
 	as := authorizationStorage.NewPostgresStorage(db)
 
-	qe := queue.NewPostgresQueue(db, ps)
-
 	authFactory := &domain.AuthorizationFactory{
 		IntegrationsStorage:   is,
 		AuthorizationsStorage: as,
 		OAuthProvider:         oauthProvider,
 	}
 
-	pipesService := service.NewService(
-		oauthProvider,
-		ps,
-		is,
-		as,
-		idms,
-		ims,
-		qe,
-		togglApi,
-		authFactory,
-		cfg.PipesAPIHost,
-	)
+	pipeFactory := &domain.PipeFactory{
+		AuthorizationFactory:  authFactory,
+		AuthorizationsStorage: as,
+		PipesStorage:          ps,
+		ImportsStorage:        ims,
+		IDMappingsStorage:     idms,
+		TogglClient:           togglApi,
+	}
 
-	autosync.NewService(qe, pipesService, env.Debug).Start()
+	qe := queue.NewPostgresQueue(db, pipeFactory, ps)
+
+	pipesService := &domain.Service{
+		AuthorizationFactory:  authFactory,
+		PipeFactory:           pipeFactory,
+		PipesStorage:          ps,
+		AuthorizationsStorage: as,
+		IntegrationsStorage:   is,
+		IDMappingsStorage:     idms,
+		ImportsStorage:        ims,
+		OAuthProvider:         oauthProvider,
+		TogglClient:           togglApi,
+		Queue:                 qe,
+	}
+
+	autosync.NewService(qe, env.Debug).Start()
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(
 		server.NewController(pipesService, is, server.Params{

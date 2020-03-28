@@ -11,26 +11,26 @@ import (
 )
 
 type Middleware struct {
-	istore domain.IntegrationsStorage
-	clt    domain.TogglClient
+	domain.IntegrationsStorage
+	domain.TogglClient
 }
 
 func NewMiddleware(clt domain.TogglClient, istore domain.IntegrationsStorage) *Middleware {
 	return &Middleware{
-		istore: istore,
-		clt:    clt,
+		IntegrationsStorage: istore,
+		TogglClient:         clt,
 	}
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := integration.ID(mux.Vars(r)["service"])
-		if !mw.istore.IsValidService(serviceID) {
+		if !mw.IntegrationsStorage.IsValidService(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := integration.PipeID(mux.Vars(r)["pipe"])
-		if !mw.istore.IsValidPipe(pipeID) {
+		if !mw.IntegrationsStorage.IsValidPipe(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}
@@ -53,7 +53,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.clt.GetWorkspaceIdByToken(authData.Username)
+		workspaceID, err = mw.TogglClient.GetWorkspaceIdByToken(authData.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

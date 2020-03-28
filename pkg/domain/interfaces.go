@@ -26,7 +26,7 @@ type TogglClient interface {
 
 //go:generate mockery -name Runner -case underscore -outpkg mocks
 type Runner interface {
-	Run(*Pipe)
+	Run()
 }
 
 //go:generate mockery -name Queue -case underscore -outpkg mocks
@@ -37,10 +37,8 @@ type Queue interface {
 	QueuePipeAsFirst(*Pipe) error
 }
 
-//go:generate mockery -name Service -case underscore -outpkg mocks
-type Service interface {
-	Runner
-
+//go:generate mockery -name PipeService -case underscore -outpkg mocks
+type PipeService interface {
 	GetPipe(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
 	CreatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
@@ -70,7 +68,7 @@ type Service interface {
 //go:generate mockery -name PipesStorage -case underscore -outpkg mocks
 type PipesStorage interface {
 	// Pipes
-	Load(workspaceID int, sid integration.ID, pid integration.PipeID) (*Pipe, error)
+	Load(p *Pipe) error
 	LoadAll(workspaceID int) (map[string]*Pipe, error)
 	Save(p *Pipe) error
 	Delete(p *Pipe, workspaceID int) error

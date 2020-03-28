@@ -56,27 +56,18 @@ func (_m *PipesStorage) IsDown() bool {
 	return r0
 }
 
-// Load provides a mock function with given fields: workspaceID, sid, pid
-func (_m *PipesStorage) Load(workspaceID int, sid integration.ID, pid integration.PipeID) (*domain.Pipe, error) {
-	ret := _m.Called(workspaceID, sid, pid)
+// Load provides a mock function with given fields: p
+func (_m *PipesStorage) Load(p *domain.Pipe) error {
+	ret := _m.Called(p)
 
-	var r0 *domain.Pipe
-	if rf, ok := ret.Get(0).(func(int, integration.ID, integration.PipeID) *domain.Pipe); ok {
-		r0 = rf(workspaceID, sid, pid)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*domain.Pipe) error); ok {
+		r0 = rf(p)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*domain.Pipe)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(int, integration.ID, integration.PipeID) error); ok {
-		r1 = rf(workspaceID, sid, pid)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // LoadAll provides a mock function with given fields: workspaceID

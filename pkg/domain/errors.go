@@ -1,9 +1,7 @@
-package service
+package domain
 
 import "errors"
 
-// ErrJSONParsing hides json marshalling errors from users
-var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
 var ErrPipeNotConfigured = errors.New("pipe is not configured")
 
 type SetParamsError struct{ Err error }

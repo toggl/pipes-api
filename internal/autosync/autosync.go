@@ -21,16 +21,14 @@ const (
 )
 
 type Service struct {
-	debug  bool
-	queue  domain.Queue
-	runner domain.Runner
+	debug bool
+	queue domain.Queue
 }
 
-func NewService(p domain.Queue, r domain.Runner, debug bool) *Service {
+func NewService(p domain.Queue, debug bool) *Service {
 	return &Service{
-		queue:  p,
-		runner: r,
-		debug:  debug,
+		queue: p,
+		debug: debug,
 	}
 }
 
@@ -64,7 +62,8 @@ func (s *Service) pipeWorker(id int) {
 		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
-			s.runner.Run(pipe)
+
+			pipe.Run()
 
 			err := s.queue.SetQueuedPipeSynced(pipe)
 			if err != nil {

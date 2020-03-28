@@ -14,14 +14,16 @@ const (
 )
 
 type PostgresQueue struct {
-	db    *sql.DB
-	store domain.PipesStorage
+	db *sql.DB
+	*domain.PipeFactory
+	domain.PipesStorage
 }
 
-func NewPostgresQueue(db *sql.DB, store domain.PipesStorage) *PostgresQueue {
+func NewPostgresQueue(db *sql.DB, factory *domain.PipeFactory, store domain.PipesStorage) *PostgresQueue {
 	return &PostgresQueue{
-		db:    db,
-		store: store,
+		db:           db,
+		PipeFactory:  factory,
+		PipesStorage: store,
 	}
 }
 
@@ -51,8 +53,9 @@ func (pq *PostgresQueue) GetPipesFromQueue() ([]*domain.Pipe, error) {
 
 		if workspaceID > 0 && len(key) > 0 {
 			sid, pid := domain.GetSidPidFromKey(key)
-			p, err := pq.store.Load(workspaceID, sid, pid)
-			if err != nil {
+
+			p := pq.PipeFactory.Create(workspaceID, sid, pid)
+			if err := pq.PipesStorage.Load(p); err != nil {
 				return nil, err
 			}
 			pipes = append(pipes, p)

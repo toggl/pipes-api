@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/domain"
+	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
@@ -72,11 +73,12 @@ func (ts *StorageTestSuite) TestStorage_IsDown() {
 func (ts *StorageTestSuite) TestStorage_Save_Load() {
 	s := NewPostgresStorage(ts.db)
 
-	p1 := domain.NewPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2, err := s.Load(1, integration.GitHub, integration.UsersPipe)
+	p2 := newPipe(1, integration.GitHub, integration.UsersPipe)
+	err = s.Load(p2)
 	ts.NoError(err)
 	ts.Equal(p1, p2)
 }
@@ -129,11 +131,11 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
 func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 	s := NewPostgresStorage(ts.db)
 
-	p1 := domain.NewPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := domain.NewPipe(1, integration.Asana, integration.UsersPipe)
+	p2 := newPipe(1, integration.Asana, integration.UsersPipe)
 	err = s.Save(p2)
 	ts.NoError(err)
 
@@ -145,11 +147,11 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 	s := NewPostgresStorage(ts.db)
 
-	p1 := domain.NewPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := domain.NewPipe(1, integration.Asana, integration.UsersPipe)
+	p2 := newPipe(1, integration.Asana, integration.UsersPipe)
 	err = s.Save(p2)
 	ts.NoError(err)
 
@@ -168,11 +170,11 @@ func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() {
 	s := NewPostgresStorage(ts.db)
 
-	p1 := domain.NewPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := domain.NewPipe(1, integration.GitHub, integration.ProjectsPipe)
+	p2 := newPipe(1, integration.GitHub, integration.ProjectsPipe)
 	err = s.Save(p2)
 	ts.NoError(err)
 
@@ -192,7 +194,7 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
 	s := NewPostgresStorage(ts.db)
 	t := time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC)
 
-	p1 := domain.NewPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
 	p1.ServiceParams = []byte(`{"start_date":"2020-01-02"}`)
 	err := s.Save(p1)
 	ts.NoError(err)
@@ -206,4 +208,23 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
 // a normal test function and pass our suite to suite.Run
 func TestStorageTestSuite(t *testing.T) {
 	suite.Run(t, new(StorageTestSuite))
+}
+
+func newPipe(workspaceID int, sid integration.ID, pid integration.PipeID) *domain.Pipe {
+	af := &domain.AuthorizationFactory{
+		IntegrationsStorage:   &mocks.IntegrationsStorage{},
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		OAuthProvider:         &mocks.OAuthProvider{},
+	}
+
+	pf := &domain.PipeFactory{
+		AuthorizationFactory:  af,
+		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
+		PipesStorage:          &mocks.PipesStorage{},
+		ImportsStorage:        &mocks.ImportsStorage{},
+		IDMappingsStorage:     &mocks.IDMappingsStorage{},
+		TogglClient:           &mocks.TogglClient{},
+	}
+
+	return pf.Create(workspaceID, sid, pid)
 }
