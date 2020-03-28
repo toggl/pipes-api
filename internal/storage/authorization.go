@@ -1,4 +1,4 @@
-package authorization
+package storage
 
 import (
 	"database/sql"
@@ -9,7 +9,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
-// PostgresStorage SQL queries
+// AuthorizationStorage SQL queries
 const (
 	selectAuthorizationSQL = `SELECT workspace_id, service, workspace_token, data
 		FROM authorizations
@@ -37,24 +37,24 @@ const (
 	truncateAuthorizationSQL = `TRUNCATE TABLE authorizations`
 )
 
-type PostgresStorage struct {
+type AuthorizationStorage struct {
 	db *sql.DB
 }
 
-func NewPostgresStorage(db *sql.DB) *PostgresStorage {
-	return &PostgresStorage{db: db}
+func NewAuthorizationStorage(db *sql.DB) *AuthorizationStorage {
+	return &AuthorizationStorage{db: db}
 }
 
-func (ps *PostgresStorage) Save(a *domain.Authorization) error {
-	_, err := ps.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
+func (as *AuthorizationStorage) Save(a *domain.Authorization) error {
+	_, err := as.db.Exec(insertAuthorizationSQL, a.WorkspaceID, a.ServiceID, a.WorkspaceToken, a.Data)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ps *PostgresStorage) Load(workspaceID int, externalServiceID integration.ID, a *domain.Authorization) error {
-	rows, err := ps.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
+func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID integration.ID, a *domain.Authorization) error {
+	rows, err := as.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return err
 	}
@@ -69,16 +69,16 @@ func (ps *PostgresStorage) Load(workspaceID int, externalServiceID integration.I
 	return nil
 }
 
-func (ps *PostgresStorage) Delete(workspaceID int, externalServiceID integration.ID) error {
-	_, err := ps.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
+func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID integration.ID) error {
+	_, err := as.db.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
 
 // LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
 // Map format: map[externalServiceID]isAuthorized
-func (ps *PostgresStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error) {
+func (as *AuthorizationStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error) {
 	authorizations := make(map[integration.ID]bool)
-	rows, err := ps.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
+	rows, err := as.db.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return authorizations, err
 	}

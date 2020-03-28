@@ -1,34 +1,15 @@
-package idmapping
+package storage
 
 import (
 	"database/sql"
-	"flag"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
-
-var (
-	dbConnString string
-	mx           sync.RWMutex
-)
-
-func getDbConnString() string {
-	mx.RLock()
-	defer mx.RUnlock()
-	return dbConnString
-}
-
-func init() {
-	// There is no need to call "flag.Parse()". See: https://golang.org/doc/go1.13#testing
-	flag.StringVar(&dbConnString, "db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "Database Connection String")
-}
 
 type IDMappingsStorageTestSuite struct {
 	suite.Suite
@@ -37,12 +18,12 @@ type IDMappingsStorageTestSuite struct {
 
 func (ts *IDMappingsStorageTestSuite) SetupSuite() {
 	var err error
-	ts.db, err = sql.Open("postgres", getDbConnString())
+	ts.db, err = sql.Open("postgres", getConnectionStringForTests())
 	require.NoError(ts.T(), err)
 
 	err = ts.db.Ping()
 	if err != nil {
-		ts.T().Skipf("Could not connect to database, db_conn_string: %v", getDbConnString())
+		ts.T().Skipf("Could not connect to database, db_conn_string: %v", getConnectionStringForTests())
 	}
 }
 
@@ -58,7 +39,7 @@ func (ts *IDMappingsStorageTestSuite) SetupTest() {
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
-	s := NewPostgresStorage(ts.db)
+	s := NewIdMappingStorageStorage(ts.db)
 	c := domain.NewIDMapping(1, "test1")
 
 	err := s.Save(c)
@@ -70,11 +51,11 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_DbClosed() {
-	cdb, err := sql.Open("postgres", getDbConnString())
+	cdb, err := sql.Open("postgres", getConnectionStringForTests())
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewPostgresStorage(cdb)
+	s := NewIdMappingStorageStorage(cdb)
 	c := domain.NewIDMapping(2, "test2")
 
 	err = s.Save(c)
@@ -86,7 +67,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
-	s := NewPostgresStorage(ts.db)
+	s := NewIdMappingStorageStorage(ts.db)
 	c := domain.NewIDMapping(3, "test3")
 	c.Data["1-test"] = 10
 	c.Data["2-test"] = 20
@@ -104,9 +85,9 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedCon
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
-	s := NewPostgresStorage(ts.db)
+	s := NewIdMappingStorageStorage(ts.db)
 
-	p1 := newPipe(1, integration.GitHub, integration.UsersPipe)
+	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
 	p1.PipeStatus = domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "test")
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
@@ -118,23 +99,4 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
 // a normal test function and pass our suite to suite.Run
 func TestIDMappingsStorageTestSuite(t *testing.T) {
 	suite.Run(t, new(IDMappingsStorageTestSuite))
-}
-
-func newPipe(workspaceID int, sid integration.ID, pid integration.PipeID) *domain.Pipe {
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   &mocks.IntegrationsStorage{},
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		OAuthProvider:         &mocks.OAuthProvider{},
-	}
-
-	pf := &domain.PipeFactory{
-		AuthorizationFactory:  af,
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		PipesStorage:          &mocks.PipesStorage{},
-		ImportsStorage:        &mocks.ImportsStorage{},
-		IDMappingsStorage:     &mocks.IDMappingsStorage{},
-		TogglClient:           &mocks.TogglClient{},
-	}
-
-	return pf.Create(workspaceID, sid, pid)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"sync"
@@ -15,21 +16,21 @@ import (
 )
 
 type InMemoryProvider struct {
-	envType          string
-	oauth1ConfigPath string
-	oauth2ConfigPath string
-	oAuth2Configs    map[string]*oauth.Config
-	oAuth1Configs    map[string]*oauthplain.Config
-	mx               sync.RWMutex
+	envType       string
+	oauth1Config  io.Reader
+	oauth2Config  io.Reader
+	oAuth2Configs map[string]*oauth.Config
+	oAuth1Configs map[string]*oauthplain.Config
+	mx            sync.RWMutex
 }
 
-func NewInMemoryProvider(envType, oauth1ConfigPath, oauth2ConfigPath string) *InMemoryProvider {
+func NewInMemoryProvider(envType string, oauth1Config, oauth2Config io.Reader) *InMemoryProvider {
 	svc := &InMemoryProvider{
-		envType:          envType,
-		oauth1ConfigPath: oauth1ConfigPath,
-		oauth2ConfigPath: oauth2ConfigPath,
-		oAuth2Configs:    map[string]*oauth.Config{},
-		oAuth1Configs:    map[string]*oauthplain.Config{},
+		envType:       envType,
+		oauth1Config:  oauth1Config,
+		oauth2Config:  oauth2Config,
+		oAuth2Configs: map[string]*oauth.Config{},
+		oAuth1Configs: map[string]*oauthplain.Config{},
 	}
 
 	svc.loadOauth2Configs()
@@ -122,7 +123,7 @@ func (p *InMemoryProvider) loadOauth2Configs() {
 	p.mx.Lock()
 	defer p.mx.Unlock()
 
-	b, err := ioutil.ReadFile(p.oauth2ConfigPath)
+	b, err := ioutil.ReadAll(p.oauth2Config)
 	if err != nil {
 		log.Fatalf("Could not read oauth2.json, reason: %v", err)
 	}
@@ -134,7 +135,7 @@ func (p *InMemoryProvider) loadOauth2Configs() {
 func (p *InMemoryProvider) loadOauth1Configs() {
 	p.mx.Lock()
 	defer p.mx.Unlock()
-	b, err := ioutil.ReadFile(p.oauth1ConfigPath)
+	b, err := ioutil.ReadAll(p.oauth1Config)
 	if err != nil {
 		log.Fatalf("Could not read oauth1.json, reason: %v", err)
 	}

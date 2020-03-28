@@ -1,4 +1,4 @@
-package pipe
+package storage
 
 import (
 	"database/sql"
@@ -13,7 +13,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
-// PostgresStorage SQL queries
+// PipeStorage SQL queries
 const (
 	selectPipesSQL = `SELECT workspace_id, Key, data FROM pipes WHERE workspace_id = $1`
 	singlePipesSQL = `SELECT workspace_id, Key, data FROM pipes WHERE workspace_id = $1 AND Key = $2 LIMIT 1`
@@ -59,27 +59,27 @@ const (
 	truncatePipesStatusSQL = `TRUNCATE TABLE pipes_status`
 )
 
-type PostgresStorage struct {
+type PipeStorage struct {
 	db *sql.DB
 }
 
-func NewPostgresStorage(db *sql.DB) *PostgresStorage {
-	return &PostgresStorage{db: db}
+func NewPipeStorage(db *sql.DB) *PipeStorage {
+	return &PipeStorage{db: db}
 }
 
-func (ps *PostgresStorage) IsDown() bool {
+func (ps *PipeStorage) IsDown() bool {
 	if _, err := ps.db.Exec("SELECT 1"); err != nil {
 		return true
 	}
 	return false
 }
 
-func (ps *PostgresStorage) Load(p *domain.Pipe) error {
+func (ps *PipeStorage) Load(p *domain.Pipe) error {
 	key := domain.PipesKey(p.ServiceID, p.ID)
 	return ps.loadPipeWithKey(p.WorkspaceID, key, p)
 }
 
-func (ps *PostgresStorage) Save(p *domain.Pipe) error {
+func (ps *PipeStorage) Save(p *domain.Pipe) error {
 	p.Configured = true
 	b, err := json.Marshal(p)
 	if err != nil {
@@ -92,7 +92,7 @@ func (ps *PostgresStorage) Save(p *domain.Pipe) error {
 	return nil
 }
 
-func (ps *PostgresStorage) Delete(p *domain.Pipe, workspaceID int) error {
+func (ps *PipeStorage) Delete(p *domain.Pipe, workspaceID int) error {
 	tx, err := ps.db.Begin()
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func (ps *PostgresStorage) Delete(p *domain.Pipe, workspaceID int) error {
 	return tx.Commit()
 }
 
-func (ps *PostgresStorage) LoadStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*domain.Status, error) {
+func (ps *PipeStorage) LoadStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*domain.Status, error) {
 	key := domain.PipesKey(sid, pid)
 	rows, err := ps.db.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
@@ -138,12 +138,12 @@ func (ps *PostgresStorage) LoadStatus(workspaceID int, sid integration.ID, pid i
 	return &pipeStatus, nil
 }
 
-func (ps *PostgresStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
+func (ps *PipeStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
 	_, err := ps.db.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
 
-func (ps *PostgresStorage) LoadAll(workspaceID int) (map[string]*domain.Pipe, error) {
+func (ps *PipeStorage) LoadAll(workspaceID int) (map[string]*domain.Pipe, error) {
 	pipes := make(map[string]*domain.Pipe)
 	rows, err := ps.db.Query(selectPipesSQL, workspaceID)
 	if err != nil {
@@ -160,7 +160,7 @@ func (ps *PostgresStorage) LoadAll(workspaceID int) (map[string]*domain.Pipe, er
 	return pipes, nil
 }
 
-func (ps *PostgresStorage) LoadLastSyncFor(p *domain.Pipe) {
+func (ps *PipeStorage) LoadLastSyncFor(p *domain.Pipe) {
 	err := ps.db.QueryRow(lastSyncSQL, p.WorkspaceID, p.Key).Scan(&p.LastSync)
 	if err != nil {
 		var err error
@@ -175,7 +175,7 @@ func (ps *PostgresStorage) LoadLastSyncFor(p *domain.Pipe) {
 	}
 }
 
-func (ps *PostgresStorage) LoadAllStatuses(workspaceID int) (map[string]*domain.Status, error) {
+func (ps *PipeStorage) LoadAllStatuses(workspaceID int) (map[string]*domain.Status, error) {
 	pipeStatuses := make(map[string]*domain.Status)
 	rows, err := ps.db.Query(selectPipeStatusSQL, workspaceID)
 	if err != nil {
@@ -199,7 +199,7 @@ func (ps *PostgresStorage) LoadAllStatuses(workspaceID int) (map[string]*domain.
 	return pipeStatuses, nil
 }
 
-func (ps *PostgresStorage) SaveStatus(p *domain.Status) error {
+func (ps *PipeStorage) SaveStatus(p *domain.Status) error {
 	if p.Status == "success" {
 		if len(p.ObjectCounts) > 0 {
 			p.Message = fmt.Sprintf("%s successfully imported/exported", strings.Join(p.ObjectCounts, ", "))
@@ -218,7 +218,7 @@ func (ps *PostgresStorage) SaveStatus(p *domain.Status) error {
 	return nil
 }
 
-func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string, p *domain.Pipe) error {
+func (ps *PipeStorage) loadPipeWithKey(workspaceID int, key string, p *domain.Pipe) error {
 	rows, err := ps.db.Query(singlePipesSQL, workspaceID, key)
 	if err != nil {
 		return err
@@ -233,7 +233,7 @@ func (ps *PostgresStorage) loadPipeWithKey(workspaceID int, key string, p *domai
 	return nil
 }
 
-func (ps *PostgresStorage) load(rows *sql.Rows, p *domain.Pipe) error {
+func (ps *PipeStorage) load(rows *sql.Rows, p *domain.Pipe) error {
 	var wid int
 	var b []byte
 	var key string

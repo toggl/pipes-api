@@ -1,9 +1,7 @@
-package authorization
+package storage
 
 import (
 	"database/sql"
-	"flag"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,22 +12,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
-var (
-	dbConnString string
-	mx           sync.RWMutex
-)
-
-func getDbConnString() string {
-	mx.RLock()
-	defer mx.RUnlock()
-	return dbConnString
-}
-
-func init() {
-	// There is no need to call "flag.Parse()". See: https://golang.org/doc/go1.13#testing
-	flag.StringVar(&dbConnString, "db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "Database Connection String")
-}
-
 type AuthorizationsStorageTestSuite struct {
 	suite.Suite
 	db *sql.DB
@@ -37,12 +19,12 @@ type AuthorizationsStorageTestSuite struct {
 
 func (ts *AuthorizationsStorageTestSuite) SetupSuite() {
 	var err error
-	ts.db, err = sql.Open("postgres", getDbConnString())
+	ts.db, err = sql.Open("postgres", getConnectionStringForTests())
 	require.NoError(ts.T(), err)
 
 	err = ts.db.Ping()
 	if err != nil {
-		ts.T().Skipf("Could not connect to database, db_conn_string: %v", getDbConnString())
+		ts.T().Skipf("Could not connect to database, db_conn_string: %v", getConnectionStringForTests())
 	}
 }
 
@@ -64,7 +46,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	}
 	a := af.Create(1, integration.GitHub)
 
-	s := NewPostgresStorage(ts.db)
+	s := NewAuthorizationStorage(ts.db)
 	err := s.Save(a)
 	ts.NoError(err)
 
@@ -75,11 +57,11 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbClosed() {
-	cdb, err := sql.Open("postgres", getDbConnString())
+	cdb, err := sql.Open("postgres", getConnectionStringForTests())
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := NewPostgresStorage(cdb)
+	s := NewAuthorizationStorage(cdb)
 
 	af := &domain.AuthorizationFactory{
 		IntegrationsStorage:   &mocks.IntegrationsStorage{},
@@ -95,7 +77,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
-	s := NewPostgresStorage(ts.db)
+	s := NewAuthorizationStorage(ts.db)
 
 	af := &domain.AuthorizationFactory{
 		IntegrationsStorage:   &mocks.IntegrationsStorage{},
@@ -112,7 +94,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyA
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
-	s := NewPostgresStorage(ts.db)
+	s := NewAuthorizationStorage(ts.db)
 
 	af := &domain.AuthorizationFactory{
 		IntegrationsStorage:   &mocks.IntegrationsStorage{},

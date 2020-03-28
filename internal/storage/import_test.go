@@ -1,9 +1,7 @@
-package _import
+package storage
 
 import (
 	"database/sql"
-	"flag"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,22 +12,6 @@ import (
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
 
-var (
-	dbConnString string
-	mx           sync.RWMutex
-)
-
-func getDbConnString() string {
-	mx.RLock()
-	defer mx.RUnlock()
-	return dbConnString
-}
-
-func init() {
-	// There is no need to call "flag.Parse()". See: https://golang.org/doc/go1.13#testing
-	flag.StringVar(&dbConnString, "db_conn_string", "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432", "Database Connection String")
-}
-
 type ImportsStorageTestSuite struct {
 	suite.Suite
 	db *sql.DB
@@ -37,12 +19,12 @@ type ImportsStorageTestSuite struct {
 
 func (ts *ImportsStorageTestSuite) SetupSuite() {
 	var err error
-	ts.db, err = sql.Open("postgres", getDbConnString())
+	ts.db, err = sql.Open("postgres", getConnectionStringForTests())
 	require.NoError(ts.T(), err)
 
 	err = ts.db.Ping()
 	if err != nil {
-		ts.T().Skipf("Could not connect to database, db_conn_string: %v", getDbConnString())
+		ts.T().Skipf("Could not connect to database, db_conn_string: %v", getConnectionStringForTests())
 	}
 }
 
@@ -56,21 +38,21 @@ func (ts *ImportsStorageTestSuite) SetupTest() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteAccountsFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 	err := s.DeleteAccountsFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteUsersFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.AccountsResponse{
@@ -90,7 +72,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor()
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.UsersResponse{
@@ -110,7 +92,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.ClientsResponse{
@@ -130,7 +112,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.ProjectsResponse{
@@ -162,7 +144,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor()
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.TasksResponse{
@@ -192,7 +174,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTodoListsFor_LoadTodoListsFor() {
-	s := NewPostgresStorage(ts.db)
+	s := NewImportStorage(ts.db)
 	svc := domain.NewExternalService(integration.GitHub, 1)
 
 	resp := &toggl.TasksResponse{

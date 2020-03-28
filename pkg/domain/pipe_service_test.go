@@ -7,10 +7,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	authorizationStorage "github.com/toggl/pipes-api/internal/storage/authorization"
-	idMappingStorage "github.com/toggl/pipes-api/internal/storage/idmapping"
-	importStorage "github.com/toggl/pipes-api/internal/storage/import"
-	pipeStorage "github.com/toggl/pipes-api/internal/storage/pipe"
+	"github.com/toggl/pipes-api/internal/storage"
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
@@ -23,10 +20,10 @@ type ServiceTestSuite struct {
 }
 
 func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
-	s := pipeStorage.NewPostgresStorage(ts.db)
-	as := authorizationStorage.NewPostgresStorage(ts.db)
-	ims := importStorage.NewPostgresStorage(ts.db)
-	idms := idMappingStorage.NewPostgresStorage(ts.db)
+	s := storage.NewPipeStorage(ts.db)
+	as := storage.NewAuthorizationStorage(ts.db)
+	ims := storage.NewImportStorage(ts.db)
+	idms := storage.NewIdMappingStorageStorage(ts.db)
 	api := client.NewTogglApiClient("https://localhost")
 	op := &mocks.OAuthProvider{}
 	q := &mocks.Queue{}

@@ -22,11 +22,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 
-	authorizationStorage "github.com/toggl/pipes-api/internal/storage/authorization"
-	idMappingStorage "github.com/toggl/pipes-api/internal/storage/idmapping"
-	importStorage "github.com/toggl/pipes-api/internal/storage/import"
-	integrationStorage "github.com/toggl/pipes-api/internal/storage/integration"
-	pipeStorage "github.com/toggl/pipes-api/internal/storage/pipe"
+	"github.com/toggl/pipes-api/internal/storage"
 )
 
 var (
@@ -70,19 +66,31 @@ func main() {
 	}
 	defer db.Close()
 
-	oAuth1ConfigPath := filepath.Join(env.WorkDir, "config", "oauth1.json")
-	oAuth2ConfigPath := filepath.Join(env.WorkDir, "config", "oauth2.json")
-	oauthProvider := oauth.NewInMemoryProvider(env.Environment, oAuth1ConfigPath, oAuth2ConfigPath)
+	integrationsConfig, err := os.Open(filepath.Join(env.WorkDir, "config", "integrations.json"))
+	if err != nil {
+		log.Fatalf("could not read integrations config file, reason: %s", err)
+	}
+	defer integrationsConfig.Close()
 
+	oAuth1Config, err := os.Open(filepath.Join(env.WorkDir, "config", "oauth1.json"))
+	if err != nil {
+		log.Fatalf("could not read integrations config file, reason: %s", err)
+	}
+	defer oAuth1Config.Close()
+
+	oAuth2Config, err := os.Open(filepath.Join(env.WorkDir, "config", "oauth2.json"))
+	if err != nil {
+		log.Fatalf("could not read integrations config file, reason: %s", err)
+	}
+	defer oAuth2Config.Close()
+
+	oauthProvider := oauth.NewInMemoryProvider(env.Environment, oAuth1Config, oAuth2Config)
 	togglApi := client.NewTogglApiClient(cfg.TogglAPIHost)
-
-	ps := pipeStorage.NewPostgresStorage(db)
-	ims := importStorage.NewPostgresStorage(db)
-	idms := idMappingStorage.NewPostgresStorage(db)
-
-	integrationsConfigPath := filepath.Join(env.WorkDir, "config", "integrations.json")
-	is := integrationStorage.NewFileStorage(integrationsConfigPath)
-	as := authorizationStorage.NewPostgresStorage(db)
+	ps := storage.NewPipeStorage(db)
+	ims := storage.NewImportStorage(db)
+	idms := storage.NewIdMappingStorageStorage(db)
+	is := storage.NewIntegrationStorage(integrationsConfig)
+	as := storage.NewAuthorizationStorage(db)
 
 	authFactory := &domain.AuthorizationFactory{
 		IntegrationsStorage:   is,
