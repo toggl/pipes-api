@@ -111,13 +111,20 @@ func (ts *StorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
-	s := NewPostgresStorage(ts.db)
-	a := pipe.NewAuthorization(1, integration.GitHub, "")
 
+	af := &pipe.AuthorizationFactory{
+		IntegrationsStorage: &pipe.MockIntegrationsStorage{},
+		Storage:             &pipe.MockStorage{},
+		OAuthProvider:       &pipe.MockOAuthProvider{},
+	}
+	a := af.Create(1, integration.GitHub)
+
+	s := NewPostgresStorage(ts.db)
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
 
-	aFromDb, err := s.LoadAuthorization(1, integration.GitHub)
+	aFromDb := af.Create(0, integration.GitHub)
+	err = s.LoadAuthorization(1, integration.GitHub, aFromDb)
 	ts.NoError(err)
 	ts.Equal(a, aFromDb)
 }
@@ -129,19 +136,28 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_DbCl
 
 	s := NewPostgresStorage(cdb)
 
-	a := pipe.NewAuthorization(2, integration.Asana, "")
+	af := &pipe.AuthorizationFactory{
+		IntegrationsStorage: &pipe.MockIntegrationsStorage{},
+		Storage:             &pipe.MockStorage{},
+		OAuthProvider:       &pipe.MockOAuthProvider{},
+	}
+	a := af.Create(2, integration.Asana)
 	err = s.SaveAuthorization(a)
 	ts.Error(err)
 
-	con, err := s.LoadAuthorization(2, integration.Asana)
+	err = s.LoadAuthorization(2, integration.Asana, a)
 	ts.Error(err)
-	ts.Nil(con)
 }
 
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := NewPostgresStorage(ts.db)
 
-	a := pipe.NewAuthorization(1, integration.GitHub, "")
+	af := &pipe.AuthorizationFactory{
+		IntegrationsStorage: &pipe.MockIntegrationsStorage{},
+		Storage:             &pipe.MockStorage{},
+		OAuthProvider:       &pipe.MockOAuthProvider{},
+	}
+	a := af.Create(1, integration.GitHub)
 
 	err := s.SaveAuthorization(a)
 	ts.NoError(err)
@@ -153,8 +169,14 @@ func (ts *StorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_O
 func (ts *StorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := NewPostgresStorage(ts.db)
 
-	a1 := pipe.NewAuthorization(1, integration.GitHub, "")
-	a2 := pipe.NewAuthorization(1, integration.Asana, "")
+	af := &pipe.AuthorizationFactory{
+		IntegrationsStorage: &pipe.MockIntegrationsStorage{},
+		Storage:             &pipe.MockStorage{},
+		OAuthProvider:       &pipe.MockOAuthProvider{},
+	}
+
+	a1 := af.Create(1, integration.GitHub)
+	a2 := af.Create(1, integration.Asana)
 
 	err := s.SaveAuthorization(a1)
 	ts.NoError(err)

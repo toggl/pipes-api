@@ -82,27 +82,18 @@ func (_m *MockStorage) IsDown() bool {
 	return r0
 }
 
-// LoadAuthorization provides a mock function with given fields: workspaceID, sid
-func (_m *MockStorage) LoadAuthorization(workspaceID int, sid integration.ID) (*Authorization, error) {
-	ret := _m.Called(workspaceID, sid)
+// LoadAuthorization provides a mock function with given fields: workspaceID, externalServiceID, a
+func (_m *MockStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error {
+	ret := _m.Called(workspaceID, externalServiceID, a)
 
-	var r0 *Authorization
-	if rf, ok := ret.Get(0).(func(int, integration.ID) *Authorization); ok {
-		r0 = rf(workspaceID, sid)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(int, integration.ID, *Authorization) error); ok {
+		r0 = rf(workspaceID, externalServiceID, a)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*Authorization)
-		}
+		r0 = ret.Error(0)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(int, integration.ID) error); ok {
-		r1 = rf(workspaceID, sid)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // LoadIDMapping provides a mock function with given fields: workspaceID, key

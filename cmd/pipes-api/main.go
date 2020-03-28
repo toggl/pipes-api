@@ -14,6 +14,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/toggl/pipes-api/pkg/config"
+	"github.com/toggl/pipes-api/pkg/pipe"
 	"github.com/toggl/pipes-api/pkg/pipe/autosync"
 	"github.com/toggl/pipes-api/pkg/pipe/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe/queue"
@@ -78,6 +79,12 @@ func main() {
 
 	pipesQueue := queue.NewPostgresQueue(db, pipesStore)
 
+	authFactory := &pipe.AuthorizationFactory{
+		IntegrationsStorage: integrationsStore,
+		Storage:             pipesStore,
+		OAuthProvider:       oauthProvider,
+	}
+
 	pipesService := service.NewService(
 		oauthProvider,
 		pipesStore,
@@ -85,6 +92,7 @@ func main() {
 		importsStore,
 		pipesQueue,
 		togglApi,
+		authFactory,
 		cfg.PipesAPIHost,
 	)
 

@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	goauth2 "code.google.com/p/goauth2/oauth"
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/tambet/oauthplain"
 
@@ -23,24 +22,26 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Service struct {
-	oauth             OAuthProvider
+	oauth             pipe.OAuthProvider
 	toggl             pipe.TogglClient
 	store             pipe.Storage
 	integrationsStore pipe.IntegrationsStorage
 	importsStore      pipe.ImportsStorage
 	queue             pipe.Queue
+	authFactory       *pipe.AuthorizationFactory
 
 	pipesApiHost string
 	mx           sync.RWMutex
 }
 
 func NewService(
-	oauth OAuthProvider,
+	oauth pipe.OAuthProvider,
 	store pipe.Storage,
 	integrationsStore pipe.IntegrationsStorage,
 	importsStore pipe.ImportsStorage,
 	queue pipe.Queue,
 	togglClient pipe.TogglClient,
+	authFactory *pipe.AuthorizationFactory,
 	pipesApiHost string) *Service {
 
 	svc := &Service{
@@ -50,6 +51,7 @@ func NewService(
 		integrationsStore: integrationsStore,
 		importsStore:      importsStore,
 		queue:             queue,
+		authFactory:       authFactory,
 
 		pipesApiHost: pipesApiHost,
 	}
@@ -160,12 +162,11 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(workspaceID, serviceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -185,11 +186,12 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID integration.ID, p
 
 func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, forceImport bool) (*toggl.UsersResponse, error) {
 	service := pipe.NewExternalService(serviceID, workspaceID)
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
+	auth := svc.authFactory.Create(workspaceID, serviceID)
+	err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth)
 	if err != nil {
 		return nil, LoadError{err}
 	}
-	if err := svc.refreshAuthorization(auth); err != nil {
+	if err := auth.Refresh(); err != nil {
 		return nil, RefreshError{errors.New("oAuth refresh failed!")}
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -234,11 +236,12 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID integration.ID, f
 
 func (svc *Service) GetServiceAccounts(workspaceID int, serviceID integration.ID, forceImport bool) (*toggl.AccountsResponse, error) {
 	service := pipe.NewExternalService(serviceID, workspaceID)
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
+	auth := svc.authFactory.Create(workspaceID, serviceID)
+	err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth)
 	if err != nil {
 		return nil, LoadError{err}
 	}
-	if err := svc.refreshAuthorization(auth); err != nil {
+	if err := auth.Refresh(); err != nil {
 		return nil, RefreshError{errors.New("oAuth refresh failed!")}
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -288,7 +291,9 @@ func (svc *Service) GetAuthURL(serviceID integration.ID, accountName, callbackUR
 }
 
 func (svc *Service) CreateAuthorization(workspaceID int, serviceID integration.ID, workspaceToken string, params pipe.AuthParams) error {
-	auth := pipe.NewAuthorization(workspaceID, serviceID, workspaceToken)
+	auth := svc.authFactory.Create(workspaceID, serviceID)
+	auth.WorkspaceToken = workspaceToken
+
 	authType, err := svc.integrationsStore.LoadAuthorizationType(serviceID)
 	if err != nil {
 		return err
@@ -445,12 +450,12 @@ func (svc *Service) Run(p *pipe.Pipe) {
 		return
 	}
 
-	auth, err := svc.store.LoadAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(p.WorkspaceID, p.ServiceID, auth); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
-	if err = svc.refreshAuthorization(auth); err != nil {
+	if err = auth.Refresh(); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
@@ -534,8 +539,9 @@ func (svc *Service) syncTEs(p *pipe.Pipe) {
 		log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 		return
 	}
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 		return
 	}
@@ -544,42 +550,10 @@ func (svc *Service) syncTEs(p *pipe.Pipe) {
 		return
 	}
 
-	err = svc.postTimeEntries(p, service)
-	if err != nil {
+	if err := svc.postTimeEntries(p, service); err != nil {
 		svc.notifyBugsnag(err, p)
 		return
 	}
-}
-
-func (svc *Service) refreshAuthorization(a *pipe.Authorization) error {
-	authType, err := svc.integrationsStore.LoadAuthorizationType(a.ServiceID)
-	if err != nil {
-		return err
-	}
-	if authType != pipe.TypeOauth2 {
-		return nil
-	}
-	var token goauth2.Token
-	if err := json.Unmarshal(a.Data, &token); err != nil {
-		return err
-	}
-	if !token.Expired() {
-		return nil
-	}
-	config, res := svc.oauth.OAuth2Configs(a.ServiceID)
-	if !res {
-		return errors.New("service OAuth config not found")
-	}
-	if err := svc.oauth.OAuth2Refresh(config, &token); err != nil {
-		return fmt.Errorf("unable to refresh oAuth2 token, reason: %w", err)
-	}
-	if err := a.SetOAuth2Token(&token); err != nil {
-		return err
-	}
-	if err := svc.store.SaveAuthorization(a); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (svc *Service) notifyBugsnag(err error, p *pipe.Pipe) {
@@ -602,12 +576,11 @@ func (svc *Service) postUsers(p *pipe.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -665,8 +638,9 @@ func (svc *Service) postClients(p *pipe.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -710,12 +684,11 @@ func (svc *Service) postProjects(p *pipe.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -756,12 +729,11 @@ func (svc *Service) postTodoLists(p *pipe.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -808,12 +780,11 @@ func (svc *Service) postTasks(p *pipe.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -930,13 +901,12 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
 
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 
@@ -951,8 +921,8 @@ func (svc *Service) fetchUsers(p *pipe.Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-		if err != nil {
+		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+		if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -978,12 +948,11 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -997,8 +966,8 @@ func (svc *Service) fetchClients(p *pipe.Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-		if err != nil {
+		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+		if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1036,8 +1005,8 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-		if err != nil {
+		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+		if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1065,12 +1034,11 @@ func (svc *Service) fetchProjects(p *pipe.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -1113,8 +1081,8 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 			return
 		}
-		auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-		if err != nil {
+		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+		if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1141,12 +1109,11 @@ func (svc *Service) fetchTodoLists(p *pipe.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -1192,8 +1159,8 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 			return
 		}
 
-		auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-		if err != nil {
+		auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+		if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
 			return
 		}
@@ -1221,12 +1188,11 @@ func (svc *Service) fetchTasks(p *pipe.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID())
-	if err != nil {
+	auth := svc.authFactory.Create(p.WorkspaceID, p.ServiceID)
+	if err := svc.store.LoadAuthorization(service.GetWorkspaceID(), service.ID(), auth); err != nil {
 		return err
 	}
-	err = svc.refreshAuthorization(auth)
-	if err != nil {
+	if err := auth.Refresh(); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {

@@ -220,21 +220,20 @@ func (ps *PostgresStorage) SaveAuthorization(a *pipe.Authorization) error {
 	return nil
 }
 
-func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID) (*pipe.Authorization, error) {
+func (ps *PostgresStorage) LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *pipe.Authorization) error {
 	rows, err := ps.db.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		return nil, rows.Err()
+		return rows.Err()
 	}
-	var a pipe.Authorization
 	err = rows.Scan(&a.WorkspaceID, &a.ServiceID, &a.WorkspaceToken, &a.Data)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &a, nil
+	return nil
 }
 
 func (ps *PostgresStorage) DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error {

@@ -3,6 +3,9 @@ package pipe
 import (
 	"time"
 
+	goauth2 "code.google.com/p/goauth2/oauth"
+	"github.com/tambet/oauthplain"
+
 	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
@@ -68,7 +71,7 @@ type Service interface {
 type Storage interface {
 	// Authorizations
 
-	LoadAuthorization(workspaceID int, sid integration.ID) (*Authorization, error)
+	LoadAuthorization(workspaceID int, externalServiceID integration.ID, a *Authorization) error
 	LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error)
 	SaveAuthorization(a *Authorization) error
 	DeleteAuthorization(workspaceID int, externalServiceID integration.ID) error
@@ -130,4 +133,14 @@ type ImportsStorage interface {
 
 	LoadTodoListsFor(s integration.Integration) (*toggl.TasksResponse, error)
 	SaveTodoListsFor(s integration.Integration, res toggl.TasksResponse) error
+}
+
+//go:generate mockery -name OAuthProvider -case underscore -inpkg
+type OAuthProvider interface {
+	OAuth2URL(integration.ID) string
+	OAuth1Configs(integration.ID) (*oauthplain.Config, bool)
+	OAuth1Exchange(sid integration.ID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error)
+	OAuth2Exchange(sid integration.ID, code string) (*goauth2.Token, error)
+	OAuth2Configs(integration.ID) (*goauth2.Config, bool)
+	OAuth2Refresh(*goauth2.Config, *goauth2.Token) error
 }
