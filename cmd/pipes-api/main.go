@@ -84,7 +84,11 @@ func main() {
 	}
 	defer oAuth2Config.Close()
 
-	oauthProvider := oauth.NewInMemoryProvider(env.Environment, oAuth1Config, oAuth2Config)
+	oauthProvider, err := oauth.Create(env.Environment, oAuth1Config, oAuth2Config)
+	if err != nil {
+		log.Fatalf("couldn't create oauth provider, reason: %v", err)
+	}
+
 	togglApi := client.NewTogglApiClient(cfg.TogglAPIHost)
 	ps := storage.NewPipeStorage(db)
 	ims := storage.NewImportStorage(db)

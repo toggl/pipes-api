@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"sync"
 
 	"code.google.com/p/goauth2/oauth"
@@ -15,30 +14,30 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
-type InMemoryProvider struct {
+type Provider struct {
 	envType       string
-	oauth1Config  io.Reader
-	oauth2Config  io.Reader
 	oAuth2Configs map[string]*oauth.Config
 	oAuth1Configs map[string]*oauthplain.Config
 	mx            sync.RWMutex
 }
 
-func NewInMemoryProvider(envType string, oauth1Config, oauth2Config io.Reader) *InMemoryProvider {
-	svc := &InMemoryProvider{
+func Create(envType string, oauth1Config, oauth2Config io.Reader) (*Provider, error) {
+	svc := &Provider{
 		envType:       envType,
-		oauth1Config:  oauth1Config,
-		oauth2Config:  oauth2Config,
 		oAuth2Configs: map[string]*oauth.Config{},
 		oAuth1Configs: map[string]*oauthplain.Config{},
 	}
 
-	svc.loadOauth2Configs()
-	svc.loadOauth1Configs()
-	return svc
+	if err := svc.loadOauth2Configs(oauth2Config); err != nil {
+		return nil, err
+	}
+	if err := svc.loadOauth1Configs(oauth1Config); err != nil {
+		return nil, err
+	}
+	return svc, nil
 }
 
-func (p *InMemoryProvider) OAuth2URL(sid integration.ID) string {
+func (p *Provider) OAuth2URL(sid integration.ID) string {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	config, ok := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -48,7 +47,7 @@ func (p *InMemoryProvider) OAuth2URL(sid integration.ID) string {
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (p *InMemoryProvider) OAuth1Exchange(sid integration.ID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
+func (p *Provider) OAuth1Exchange(sid integration.ID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
 	if accountName == "" {
 		return nil, errors.New("missing account_name")
 	}
@@ -82,7 +81,7 @@ func (p *InMemoryProvider) OAuth1Exchange(sid integration.ID, accountName, oAuth
 	return token, nil
 }
 
-func (p *InMemoryProvider) OAuth2Exchange(sid integration.ID, code string) (*oauth.Token, error) {
+func (p *Provider) OAuth2Exchange(sid integration.ID, code string) (*oauth.Token, error) {
 
 	p.mx.RLock()
 	config, res := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -100,46 +99,48 @@ func (p *InMemoryProvider) OAuth2Exchange(sid integration.ID, code string) (*oau
 	return token, nil
 }
 
-func (p *InMemoryProvider) OAuth1Configs(sid integration.ID) (*oauthplain.Config, bool) {
+func (p *Provider) OAuth1Configs(sid integration.ID) (*oauthplain.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth1Configs[string(sid)+"_"+p.envType]
 	return v, found
 }
 
-func (p *InMemoryProvider) OAuth2Configs(sid integration.ID) (*oauth.Config, bool) {
+func (p *Provider) OAuth2Configs(sid integration.ID) (*oauth.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth2Configs[string(sid)+"_"+p.envType]
 	return v, found
 }
 
-func (p *InMemoryProvider) OAuth2Refresh(cfg *oauth.Config, token *oauth.Token) error {
+func (p *Provider) OAuth2Refresh(cfg *oauth.Config, token *oauth.Token) error {
 	transport := &oauth.Transport{Config: cfg, Token: token}
 	return transport.Refresh()
 }
 
-func (p *InMemoryProvider) loadOauth2Configs() {
+func (p *Provider) loadOauth2Configs(r io.Reader) error {
 	p.mx.Lock()
 	defer p.mx.Unlock()
 
-	b, err := ioutil.ReadAll(p.oauth2Config)
+	b, err := ioutil.ReadAll(r)
 	if err != nil {
-		log.Fatalf("Could not read oauth2.json, reason: %v", err)
+		return fmt.Errorf("could not read oauth2.json, reason: %w", err)
 	}
 	if err := json.Unmarshal(b, &p.oAuth2Configs); err != nil {
-		log.Fatalf("Could not parse oauth2.json, reason: %v", err)
+		return fmt.Errorf("could not parse oauth2.json, reason: %w", err)
 	}
+	return nil
 }
 
-func (p *InMemoryProvider) loadOauth1Configs() {
+func (p *Provider) loadOauth1Configs(r io.Reader) error {
 	p.mx.Lock()
 	defer p.mx.Unlock()
-	b, err := ioutil.ReadAll(p.oauth1Config)
+	b, err := ioutil.ReadAll(r)
 	if err != nil {
-		log.Fatalf("Could not read oauth1.json, reason: %v", err)
+		return fmt.Errorf("could not read oauth1.json, reason: %w", err)
 	}
 	if err := json.Unmarshal(b, &p.oAuth1Configs); err != nil {
-		log.Fatalf("Could not parse oauth1.json, reason: %v", err)
+		return fmt.Errorf("could not parse oauth1.json, reason: %w", err)
 	}
+	return nil
 }
