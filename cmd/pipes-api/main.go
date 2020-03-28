@@ -13,20 +13,21 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	_ "github.com/lib/pq"
 
-	"github.com/toggl/pipes-api/pkg/autosync"
-	"github.com/toggl/pipes-api/pkg/config"
+	"github.com/toggl/pipes-api/internal/autosync"
+	"github.com/toggl/pipes-api/internal/config"
+	"github.com/toggl/pipes-api/internal/oauth"
+	"github.com/toggl/pipes-api/internal/queue"
+	"github.com/toggl/pipes-api/internal/server"
+	"github.com/toggl/pipes-api/internal/service"
+
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/oauth"
-	"github.com/toggl/pipes-api/pkg/queue"
-	"github.com/toggl/pipes-api/pkg/server"
-	"github.com/toggl/pipes-api/pkg/service"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 
-	authorizationStorage "github.com/toggl/pipes-api/pkg/storage/authorization"
-	idMappingStorage "github.com/toggl/pipes-api/pkg/storage/idmapping"
-	importStorage "github.com/toggl/pipes-api/pkg/storage/import"
-	integrationStorage "github.com/toggl/pipes-api/pkg/storage/integration"
-	pipeStorage "github.com/toggl/pipes-api/pkg/storage/pipe"
+	authorizationStorage "github.com/toggl/pipes-api/internal/storage/authorization"
+	idMappingStorage "github.com/toggl/pipes-api/internal/storage/idmapping"
+	importStorage "github.com/toggl/pipes-api/internal/storage/import"
+	integrationStorage "github.com/toggl/pipes-api/internal/storage/integration"
+	pipeStorage "github.com/toggl/pipes-api/internal/storage/pipe"
 )
 
 var (

@@ -12,19 +12,20 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/toggl/pipes-api/pkg/config"
+	"github.com/toggl/pipes-api/internal/config"
+	"github.com/toggl/pipes-api/internal/oauth"
+	"github.com/toggl/pipes-api/internal/queue"
+
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/oauth"
-	"github.com/toggl/pipes-api/pkg/queue"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 
-	authorizationStorage "github.com/toggl/pipes-api/pkg/storage/authorization"
-	idMappingStorage "github.com/toggl/pipes-api/pkg/storage/idmapping"
-	importStorage "github.com/toggl/pipes-api/pkg/storage/import"
-	integrationStorage "github.com/toggl/pipes-api/pkg/storage/integration"
-	pipeStorage "github.com/toggl/pipes-api/pkg/storage/pipe"
+	authorizationStorage "github.com/toggl/pipes-api/internal/storage/authorization"
+	idMappingStorage "github.com/toggl/pipes-api/internal/storage/idmapping"
+	importStorage "github.com/toggl/pipes-api/internal/storage/import"
+	integrationStorage "github.com/toggl/pipes-api/internal/storage/integration"
+	pipeStorage "github.com/toggl/pipes-api/internal/storage/pipe"
 )
 
 var workspaceID = 1

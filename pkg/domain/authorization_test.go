@@ -2,7 +2,6 @@ package domain_test
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/tambet/oauthplain"
 
-	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
@@ -75,10 +73,6 @@ func TestSetOauth1Token(t *testing.T) {
 }
 
 func TestRefresh_Load_Ok(t *testing.T) {
-
-	flags := config.Flags{}
-	config.ParseFlags(&flags, os.Args)
-
 	as := &mocks.AuthorizationsStorage{}
 	as.On("Load", 1, integration.GitHub, mock.Anything).Return(nil)
 	as.On("Save", mock.Anything).Return(nil)
