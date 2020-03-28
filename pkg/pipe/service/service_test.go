@@ -16,8 +16,8 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/config"
 	"github.com/toggl/pipes-api/pkg/integration"
+	"github.com/toggl/pipes-api/pkg/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe"
-	"github.com/toggl/pipes-api/pkg/pipe/oauth"
 	"github.com/toggl/pipes-api/pkg/pipe/queue"
 	"github.com/toggl/pipes-api/pkg/pipe/storage"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
