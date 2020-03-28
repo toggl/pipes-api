@@ -9,7 +9,7 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/pipe"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 var wg sync.WaitGroup
@@ -22,11 +22,11 @@ const (
 
 type Service struct {
 	debug  bool
-	queue  pipe.Queue
-	runner pipe.Runner
+	queue  domain.Queue
+	runner domain.Runner
 }
 
-func NewService(p pipe.Queue, r pipe.Runner, debug bool) *Service {
+func NewService(p domain.Queue, r domain.Runner, debug bool) *Service {
 	return &Service{
 		queue:  p,
 		runner: r,

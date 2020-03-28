@@ -6,16 +6,16 @@ import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 
+	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/pipe"
 )
 
 type Middleware struct {
-	istore pipe.IntegrationsStorage
-	clt    pipe.TogglClient
+	istore domain.IntegrationsStorage
+	clt    domain.TogglClient
 }
 
-func NewMiddleware(clt pipe.TogglClient, istore pipe.IntegrationsStorage) *Middleware {
+func NewMiddleware(clt domain.TogglClient, istore domain.IntegrationsStorage) *Middleware {
 	return &Middleware{
 		istore: istore,
 		clt:    clt,

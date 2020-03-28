@@ -8,14 +8,14 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/pipe"
-	"github.com/toggl/pipes-api/pkg/pipe/service"
+	"github.com/toggl/pipes-api/pkg/service"
 )
 
 type Controller struct {
-	pipesSvc pipe.Service
-	istore   pipe.IntegrationsStorage
+	pipesSvc domain.Service
+	istore   domain.IntegrationsStorage
 	params   Params
 }
 
@@ -25,7 +25,7 @@ type Params struct {
 	BuildTime string
 }
 
-func NewController(pipes pipe.Service, istore pipe.IntegrationsStorage, params Params) *Controller {
+func NewController(pipes domain.Service, istore domain.IntegrationsStorage, params Params) *Controller {
 	return &Controller{pipesSvc: pipes, istore: istore, params: params}
 }
 
@@ -140,7 +140,7 @@ func (c *Controller) CreateAuthorizationHandler(req Request) Response {
 		return badRequest("Missing payload")
 	}
 
-	var params pipe.AuthParams
+	var params domain.AuthParams
 	err = json.Unmarshal(req.body, &params)
 	if err != nil {
 		return badRequest("Bad payload")

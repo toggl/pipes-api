@@ -15,18 +15,18 @@ import (
 
 	"github.com/toggl/pipes-api/pkg/autosync"
 	"github.com/toggl/pipes-api/pkg/config"
+	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/oauth"
-	"github.com/toggl/pipes-api/pkg/pipe"
-	"github.com/toggl/pipes-api/pkg/pipe/queue"
-	"github.com/toggl/pipes-api/pkg/pipe/service"
+	"github.com/toggl/pipes-api/pkg/queue"
 	"github.com/toggl/pipes-api/pkg/server"
+	"github.com/toggl/pipes-api/pkg/service"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 
-	authorizationStorage "github.com/toggl/pipes-api/pkg/pipe/storage/authorization"
-	idMappingStorage "github.com/toggl/pipes-api/pkg/pipe/storage/idmapping"
-	importStorage "github.com/toggl/pipes-api/pkg/pipe/storage/import"
-	integrationStorage "github.com/toggl/pipes-api/pkg/pipe/storage/integration"
-	pipeStorage "github.com/toggl/pipes-api/pkg/pipe/storage/pipe"
+	authorizationStorage "github.com/toggl/pipes-api/pkg/storage/authorization"
+	idMappingStorage "github.com/toggl/pipes-api/pkg/storage/idmapping"
+	importStorage "github.com/toggl/pipes-api/pkg/storage/import"
+	integrationStorage "github.com/toggl/pipes-api/pkg/storage/integration"
+	pipeStorage "github.com/toggl/pipes-api/pkg/storage/pipe"
 )
 
 var (
@@ -86,7 +86,7 @@ func main() {
 
 	qe := queue.NewPostgresQueue(db, ps)
 
-	authFactory := &pipe.AuthorizationFactory{
+	authFactory := &domain.AuthorizationFactory{
 		IntegrationsStorage:   is,
 		AuthorizationsStorage: as,
 		OAuthProvider:         oauthProvider,
