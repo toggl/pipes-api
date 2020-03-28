@@ -91,7 +91,7 @@ func GetSidPidFromKey(key string) (integration.ID, integration.PipeID) {
 	return integration.ID(ids[0]), integration.PipeID(ids[1])
 }
 
-func (p *Pipe) Run() {
+func (p *Pipe) Synchronize() {
 	var err error
 	defer func() {
 		if err != nil {

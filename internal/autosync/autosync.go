@@ -63,7 +63,7 @@ func (s *Service) pipeWorker(id int) {
 		for _, pipe := range pipes {
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
 
-			pipe.Run()
+			pipe.Synchronize()
 
 			err := s.queue.SetQueuedPipeSynced(pipe)
 			if err != nil {

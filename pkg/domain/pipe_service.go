@@ -383,7 +383,7 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID in
 
 		go func() {
 			wsLock.Lock()
-			p.Run()
+			p.Synchronize()
 			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D

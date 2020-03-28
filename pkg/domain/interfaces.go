@@ -24,11 +24,6 @@ type TogglClient interface {
 	Ping() error
 }
 
-//go:generate mockery -name Runner -case underscore -outpkg mocks
-type Runner interface {
-	Run()
-}
-
 //go:generate mockery -name Queue -case underscore -outpkg mocks
 type Queue interface {
 	QueueAutomaticPipes() error
