@@ -68,7 +68,7 @@ type Pipe struct {
 	WorkspaceID     int                `json:"-"`
 	ServiceID       integration.ID     `json:"-"`
 	Key             string             `json:"-"`
-	UsersSelector   []byte             `json:"-"`
+	UsersSelector   *UserParams        `json:"-"`
 	LastSync        *time.Time         `json:"-"`
 
 	*AuthorizationFactory `json:"-"`
@@ -250,19 +250,15 @@ func (p *Pipe) postUsers() error {
 		return errors.New("service users not found")
 	}
 
-	var selector struct {
-		IDs         []int `json:"ids"`
-		SendInvites bool  `json:"send_invites"`
-	}
-	if err := json.Unmarshal(p.UsersSelector, &selector); err != nil {
-		return err
+	if p.UsersSelector == nil {
+		return errors.New("unable to get selected users")
 	}
 
 	var users []*toggl.User
-	for _, userID := range selector.IDs {
+	for _, userID := range p.UsersSelector.IDs {
 		for _, user := range usersResponse.Users {
 			if user.ForeignID == strconv.Itoa(userID) {
-				user.SendInvitation = selector.SendInvites
+				user.SendInvitation = p.UsersSelector.SendInvites
 				users = append(users, user)
 			}
 		}

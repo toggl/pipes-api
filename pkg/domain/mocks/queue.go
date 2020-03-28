@@ -12,8 +12,8 @@ type Queue struct {
 	mock.Mock
 }
 
-// GetPipesFromQueue provides a mock function with given fields:
-func (_m *Queue) GetPipesFromQueue() ([]*domain.Pipe, error) {
+// LoadScheduledPipes provides a mock function with given fields:
+func (_m *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 	ret := _m.Called()
 
 	var r0 []*domain.Pipe
@@ -35,8 +35,8 @@ func (_m *Queue) GetPipesFromQueue() ([]*domain.Pipe, error) {
 	return r0, r1
 }
 
-// QueueAutomaticPipes provides a mock function with given fields:
-func (_m *Queue) QueueAutomaticPipes() error {
+// ScheduleAutomaticPipesSynchronization provides a mock function with given fields:
+func (_m *Queue) ScheduleAutomaticPipesSynchronization() error {
 	ret := _m.Called()
 
 	var r0 error
@@ -49,8 +49,8 @@ func (_m *Queue) QueueAutomaticPipes() error {
 	return r0
 }
 
-// QueuePipeAsFirst provides a mock function with given fields: _a0
-func (_m *Queue) QueuePipeAsFirst(_a0 *domain.Pipe) error {
+// SchedulePipeSynchronization provides a mock function with given fields: _a0
+func (_m *Queue) SchedulePipeSynchronization(_a0 *domain.Pipe) error {
 	ret := _m.Called(_a0)
 
 	var r0 error
@@ -63,8 +63,8 @@ func (_m *Queue) QueuePipeAsFirst(_a0 *domain.Pipe) error {
 	return r0
 }
 
-// SetQueuedPipeSynced provides a mock function with given fields: _a0
-func (_m *Queue) SetQueuedPipeSynced(_a0 *domain.Pipe) error {
+// MarkPipeSynchronized provides a mock function with given fields: _a0
+func (_m *Queue) MarkPipeSynchronized(_a0 *domain.Pipe) error {
 	ret := _m.Called(_a0)
 
 	var r0 error

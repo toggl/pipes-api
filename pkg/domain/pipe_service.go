@@ -4,18 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"sync"
-	"time"
 
 	"github.com/tambet/oauthplain"
 
 	"github.com/toggl/pipes-api/pkg/integration"
 	"github.com/toggl/pipes-api/pkg/toggl"
 )
-
-// mutex to prevent multiple of postPipeRun on same workspace run at same time
-var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
-var postPipeRunLock sync.Mutex
 
 type Service struct {
 	*AuthorizationFactory
@@ -357,16 +351,7 @@ func (svc *Service) GetIntegrations(workspaceID int) ([]Integration, error) {
 	return resultIntegrations, nil
 }
 
-func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector []byte) error {
-	// make sure no race condition on fetching workspace lock
-	postPipeRunLock.Lock()
-	wsLock, exists := postPipeRunWorkspaceLock[workspaceID]
-	if !exists {
-		wsLock = &sync.Mutex{}
-		postPipeRunWorkspaceLock[workspaceID] = wsLock
-	}
-	postPipeRunLock.Unlock()
-
+func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector *UserParams) error {
 	p := svc.PipeFactory.Create(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
@@ -375,22 +360,8 @@ func (svc *Service) RunPipe(workspaceID int, serviceID integration.ID, pipeID in
 		return ErrPipeNotConfigured
 	}
 
-	if p.ID == integration.UsersPipe {
-		p.UsersSelector = usersSelector
-		if len(p.UsersSelector) == 0 {
-			return SetParamsError{errors.New("Missing request payload")}
-		}
-
-		go func() {
-			wsLock.Lock()
-			p.Synchronize()
-			wsLock.Unlock()
-		}()
-		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
-		return nil
-	}
-
-	if err := svc.Queue.QueuePipeAsFirst(p); err != nil {
+	p.UsersSelector = usersSelector
+	if err := svc.Queue.SchedulePipeSynchronization(p); err != nil {
 		return err
 	}
 	return nil

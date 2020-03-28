@@ -11,3 +11,8 @@ type AuthParams struct {
 	// Fields used for OAuth2
 	Code string `json:"code,omitempty"`
 }
+
+type UserParams struct {
+	IDs         []int `json:"ids"`
+	SendInvites bool  `json:"send_invites"`
+}

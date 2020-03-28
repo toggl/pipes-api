@@ -44,7 +44,7 @@ func (s *Service) pipeWorker(id int) {
 		wg.Done()
 	}()
 	for {
-		pipes, err := s.queue.GetPipesFromQueue()
+		pipes, err := s.queue.LoadScheduledPipes()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -65,7 +65,7 @@ func (s *Service) pipeWorker(id int) {
 
 			pipe.Synchronize()
 
-			err := s.queue.SetQueuedPipeSynced(pipe)
+			err := s.queue.MarkPipeSynchronized(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
@@ -109,7 +109,7 @@ func (s *Service) startQueue() {
 
 		log.Println("-- startQueue started")
 
-		if err := s.queue.QueueAutomaticPipes(); err != nil {
+		if err := s.queue.ScheduleAutomaticPipesSynchronization(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}

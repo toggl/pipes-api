@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -265,7 +266,14 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	err := c.PipeService.RunPipe(workspaceID, serviceID, pipeID, req.body)
+	var selector *domain.UserParams
+	if pipeID == integration.UsersPipe {
+		if err := json.Unmarshal(req.body, selector); err != nil {
+			return badRequest(fmt.Errorf("unable to parse users list, reason: %w", err))
+		}
+	}
+
+	err := c.PipeService.RunPipe(workspaceID, serviceID, pipeID, selector)
 	if err != nil {
 		if errors.Is(err, domain.ErrPipeNotConfigured) {
 			return badRequest(err.Error())

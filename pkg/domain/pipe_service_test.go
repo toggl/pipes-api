@@ -2,81 +2,101 @@ package domain_test
 
 import (
 	"database/sql"
+	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/toggl/pipes-api/internal/storage"
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl/client"
 )
 
 type ServiceTestSuite struct {
 	suite.Suite
-	db *sql.DB
+	db  *sql.DB
+	svc *domain.Service
 }
 
-func (ts *ServiceTestSuite) TestService_Set_GetAvailableAuthorizations() {
-	s := storage.NewPipeStorage(ts.db)
-	as := storage.NewAuthorizationStorage(ts.db)
-	ims := storage.NewImportStorage(ts.db)
-	idms := storage.NewIdMappingStorageStorage(ts.db)
-	api := client.NewTogglApiClient("https://localhost")
-	op := &mocks.OAuthProvider{}
-	q := &mocks.Queue{}
+func (ts *ServiceTestSuite) SetupTest() {
+	pipeStorage := &mocks.PipesStorage{}
+	importStorage := &mocks.ImportsStorage{}
+	integrationStorage := &mocks.IntegrationsStorage{}
+	idMappingStorage := &mocks.IDMappingsStorage{}
+	togglClient := &mocks.TogglClient{}
+	authorizationStorage := &mocks.AuthorizationsStorage{}
+	oauthProvider := &mocks.OAuthProvider{}
+	queue := &mocks.Queue{}
 
-	is := &mocks.IntegrationsStorage{}
-	is.On("SaveAuthorizationType", mock.Anything, mock.Anything).Return(nil)
-	is.On("LoadAuthorizationType", integration.GitHub).Return(domain.TypeOauth2, nil)
-	is.On("LoadAuthorizationType", integration.Asana).Return(domain.TypeOauth1, nil)
-
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   is,
-		AuthorizationsStorage: as,
-		OAuthProvider:         op,
+	authFactory := &domain.AuthorizationFactory{
+		IntegrationsStorage:   integrationStorage,
+		AuthorizationsStorage: authorizationStorage,
+		OAuthProvider:         oauthProvider,
 	}
 
-	pf := &domain.PipeFactory{
-		AuthorizationFactory:  af,
-		AuthorizationsStorage: as,
-		PipesStorage:          s,
-		ImportsStorage:        ims,
-		IDMappingsStorage:     idms,
-		TogglClient:           api,
+	pipeFactory := &domain.PipeFactory{
+		AuthorizationFactory:  authFactory,
+		AuthorizationsStorage: authorizationStorage,
+		PipesStorage:          pipeStorage,
+		ImportsStorage:        importStorage,
+		IDMappingsStorage:     idMappingStorage,
+		TogglClient:           togglClient,
 	}
 
-	svc := &domain.Service{
-		AuthorizationFactory:  af,
-		PipeFactory:           pf,
-		PipesStorage:          s,
-		AuthorizationsStorage: as,
-		IntegrationsStorage:   is,
-		IDMappingsStorage:     idms,
-		ImportsStorage:        ims,
-		OAuthProvider:         op,
-		TogglClient:           api,
-		Queue:                 q,
+	ts.svc = &domain.Service{
+		AuthorizationFactory:  authFactory,
+		PipeFactory:           pipeFactory,
+		PipesStorage:          pipeStorage,
+		AuthorizationsStorage: authorizationStorage,
+		IntegrationsStorage:   integrationStorage,
+		IDMappingsStorage:     idMappingStorage,
+		ImportsStorage:        importStorage,
+		OAuthProvider:         oauthProvider,
+		TogglClient:           togglClient,
+		Queue:                 queue,
 	}
+}
 
-	res, err := svc.IntegrationsStorage.LoadAuthorizationType(integration.GitHub)
-	ts.NoError(err)
-	ts.Equal(domain.TypeOauth2, res)
+func (ts *ServiceTestSuite) TearDownTest() {
+	ts.svc = nil
+}
 
-	err = svc.IntegrationsStorage.SaveAuthorizationType(integration.GitHub, domain.TypeOauth2)
-	ts.NoError(err)
-	err = svc.IntegrationsStorage.SaveAuthorizationType(integration.Asana, domain.TypeOauth1)
-	ts.NoError(err)
+func (ts *ServiceTestSuite) TestService_Ready() {
+	ps := &mocks.PipesStorage{}
+	ps.On("IsDown").Return(false)
 
-	res, err = svc.IntegrationsStorage.LoadAuthorizationType(integration.GitHub)
-	ts.NoError(err)
-	ts.Equal(domain.TypeOauth2, res)
+	tc := &mocks.TogglClient{}
+	tc.On("Ping").Return(nil)
 
-	res, err = svc.IntegrationsStorage.LoadAuthorizationType(integration.Asana)
-	ts.NoError(err)
-	ts.Equal(domain.TypeOauth1, res)
+	ts.svc.PipesStorage = ps
+	ts.svc.TogglClient = tc
+	err := ts.svc.Ready()
+	ts.Empty(err)
+}
+
+func (ts *ServiceTestSuite) TestService_Ready_IsDown() {
+	ps := &mocks.PipesStorage{}
+	ps.On("IsDown").Return(true)
+
+	tc := &mocks.TogglClient{}
+	tc.On("Ping").Return(nil)
+
+	ts.svc.PipesStorage = ps
+	ts.svc.TogglClient = tc
+	err := ts.svc.Ready()
+	ts.NotEmpty(err)
+}
+
+func (ts *ServiceTestSuite) TestService_Ready_Ping() {
+	ps := &mocks.PipesStorage{}
+	ps.On("IsDown").Return(false)
+
+	tc := &mocks.TogglClient{}
+	tc.On("Ping").Return(errors.New("error"))
+
+	ts.svc.PipesStorage = ps
+	ts.svc.TogglClient = tc
+	err := ts.svc.Ready()
+	ts.NotEmpty(err)
 }
 
 // In order for 'go test' to run this suite, we need to create

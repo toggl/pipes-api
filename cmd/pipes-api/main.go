@@ -111,7 +111,7 @@ func main() {
 		TogglClient:           togglApi,
 	}
 
-	qe := queue.NewPostgresQueue(db, pipeFactory, ps)
+	qe := queue.NewPipesQueue(db, pipeFactory, ps)
 
 	pipesService := &domain.Service{
 		AuthorizationFactory:  authFactory,

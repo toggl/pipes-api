@@ -26,10 +26,10 @@ type TogglClient interface {
 
 //go:generate mockery -name Queue -case underscore -outpkg mocks
 type Queue interface {
-	QueueAutomaticPipes() error
-	GetPipesFromQueue() ([]*Pipe, error)
-	SetQueuedPipeSynced(*Pipe) error
-	QueuePipeAsFirst(*Pipe) error
+	ScheduleAutomaticPipesSynchronization() error
+	LoadScheduledPipes() ([]*Pipe, error)
+	MarkPipeSynchronized(*Pipe) error
+	SchedulePipeSynchronization(*Pipe) error
 }
 
 //go:generate mockery -name PipeService -case underscore -outpkg mocks
@@ -38,7 +38,7 @@ type PipeService interface {
 	CreatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	UpdatePipe(workspaceID int, sid integration.ID, pid integration.PipeID, params []byte) error
 	DeletePipe(workspaceID int, sid integration.ID, pid integration.PipeID) error
-	RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector []byte) error
+	RunPipe(workspaceID int, sid integration.ID, pid integration.PipeID, usersSelector *UserParams) error
 	GetServicePipeLog(workspaceID int, sid integration.ID, pid integration.PipeID) (string, error)
 
 	ClearIDMappings(workspaceID int, sid integration.ID, pid integration.PipeID) error // TODO: Remove (Probably dead method).
