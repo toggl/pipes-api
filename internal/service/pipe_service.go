@@ -1141,7 +1141,7 @@ func (svc *Service) postClients(p *domain.Pipe) error {
 }
 
 func (svc *Service) refresh(a *domain.Authorization) error {
-	authType, err := a.IntegrationsStorage.LoadAuthorizationType(a.ServiceID)
+	authType, err := svc.IntegrationsStorage.LoadAuthorizationType(a.ServiceID)
 	if err != nil {
 		return err
 	}
@@ -1155,17 +1155,17 @@ func (svc *Service) refresh(a *domain.Authorization) error {
 	if !token.Expired() {
 		return nil
 	}
-	config, res := a.OAuthProvider.OAuth2Configs(a.ServiceID)
+	config, res := svc.OAuthProvider.OAuth2Configs(a.ServiceID)
 	if !res {
 		return errors.New("service OAuth config not found")
 	}
-	if err := a.OAuthProvider.OAuth2Refresh(config, &token); err != nil {
+	if err := svc.OAuthProvider.OAuth2Refresh(config, &token); err != nil {
 		return fmt.Errorf("unable to refresh oAuth2 token, reason: %w", err)
 	}
 	if err := a.SetOAuth2Token(&token); err != nil {
 		return err
 	}
-	if err := a.AuthorizationsStorage.Save(a); err != nil {
+	if err := svc.AuthorizationsStorage.Save(a); err != nil {
 		return err
 	}
 	return nil

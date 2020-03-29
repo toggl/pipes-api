@@ -127,7 +127,7 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		defer func() {
 			if recover() != nil {
 				log.Println("panic when handling", r.URL.Path)
-				bugsnag.Recover(bugsnag.StartSession(r.Context()))
+				bugsnag.Recover(r.Context())
 			}
 		}()
 
