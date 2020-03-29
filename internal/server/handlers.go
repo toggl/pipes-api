@@ -9,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
@@ -56,7 +57,7 @@ func (c *Controller) CreatePipeHandler(req Request) Response {
 	}
 	err = c.PipeService.CreatePipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
-		if errors.As(err, &domain.SetParamsError{}) {
+		if errors.As(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -76,7 +77,7 @@ func (c *Controller) UpdatePipeHandler(req Request) Response {
 
 	err = c.PipeService.UpdatePipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
-		if errors.Is(err, domain.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -92,7 +93,7 @@ func (c *Controller) DeletePipeHandler(req Request) Response {
 	}
 	err = c.PipeService.DeletePipe(workspaceID, serviceID, pipeID)
 	if err != nil {
-		if errors.Is(err, domain.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -116,7 +117,7 @@ func (c *Controller) GetAuthURLHandler(req Request) Response {
 
 	url, err := c.PipeService.GetAuthURL(serviceID, accountName, callbackURL)
 	if err != nil {
-		if errors.Is(err, &domain.LoadError{}) {
+		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -178,13 +179,13 @@ func (c *Controller) GetServiceAccountsHandler(req Request) Response {
 
 	accountsResponse, err := c.PipeService.GetServiceAccounts(workspaceID, serviceID, fi)
 	if err != nil {
-		if errors.Is(err, &domain.LoadError{}) {
+		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
 		}
-		if errors.Is(err, &domain.RefreshError{}) {
+		if errors.Is(err, &service.RefreshError{}) {
 			return badRequest(err.Error())
 		}
-		if errors.Is(err, domain.ErrNoContent) {
+		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
 		}
 
@@ -209,19 +210,19 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 
 	usersResponse, err := c.PipeService.GetServiceUsers(workspaceID, serviceID, fi)
 	if err != nil {
-		if errors.Is(err, domain.ErrNoContent) {
+		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
 		}
 
-		if errors.Is(err, &domain.LoadError{}) {
+		if errors.Is(err, &service.LoadError{}) {
 			return badRequest("No authorizations for " + serviceID)
 		}
 
-		if errors.Is(err, domain.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 
-		if errors.Is(err, &domain.SetParamsError{}) {
+		if errors.Is(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())
@@ -234,7 +235,7 @@ func (c *Controller) GetServicePipeLogHandler(req Request) Response {
 	serviceID, pipeID := currentServicePipeID(req.r)
 	pipesLog, err := c.PipeService.GetServicePipeLog(workspaceID, serviceID, pipeID)
 	if err != nil {
-		if errors.Is(err, domain.ErrNoContent) {
+		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
 		}
 		return internalServerError("Unable to get log from DB")
@@ -250,7 +251,7 @@ func (c *Controller) PostServicePipeClearIDMappingsHandler(req Request) Response
 
 	err := c.PipeService.ClearIDMappings(workspaceID, serviceID, pipeID)
 	if err != nil {
-		if errors.Is(err, domain.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
 		return internalServerError("Unable to get clear connections: " + err.Error())
@@ -272,10 +273,10 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 
 	err := c.Queue.SchedulePipeSynchronization(workspaceID, serviceID, pipeID, selector)
 	if err != nil {
-		if errors.Is(err, domain.ErrPipeNotConfigured) {
+		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
 		}
-		if errors.Is(err, &domain.SetParamsError{}) {
+		if errors.Is(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
 		}
 		return internalServerError(err.Error())

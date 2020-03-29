@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
@@ -39,18 +38,13 @@ func (ts *AuthorizationsStorageTestSuite) SetupTest() {
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   &mocks.IntegrationsStorage{},
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		OAuthProvider:         &mocks.OAuthProvider{},
-	}
-	a := af.Create(1, integration.GitHub)
+	a := domain.NewAuthorization(1, integration.GitHub)
 
 	s := &AuthorizationStorage{DB: ts.db}
 	err := s.Save(a)
 	ts.NoError(err)
 
-	aFromDb := af.Create(0, integration.GitHub)
+	aFromDb := domain.NewAuthorization(0, integration.GitHub)
 	err = s.Load(1, integration.GitHub, aFromDb)
 	ts.NoError(err)
 	ts.Equal(a, aFromDb)
@@ -62,13 +56,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	cdb.Close()
 
 	s := &AuthorizationStorage{DB: cdb}
-
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   &mocks.IntegrationsStorage{},
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		OAuthProvider:         &mocks.OAuthProvider{},
-	}
-	a := af.Create(2, integration.Asana)
+	a := domain.NewAuthorization(2, integration.Asana)
 	err = s.Save(a)
 	ts.Error(err)
 
@@ -78,13 +66,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := &AuthorizationStorage{DB: ts.db}
-
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   &mocks.IntegrationsStorage{},
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		OAuthProvider:         &mocks.OAuthProvider{},
-	}
-	a := af.Create(1, integration.GitHub)
+	a := domain.NewAuthorization(1, integration.GitHub)
 
 	err := s.Save(a)
 	ts.NoError(err)
@@ -96,14 +78,8 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyA
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := &AuthorizationStorage{DB: ts.db}
 
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   &mocks.IntegrationsStorage{},
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		OAuthProvider:         &mocks.OAuthProvider{},
-	}
-
-	a1 := af.Create(1, integration.GitHub)
-	a2 := af.Create(1, integration.Asana)
+	a1 := domain.NewAuthorization(1, integration.GitHub)
+	a2 := domain.NewAuthorization(1, integration.Asana)
 
 	err := s.Save(a1)
 	ts.NoError(err)

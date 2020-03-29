@@ -1,20 +1,22 @@
-package domain_test
+package service_test
 
 import (
 	"database/sql"
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/toggl/pipes-api/pkg/domain"
+	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
+	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type ServiceTestSuite struct {
 	suite.Suite
 	db  *sql.DB
-	svc *domain.Service
+	svc *service.Service
 }
 
 func (ts *ServiceTestSuite) SetupTest() {
@@ -26,14 +28,7 @@ func (ts *ServiceTestSuite) SetupTest() {
 	authorizationStorage := &mocks.AuthorizationsStorage{}
 	oauthProvider := &mocks.OAuthProvider{}
 
-	authFactory := &domain.AuthorizationFactory{
-		IntegrationsStorage:   integrationStorage,
-		AuthorizationsStorage: authorizationStorage,
-		OAuthProvider:         oauthProvider,
-	}
-
-	ts.svc = &domain.Service{
-		AuthorizationFactory:  authFactory,
+	ts.svc = &service.Service{
 		PipesStorage:          pipeStorage,
 		AuthorizationsStorage: authorizationStorage,
 		IntegrationsStorage:   integrationStorage,
@@ -91,4 +86,23 @@ func (ts *ServiceTestSuite) TestService_Ready_Ping() {
 // a normal test function and pass our suite to suite.Run
 func TestServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(ServiceTestSuite))
+}
+
+func TestNewExternalService(t *testing.T) {
+	s1 := service.NewExternalService(integration.BaseCamp, 1)
+	s2 := service.NewExternalService(integration.Asana, 2)
+	s3 := service.NewExternalService(integration.GitHub, 3)
+	s4 := service.NewExternalService(integration.FreshBooks, 4)
+	s5 := service.NewExternalService(integration.TeamWeek, 5)
+
+	assert.Equal(t, integration.BaseCamp, s1.ID())
+	assert.Equal(t, integration.Asana, s2.ID())
+	assert.Equal(t, integration.GitHub, s3.ID())
+	assert.Equal(t, integration.FreshBooks, s4.ID())
+	assert.Equal(t, integration.TeamWeek, s5.ID())
+}
+
+func TestNewExternalServicePanic(t *testing.T) {
+	pf := func() { service.NewExternalService("Unknown", 1) }
+	assert.Panics(t, pf)
 }

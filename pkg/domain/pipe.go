@@ -1,16 +1,12 @@
 package domain
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/toggl/pipes-api/pkg/integration"
 )
-
-// ErrJSONParsing hides json marshalling errors from users
-var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
 
 func NewPipe(workspaceID int, sid integration.ID, pid integration.PipeID) *Pipe {
 	return &Pipe{
@@ -45,7 +41,7 @@ type Pipe struct {
 	ServiceID       integration.ID     `json:"-"`
 	UsersSelector   UserParams         `json:"-"`
 	LastSync        *time.Time         `json:"-"`
-	pipesApiHost    string             `json:"-"`
+	PipesApiHost    string             `json:"-"`
 }
 
 func (p *Pipe) Key() string {

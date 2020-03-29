@@ -16,9 +16,9 @@ import (
 	"github.com/toggl/pipes-api/internal/config"
 	"github.com/toggl/pipes-api/internal/oauth"
 	"github.com/toggl/pipes-api/internal/server"
+	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/internal/sync"
 
-	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/toggl/client"
 
 	"github.com/toggl/pipes-api/internal/storage"
@@ -96,14 +96,7 @@ func main() {
 
 	integrationStorage := storage.NewIntegrationStorage(integrationsConfig)
 
-	authFactory := &domain.AuthorizationFactory{
-		IntegrationsStorage:   integrationStorage,
-		AuthorizationsStorage: authorizationStorage,
-		OAuthProvider:         oauthProvider,
-	}
-
-	pipesService := &domain.Service{
-		AuthorizationFactory:  authFactory,
+	pipesService := &service.Service{
 		PipesStorage:          pipeStorage,
 		AuthorizationsStorage: authorizationStorage,
 		IntegrationsStorage:   integrationStorage,

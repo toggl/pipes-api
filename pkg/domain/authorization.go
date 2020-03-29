@@ -2,8 +2,6 @@ package domain
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 
 	goauth2 "code.google.com/p/goauth2/oauth"
 	"github.com/tambet/oauthplain"
@@ -15,37 +13,6 @@ const (
 	TypeOauth2 = "oauth2"
 	TypeOauth1 = "oauth1"
 )
-
-type AuthorizationFactory struct {
-	IntegrationsStorage
-	AuthorizationsStorage
-	OAuthProvider
-}
-
-func (f *AuthorizationFactory) Create(workspaceID int, id integration.ID) *Authorization {
-
-	if f.IntegrationsStorage == nil {
-		panic("AuthorizationFactory.IntegrationsStorage should not be nil")
-	}
-
-	if f.AuthorizationsStorage == nil {
-		panic("AuthorizationFactory.Storage should not be nil")
-	}
-
-	if f.OAuthProvider == nil {
-		panic("AuthorizationFactory.OAuthProvider should not be nil")
-	}
-
-	return &Authorization{
-		WorkspaceID: workspaceID,
-		ServiceID:   id,
-		Data:        []byte("{}"),
-
-		IntegrationsStorage:   f.IntegrationsStorage,
-		AuthorizationsStorage: f.AuthorizationsStorage,
-		OAuthProvider:         f.OAuthProvider,
-	}
-}
 
 type Authorization struct {
 	WorkspaceID    int
@@ -78,33 +45,10 @@ func (a *Authorization) SetOAuth1Token(t *oauthplain.Token) error {
 	return nil
 }
 
-func (a *Authorization) Refresh() error {
-	authType, err := a.IntegrationsStorage.LoadAuthorizationType(a.ServiceID)
-	if err != nil {
-		return err
+func NewAuthorization(workspaceID int, id integration.ID) *Authorization {
+	return &Authorization{
+		WorkspaceID: workspaceID,
+		ServiceID:   id,
+		Data:        []byte("{}"),
 	}
-	if authType != TypeOauth2 {
-		return nil
-	}
-	var token goauth2.Token
-	if err := json.Unmarshal(a.Data, &token); err != nil {
-		return err
-	}
-	if !token.Expired() {
-		return nil
-	}
-	config, res := a.OAuthProvider.OAuth2Configs(a.ServiceID)
-	if !res {
-		return errors.New("service OAuth config not found")
-	}
-	if err := a.OAuthProvider.OAuth2Refresh(config, &token); err != nil {
-		return fmt.Errorf("unable to refresh oAuth2 token, reason: %w", err)
-	}
-	if err := a.SetOAuth2Token(&token); err != nil {
-		return err
-	}
-	if err := a.AuthorizationsStorage.Save(a); err != nil {
-		return err
-	}
-	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
@@ -75,7 +76,7 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID integrat
 		return err
 	}
 	if p == nil {
-		return domain.ErrPipeNotConfigured
+		return service.ErrPipeNotConfigured
 	}
 
 	p.UsersSelector = usersSelector
@@ -91,7 +92,7 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID integrat
 
 	if p.ID == integration.UsersPipe {
 		if len(p.UsersSelector.IDs) == 0 {
-			return domain.SetParamsError{errors.New("Missing request payload")}
+			return service.SetParamsError{errors.New("Missing request payload")}
 		}
 
 		go func() {

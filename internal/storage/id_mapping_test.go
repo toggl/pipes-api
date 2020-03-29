@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
@@ -89,7 +90,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
 
 	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
 	p1.PipeStatus = domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "test")
-	svc := domain.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(integration.GitHub, 1)
 
 	err := s.Delete(1, svc.KeyFor(p1.ID), p1.PipeStatus.Key)
 	ts.NoError(err)
