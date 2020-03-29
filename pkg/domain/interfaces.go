@@ -37,7 +37,8 @@ type PipeService interface {
 	DeletePipe(workspaceID int, sid ID, pid PipeID) error
 	GetServicePipeLog(workspaceID int, sid ID, pid PipeID) (string, error)
 
-	ClearIDMappings(workspaceID int, sid ID, pid PipeID) error // TODO: Remove (Probably dead method).
+	// Deprecated: TODO: Remove dead method. It's used only in h4xx0rz(old Backoffice) https://github.com/toggl/support/blob/master/app/controllers/workspaces_controller.rb#L145
+	ClearIDMappings(workspaceID int, sid ID, pid PipeID) error
 
 	GetServiceUsers(workspaceID int, sid ID, forceImport bool) (*UsersResponse, error)
 

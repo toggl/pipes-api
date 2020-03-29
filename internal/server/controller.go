@@ -243,7 +243,7 @@ func (c *Controller) GetServicePipeLogHandler(req Request) Response {
 }
 
 // PostServicePipeClearIDMappingsHandler clears mappings between pipes entities.
-// TODO: Remove (Probably dead endpoint).
+// Deprecated: TODO: Remove dead method. It's used only in h4xx0rz(old Backoffice) https://github.com/toggl/support/blob/master/app/controllers/workspaces_controller.rb#L145
 func (c *Controller) PostServicePipeClearIDMappingsHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)

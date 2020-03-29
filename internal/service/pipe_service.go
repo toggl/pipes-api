@@ -110,7 +110,7 @@ func (svc *Service) GetServicePipeLog(workspaceID int, serviceID domain.ID, pipe
 	return pipeStatus.GenerateLog(), nil
 }
 
-// TODO: Remove (Probably dead method).
+// Deprecated: TODO: Remove dead method. It's used only in h4xx0rz(old Backoffice) https://github.com/toggl/support/blob/master/app/controllers/workspaces_controller.rb#L145
 func (svc *Service) ClearIDMappings(workspaceID int, serviceID domain.ID, pipeID domain.PipeID) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
