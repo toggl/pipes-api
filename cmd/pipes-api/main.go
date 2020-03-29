@@ -120,8 +120,9 @@ func main() {
 	}
 
 	syncService := sync.WorkerPool{
-		Debug: env.Debug,
-		Queue: pipesQueue,
+		Debug:       env.Debug,
+		Queue:       pipesQueue,
+		PipeService: pipesService,
 	}
 	syncService.Start()
 
