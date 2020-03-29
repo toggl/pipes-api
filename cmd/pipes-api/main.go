@@ -17,11 +17,9 @@ import (
 	"github.com/toggl/pipes-api/internal/oauth"
 	"github.com/toggl/pipes-api/internal/server"
 	"github.com/toggl/pipes-api/internal/service"
-	"github.com/toggl/pipes-api/internal/sync"
-
-	"github.com/toggl/pipes-api/pkg/toggl"
-
 	"github.com/toggl/pipes-api/internal/storage"
+	"github.com/toggl/pipes-api/internal/sync"
+	"github.com/toggl/pipes-api/internal/toggl"
 )
 
 var (
