@@ -21,8 +21,9 @@ const (
 )
 
 type WorkerPool struct {
-	Debug bool
-	domain.Queue
+	Debug       bool
+	Queue       domain.Queue
+	PipeService domain.PipeService
 }
 
 func (s *WorkerPool) Start() {
@@ -54,9 +55,9 @@ func (s *WorkerPool) pipeWorker(id int) {
 
 		log.Printf("[Worker %d] received %d pipes\n", id, len(pipes))
 		for _, pipe := range pipes {
-			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key)
+			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key())
 
-			pipe.Synchronize()
+			s.PipeService.Synchronize(pipe)
 
 			err := s.Queue.MarkPipeSynchronized(pipe)
 			if err != nil {
@@ -70,7 +71,7 @@ func (s *WorkerPool) pipeWorker(id int) {
 					},
 				})
 			}
-			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key, err != nil)
+			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key(), err != nil)
 		}
 	}
 }

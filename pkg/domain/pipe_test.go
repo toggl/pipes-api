@@ -10,17 +10,8 @@ import (
 )
 
 func TestNewPipe(t *testing.T) {
-	pf := &domain.PipeFactory{
-		AuthorizationFactory:  &domain.AuthorizationFactory{},
-		AuthorizationsStorage: nil,
-		PipesStorage:          nil,
-		ImportsStorage:        nil,
-		IDMappingsStorage:     nil,
-		TogglClient:           nil,
-	}
-
-	p := pf.Create(1, integration.GitHub, integration.ProjectsPipe)
-	assert.Equal(t, "github:projects", p.Key)
+	p := domain.NewPipe(1, integration.GitHub, integration.ProjectsPipe)
+	assert.Equal(t, "github:projects", p.Key())
 	assert.Equal(t, integration.GitHub, p.ServiceID)
 	assert.Equal(t, 1, p.WorkspaceID)
 }

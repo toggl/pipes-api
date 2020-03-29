@@ -22,9 +22,9 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Queue struct {
-	*sql.DB
-	*domain.PipeFactory
-	domain.PipesStorage
+	DB           *sql.DB
+	PipeService  domain.PipeService
+	PipesStorage domain.PipesStorage
 }
 
 func (pq *Queue) ScheduleAutomaticPipesSynchronization() error {
@@ -54,7 +54,7 @@ func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 		if workspaceID > 0 && len(key) > 0 {
 			sid, pid := domain.GetSidPidFromKey(key)
 
-			p := pq.PipeFactory.Create(workspaceID, sid, pid)
+			p := domain.NewPipe(workspaceID, sid, pid)
 			if err := pq.PipesStorage.Load(p); err != nil {
 				return nil, err
 			}
@@ -70,7 +70,7 @@ func (pq *Queue) MarkPipeSynchronized(pipe *domain.Pipe) error {
 }
 
 func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID integration.ID, pipeID integration.PipeID, usersSelector domain.UserParams) error {
-	p := pq.PipeFactory.Create(workspaceID, serviceID, pipeID)
+	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := pq.PipesStorage.Load(p); err != nil {
 		return err
 	}
@@ -96,14 +96,14 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID integrat
 
 		go func() {
 			wsLock.Lock()
-			p.Synchronize()
+			pq.PipeService.Synchronize(p)
 			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
 		return nil
 	}
 
-	return pq.queuePipeAsFirst(p.WorkspaceID, p.Key)
+	return pq.queuePipeAsFirst(p.WorkspaceID, p.Key())
 }
 
 func (pq *Queue) queuePipeAsFirst(workspaceId int, key string) error {

@@ -56,6 +56,8 @@ type PipeService interface {
 
 	GetIntegrations(workspaceID int) ([]Integration, error)
 
+	Synchronize(p *Pipe)
+
 	Ready() []error
 }
 

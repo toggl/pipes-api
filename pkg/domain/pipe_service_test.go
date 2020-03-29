@@ -32,18 +32,8 @@ func (ts *ServiceTestSuite) SetupTest() {
 		OAuthProvider:         oauthProvider,
 	}
 
-	pipeFactory := &domain.PipeFactory{
-		AuthorizationFactory:  authFactory,
-		AuthorizationsStorage: authorizationStorage,
-		PipesStorage:          pipeStorage,
-		ImportsStorage:        importStorage,
-		IDMappingsStorage:     idMappingStorage,
-		TogglClient:           togglClient,
-	}
-
 	ts.svc = &domain.Service{
 		AuthorizationFactory:  authFactory,
-		PipeFactory:           pipeFactory,
 		PipesStorage:          pipeStorage,
 		AuthorizationsStorage: authorizationStorage,
 		IntegrationsStorage:   integrationStorage,

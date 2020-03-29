@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/domain/mocks"
 	"github.com/toggl/pipes-api/pkg/integration"
 )
 
@@ -20,20 +19,5 @@ func getConnectionStringForTests() string {
 }
 
 func createPipeForTests(workspaceID int, sid integration.ID, pid integration.PipeID) *domain.Pipe {
-	af := &domain.AuthorizationFactory{
-		IntegrationsStorage:   &mocks.IntegrationsStorage{},
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		OAuthProvider:         &mocks.OAuthProvider{},
-	}
-
-	pf := &domain.PipeFactory{
-		AuthorizationFactory:  af,
-		AuthorizationsStorage: &mocks.AuthorizationsStorage{},
-		PipesStorage:          &mocks.PipesStorage{},
-		ImportsStorage:        &mocks.ImportsStorage{},
-		IDMappingsStorage:     &mocks.IDMappingsStorage{},
-		TogglClient:           &mocks.TogglClient{},
-	}
-
-	return pf.Create(workspaceID, sid, pid)
+	return domain.NewPipe(workspaceID, sid, pid)
 }

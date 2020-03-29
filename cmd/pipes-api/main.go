@@ -102,24 +102,8 @@ func main() {
 		OAuthProvider:         oauthProvider,
 	}
 
-	pipeFactory := &domain.PipeFactory{
-		AuthorizationFactory:  authFactory,
-		AuthorizationsStorage: authorizationStorage,
-		PipesStorage:          pipeStorage,
-		ImportsStorage:        importStorage,
-		IDMappingsStorage:     idMappingStorage,
-		TogglClient:           togglApiClient,
-	}
-
-	pipesQueue := &sync.Queue{
-		DB:           db,
-		PipeFactory:  pipeFactory,
-		PipesStorage: pipeStorage,
-	}
-
 	pipesService := &domain.Service{
 		AuthorizationFactory:  authFactory,
-		PipeFactory:           pipeFactory,
 		PipesStorage:          pipeStorage,
 		AuthorizationsStorage: authorizationStorage,
 		IntegrationsStorage:   integrationStorage,
@@ -127,6 +111,12 @@ func main() {
 		ImportsStorage:        importStorage,
 		OAuthProvider:         oauthProvider,
 		TogglClient:           togglApiClient,
+	}
+
+	pipesQueue := &sync.Queue{
+		DB:           db,
+		PipeService:  pipesService,
+		PipesStorage: pipeStorage,
 	}
 
 	syncService := sync.WorkerPool{
