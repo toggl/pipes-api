@@ -1,4 +1,4 @@
-package toggl
+package domain
 
 import (
 	"testing"

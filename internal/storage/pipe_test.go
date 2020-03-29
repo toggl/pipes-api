@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type StorageTestSuite struct {
@@ -54,11 +53,11 @@ func (ts *StorageTestSuite) TestStorage_IsDown() {
 func (ts *StorageTestSuite) TestStorage_Save_Load() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
+	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
+	p2 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	err = s.Load(p2)
 	ts.NoError(err)
 	ts.Equal(p1, p2)
@@ -67,26 +66,26 @@ func (ts *StorageTestSuite) TestStorage_Save_Load() {
 func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "")
+	p1 := domain.NewPipeStatus(1, domain.GitHub, domain.UsersPipe, "")
 	p1.Status = domain.StatusSuccess
 	p1.ObjectCounts = []string{"obj1", "obj2"}
 
 	err := s.SaveStatus(p1)
 	ts.NoError(err)
 
-	p2, err := s.LoadStatus(1, integration.GitHub, integration.UsersPipe)
+	p2, err := s.LoadStatus(1, domain.GitHub, domain.UsersPipe)
 	ts.NoError(err)
 	ts.Equal(p1.WorkspaceID, p2.WorkspaceID)
 	ts.Equal(p1.ServiceID, p2.ServiceID)
 	ts.Equal(p1.PipeID, p2.PipeID)
 	ts.Contains(p2.Message, "successfully imported/exported")
 
-	p3 := domain.NewPipeStatus(2, integration.GitHub, integration.UsersPipe, "")
+	p3 := domain.NewPipeStatus(2, domain.GitHub, domain.UsersPipe, "")
 	p3.Status = domain.StatusSuccess
 	err = s.SaveStatus(p3)
 	ts.NoError(err)
 
-	p4, err := s.LoadStatus(2, integration.GitHub, integration.UsersPipe)
+	p4, err := s.LoadStatus(2, domain.GitHub, domain.UsersPipe)
 	ts.NoError(err)
 
 	ts.Contains(p4.Message, "No new")
@@ -95,8 +94,8 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "")
-	p2 := domain.NewPipeStatus(1, integration.Asana, integration.UsersPipe, "")
+	p1 := domain.NewPipeStatus(1, domain.GitHub, domain.UsersPipe, "")
+	p2 := domain.NewPipeStatus(1, domain.Asana, domain.UsersPipe, "")
 
 	err := s.SaveStatus(p1)
 	ts.NoError(err)
@@ -112,11 +111,11 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
 func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
+	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := createPipeForTests(1, integration.Asana, integration.UsersPipe)
+	p2 := createPipeForTests(1, domain.Asana, domain.UsersPipe)
 	err = s.Save(p2)
 	ts.NoError(err)
 
@@ -128,11 +127,11 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadPipes() {
 func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
+	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := createPipeForTests(1, integration.Asana, integration.UsersPipe)
+	p2 := createPipeForTests(1, domain.Asana, domain.UsersPipe)
 	err = s.Save(p2)
 	ts.NoError(err)
 
@@ -151,11 +150,11 @@ func (ts *StorageTestSuite) TestStorage_Save_Delete() {
 func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
+	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	err := s.Save(p1)
 	ts.NoError(err)
 
-	p2 := createPipeForTests(1, integration.GitHub, integration.ProjectsPipe)
+	p2 := createPipeForTests(1, domain.GitHub, domain.ProjectsPipe)
 	err = s.Save(p2)
 	ts.NoError(err)
 
@@ -163,7 +162,7 @@ func (ts *StorageTestSuite) TestStorage_Save_DeletePipeByWorkspaceIDServiceID() 
 	ts.NoError(err)
 	ts.Equal(2, len(ps))
 
-	err = s.DeleteByWorkspaceIDServiceID(1, integration.GitHub)
+	err = s.DeleteByWorkspaceIDServiceID(1, domain.GitHub)
 	ts.NoError(err)
 
 	ps, err = s.LoadAll(1)
@@ -175,7 +174,7 @@ func (ts *StorageTestSuite) TestStorage_Save_LoadLastSync() {
 	s := &PipeStorage{DB: ts.db}
 	t := time.Date(2020, 1, 2, 0, 0, 0, 0, time.UTC)
 
-	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
+	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	p1.ServiceParams = []byte(`{"start_date":"2020-01-02"}`)
 	err := s.Save(p1)
 	ts.NoError(err)

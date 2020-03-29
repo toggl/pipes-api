@@ -10,8 +10,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/google/go-github/github"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 type Service struct {
@@ -19,15 +18,15 @@ type Service struct {
 	token       oauth.Token
 }
 
-func (s *Service) ID() integration.ID {
-	return integration.GitHub
+func (s *Service) ID() domain.ID {
+	return domain.GitHub
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integration.PipeID) string {
+func (s *Service) KeyFor(objectType domain.PipeID) string {
 	return fmt.Sprintf("github:%s", objectType)
 }
 
@@ -38,22 +37,22 @@ func (s *Service) SetAuthData(b []byte) error {
 	return nil
 }
 
-func (s *Service) Accounts() ([]*toggl.Account, error) {
-	var accounts []*toggl.Account
-	account := toggl.Account{ID: 1, Name: "Self"}
+func (s *Service) Accounts() ([]*domain.Account, error) {
+	var accounts []*domain.Account
+	account := domain.Account{ID: 1, Name: "Self"}
 	accounts = append(accounts, &account)
 	return accounts, nil
 }
 
 // Map Github repos to projects
-func (s *Service) Projects() ([]*toggl.Project, error) {
+func (s *Service) Projects() ([]*domain.Project, error) {
 	repos, _, err := s.client().Repositories.List(context.Background(), "", nil)
 	if err != nil {
 		return nil, err
 	}
-	var projects []*toggl.Project
+	var projects []*domain.Project
 	for _, object := range repos {
-		project := toggl.Project{
+		project := domain.Project{
 			Active:    true,
 			Name:      *object.Name,
 			ForeignID: strconv.FormatInt(*object.ID, 10),
@@ -69,23 +68,23 @@ func (s *Service) SetParams([]byte) error {
 	return nil
 }
 
-func (s *Service) Users() ([]*toggl.User, error) {
-	return []*toggl.User{}, nil
+func (s *Service) Users() ([]*domain.User, error) {
+	return []*domain.User{}, nil
 }
 
-func (s *Service) Clients() ([]*toggl.Client, error) {
-	return []*toggl.Client{}, nil
+func (s *Service) Clients() ([]*domain.Client, error) {
+	return []*domain.Client{}, nil
 }
 
-func (s *Service) Tasks() ([]*toggl.Task, error) {
-	return []*toggl.Task{}, nil
+func (s *Service) Tasks() ([]*domain.Task, error) {
+	return []*domain.Task{}, nil
 }
 
-func (s *Service) TodoLists() ([]*toggl.Task, error) {
-	return []*toggl.Task{}, nil
+func (s *Service) TodoLists() ([]*domain.Task, error) {
+	return []*domain.Task{}, nil
 }
 
-func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
+func (s *Service) ExportTimeEntry(*domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 

@@ -10,7 +10,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 // PipeStorage SQL queries
@@ -110,7 +109,7 @@ func (ps *PipeStorage) Delete(p *domain.Pipe, workspaceID int) error {
 	return tx.Commit()
 }
 
-func (ps *PipeStorage) LoadStatus(workspaceID int, sid integration.ID, pid integration.PipeID) (*domain.Status, error) {
+func (ps *PipeStorage) LoadStatus(workspaceID int, sid domain.ID, pid domain.PipeID) (*domain.Status, error) {
 	key := domain.PipesKey(sid, pid)
 	rows, err := ps.DB.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
@@ -134,7 +133,7 @@ func (ps *PipeStorage) LoadStatus(workspaceID int, sid integration.ID, pid integ
 	return &pipeStatus, nil
 }
 
-func (ps *PipeStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID integration.ID) error {
+func (ps *PipeStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID domain.ID) error {
 	_, err := ps.DB.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
@@ -241,6 +240,6 @@ func (ps *PipeStorage) load(rows *sql.Rows, p *domain.Pipe) error {
 		return err
 	}
 	p.WorkspaceID = wid
-	p.ServiceID = integration.ID(strings.Split(key, ":")[0])
+	p.ServiceID = domain.ID(strings.Split(key, ":")[0])
 	return nil
 }

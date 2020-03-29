@@ -12,8 +12,7 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/range-labs/go-asana/asana"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 var asanaPerPageLimit uint32 = 100
@@ -28,15 +27,15 @@ type AsanaParams struct {
 	AccountID int64 `json:"account_id"`
 }
 
-func (s *Service) ID() integration.ID {
-	return integration.Asana
+func (s *Service) ID() domain.ID {
+	return domain.Asana
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integration.PipeID) string {
+func (s *Service) KeyFor(objectType domain.PipeID) string {
 	if s.AsanaParams == nil {
 		return fmt.Sprintf("asana:account:%s", objectType)
 	}
@@ -60,7 +59,7 @@ func (s *Service) SetAuthData(b []byte) error {
 }
 
 // Map Asana accounts to local accounts
-func (s *Service) Accounts() ([]*toggl.Account, error) {
+func (s *Service) Accounts() ([]*domain.Account, error) {
 	foreignObjects, err := s.client().ListWorkspaces(context.Background())
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -73,9 +72,9 @@ func (s *Service) Accounts() ([]*toggl.Account, error) {
 		})
 		return nil, err
 	}
-	var accounts []*toggl.Account
+	var accounts []*domain.Account
 	for _, object := range foreignObjects {
-		account := toggl.Account{
+		account := domain.Account{
 			ID:   numberStrToInt64(object.GID),
 			Name: object.Name,
 		}
@@ -85,7 +84,7 @@ func (s *Service) Accounts() ([]*toggl.Account, error) {
 }
 
 // Map Asana users to users
-func (s *Service) Users() ([]*toggl.User, error) {
+func (s *Service) Users() ([]*domain.User, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
 		Limit:     asanaPerPageLimit,
@@ -103,9 +102,9 @@ func (s *Service) Users() ([]*toggl.User, error) {
 		})
 		return nil, err
 	}
-	var users []*toggl.User
+	var users []*domain.User
 	for _, object := range foreignObjects {
-		user := toggl.User{
+		user := domain.User{
 			ForeignID: object.GID,
 			Name:      object.Name,
 			Email:     object.Email,
@@ -116,7 +115,7 @@ func (s *Service) Users() ([]*toggl.User, error) {
 }
 
 // Map Asana projects to projects
-func (s *Service) Projects() ([]*toggl.Project, error) {
+func (s *Service) Projects() ([]*domain.Project, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
 		Limit:     asanaPerPageLimit,
@@ -134,9 +133,9 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 		})
 		return nil, err
 	}
-	var projects []*toggl.Project
+	var projects []*domain.Project
 	for _, object := range foreignObjects {
-		project := toggl.Project{
+		project := domain.Project{
 			ForeignID: object.GID,
 			Name:      object.Name,
 			Active:    !object.Archived,
@@ -147,7 +146,7 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 }
 
 // Map Asana tasks to tasks
-func (s *Service) Tasks() ([]*toggl.Task, error) {
+func (s *Service) Tasks() ([]*domain.Task, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
 		Limit:     asanaPerPageLimit,
@@ -166,7 +165,7 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 		return nil, err
 	}
 
-	var tasks []*toggl.Task
+	var tasks []*domain.Task
 	for _, project := range foreignProjects {
 		// list task only accept project filter
 		opt := &asana.Filter{
@@ -187,7 +186,7 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 			return nil, err
 		}
 		for _, object := range foreignObjects {
-			task := toggl.Task{
+			task := domain.Task{
 				ForeignID:        object.GID,
 				Name:             object.Name,
 				Active:           !object.Completed,
@@ -209,15 +208,15 @@ func numberStrToInt64(s string) int64 {
 
 func (s *Service) SetSince(*time.Time) {}
 
-func (s *Service) Clients() ([]*toggl.Client, error) {
-	return []*toggl.Client{}, nil
+func (s *Service) Clients() ([]*domain.Client, error) {
+	return []*domain.Client{}, nil
 }
 
-func (s *Service) TodoLists() ([]*toggl.Task, error) {
-	return []*toggl.Task{}, nil
+func (s *Service) TodoLists() ([]*domain.Task, error) {
+	return []*domain.Task{}, nil
 }
 
-func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
+func (s *Service) ExportTimeEntry(*domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 

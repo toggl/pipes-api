@@ -9,7 +9,6 @@ import (
 
 	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type IDMappingsStorageTestSuite struct {
@@ -88,9 +87,9 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedCon
 func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
 	s := &IdMappingStorage{DB: ts.db}
 
-	p1 := createPipeForTests(1, integration.GitHub, integration.UsersPipe)
-	p1.PipeStatus = domain.NewPipeStatus(1, integration.GitHub, integration.UsersPipe, "test")
-	svc := service.NewExternalService(integration.GitHub, 1)
+	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
+	p1.PipeStatus = domain.NewPipeStatus(1, domain.GitHub, domain.UsersPipe, "test")
+	svc := service.NewExternalService(domain.GitHub, 1)
 
 	err := s.Delete(1, svc.KeyFor(p1.ID), p1.PipeStatus.Key)
 	ts.NoError(err)

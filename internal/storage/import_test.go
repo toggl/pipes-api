@@ -8,8 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/internal/service"
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 type ImportsStorageTestSuite struct {
@@ -39,25 +38,25 @@ func (ts *ImportsStorageTestSuite) SetupTest() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteAccountsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 	err := s.DeleteAccountsFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteUsersFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 
-	resp := &toggl.AccountsResponse{
+	resp := &domain.AccountsResponse{
 		Error: "",
-		Accounts: []*toggl.Account{
+		Accounts: []*domain.Account{
 			{ID: 1, Name: "test1"},
 			{ID: 2, Name: "test2"},
 		},
@@ -73,11 +72,11 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor()
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 
-	resp := &toggl.UsersResponse{
+	resp := &domain.UsersResponse{
 		Error: "",
-		Users: []*toggl.User{
+		Users: []*domain.User{
 			{ID: 1, Name: "test1"},
 			{ID: 2, Name: "test2"},
 		},
@@ -93,11 +92,11 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 
-	resp := &toggl.ClientsResponse{
+	resp := &domain.ClientsResponse{
 		Error: "",
-		Clients: []*toggl.Client{
+		Clients: []*domain.Client{
 			{ID: 1, Name: "test1"},
 			{ID: 2, Name: "test2"},
 		},
@@ -113,11 +112,11 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 
-	resp := &toggl.ProjectsResponse{
+	resp := &domain.ProjectsResponse{
 		Error: "",
-		Projects: []*toggl.Project{
+		Projects: []*domain.Project{
 			{
 				ID:       1,
 				Name:     "test1",
@@ -145,11 +144,11 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor()
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 
-	resp := &toggl.TasksResponse{
+	resp := &domain.TasksResponse{
 		Error: "",
-		Tasks: []*toggl.Task{
+		Tasks: []*domain.Task{
 			{
 				ID:        1,
 				Name:      "test1",
@@ -175,11 +174,11 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTodoListsFor_LoadTodoListsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(integration.GitHub, 1)
+	svc := service.NewExternalService(domain.GitHub, 1)
 
-	resp := &toggl.TasksResponse{
+	resp := &domain.TasksResponse{
 		Error: "",
-		Tasks: []*toggl.Task{
+		Tasks: []*domain.Task{
 			{
 				ID:        1,
 				Name:      "test1",

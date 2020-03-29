@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/toggl/pipes-api/pkg/integration"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 func TestNewProvider(t *testing.T) {
@@ -55,7 +55,7 @@ func TestProvider_OAuth1Configs(t *testing.T) {
 	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
-	c, exists := p.OAuth1Configs(integration.FreshBooks)
+	c, exists := p.OAuth1Configs(domain.FreshBooks)
 	assert.True(t, exists)
 	assert.NotNil(t, c)
 }
@@ -70,7 +70,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
-		token, err := p.OAuth1Exchange(integration.FreshBooks, "client", "token", "verifier")
+		token, err := p.OAuth1Exchange(domain.FreshBooks, "client", "token", "verifier")
 		assert.Nil(t, err)
 		assert.Equal(t, "valid", token.OAuthToken)
 		assert.Equal(t, "secret", token.OAuthTokenSecret)
@@ -85,7 +85,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
-		token, err := p.OAuth1Exchange(integration.FreshBooks, "client", "token", "verifier")
+		token, err := p.OAuth1Exchange(domain.FreshBooks, "client", "token", "verifier")
 		assert.Error(t, err)
 		assert.Nil(t, token)
 	})
@@ -94,11 +94,11 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 		p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 		require.NoError(t, err)
 
-		_, err = p.OAuth1Exchange(integration.FreshBooks, "", "secret", "verifier")
+		_, err = p.OAuth1Exchange(domain.FreshBooks, "", "secret", "verifier")
 		assert.Error(t, err)
-		_, err = p.OAuth1Exchange(integration.FreshBooks, "token", "", "verifier")
+		_, err = p.OAuth1Exchange(domain.FreshBooks, "token", "", "verifier")
 		assert.Error(t, err)
-		_, err = p.OAuth1Exchange(integration.FreshBooks, "token", "secret", "")
+		_, err = p.OAuth1Exchange(domain.FreshBooks, "token", "secret", "")
 		assert.Error(t, err)
 	})
 
@@ -116,7 +116,7 @@ func TestProvider_OAuth2Configs(t *testing.T) {
 	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
-	c, exists := p.OAuth2Configs(integration.GitHub)
+	c, exists := p.OAuth2Configs(domain.GitHub)
 	assert.True(t, exists)
 	assert.NotNil(t, c)
 }
@@ -131,7 +131,7 @@ func TestProvider_OAuth2Exchange(t *testing.T) {
 		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
-		token, err := p.OAuth2Exchange(integration.GitHub, "test_code")
+		token, err := p.OAuth2Exchange(domain.GitHub, "test_code")
 		assert.Nil(t, err)
 		assert.Equal(t, "valid", token.AccessToken)
 		assert.Equal(t, "test", token.RefreshToken)
@@ -145,7 +145,7 @@ func TestProvider_OAuth2Exchange(t *testing.T) {
 		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
-		token, err := p.OAuth2Exchange(integration.GitHub, "test_code")
+		token, err := p.OAuth2Exchange(domain.GitHub, "test_code")
 		assert.Error(t, err)
 		assert.Nil(t, token)
 	})
@@ -176,7 +176,7 @@ func TestProvider_OAuth2Refresh(t *testing.T) {
 		Extra:        nil,
 	}
 
-	cfg, ok := p.OAuth2Configs(integration.GitHub)
+	cfg, ok := p.OAuth2Configs(domain.GitHub)
 	assert.True(t, ok)
 
 	err = p.OAuth2Refresh(cfg, token)
@@ -189,7 +189,7 @@ func TestProvider_OAuth2URL(t *testing.T) {
 	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
-	url := p.OAuth2URL(integration.GitHub)
+	url := p.OAuth2URL(domain.GitHub)
 	assert.Equal(t, "/authorize?access_type=&approval_prompt=&client_id=123&redirect_uri=&response_type=code&state=__STATE__&type=web_server", url)
 
 	url2 := p.OAuth2URL("unknown")

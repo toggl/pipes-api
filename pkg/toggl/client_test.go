@@ -1,4 +1,4 @@
-package client
+package toggl
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 func TestApiClient_Ping(t *testing.T) {
@@ -66,7 +66,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 			assert.Equal(t, "api_token", p)
 			assert.True(t, ok)
 
-			tes := []toggl.TimeEntry{
+			tes := []domain.TimeEntry{
 				{
 					ID:                0,
 					ProjectID:         0,
@@ -160,8 +160,8 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 			assert.Equal(t, "api_token", p)
 			assert.True(t, ok)
 
-			wr := toggl.WorkspaceResponse{
-				Workspace: &toggl.Workspace{
+			wr := domain.WorkspaceResponse{
+				Workspace: &domain.Workspace{
 					ID:   1,
 					Name: "",
 				}}
@@ -309,8 +309,8 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 
 func TestApiClient_PostClients(t *testing.T) {
 	t.Run("PostClients Ok", func(t *testing.T) {
-		in := &toggl.ClientsImport{
-			Clients: []*toggl.Client{
+		in := &domain.ClientsImport{
+			Clients: []*domain.Client{
 				{
 					ID:        1,
 					Name:      "test",
@@ -346,8 +346,8 @@ func TestApiClient_PostClients(t *testing.T) {
 
 func TestApiClient_PostProjects(t *testing.T) {
 	t.Run("PostProjects Ok", func(t *testing.T) {
-		in := &toggl.ProjectsImport{
-			Projects: []*toggl.Project{
+		in := &domain.ProjectsImport{
+			Projects: []*domain.Project{
 				{
 					ID:        1,
 					Name:      "test1",
@@ -386,8 +386,8 @@ func TestApiClient_PostProjects(t *testing.T) {
 
 func TestApiClient_PostTasks(t *testing.T) {
 	t.Run("PostTasks Ok", func(t *testing.T) {
-		in := &toggl.TasksImport{
-			Tasks: []*toggl.Task{
+		in := &domain.TasksImport{
+			Tasks: []*domain.Task{
 				{
 					ID:        1,
 					Name:      "test1",
@@ -425,8 +425,8 @@ func TestApiClient_PostTasks(t *testing.T) {
 
 func TestApiClient_PostTodoLists(t *testing.T) {
 	t.Run("PostTodoLists Ok", func(t *testing.T) {
-		in := &toggl.TasksImport{
-			Tasks: []*toggl.Task{
+		in := &domain.TasksImport{
+			Tasks: []*domain.Task{
 				{
 					ID:        1,
 					Name:      "test1",
@@ -464,8 +464,8 @@ func TestApiClient_PostTodoLists(t *testing.T) {
 
 func TestApiClient_PostUsers(t *testing.T) {
 	t.Run("PostUsers Ok", func(t *testing.T) {
-		in := &toggl.UsersImport{
-			WorkspaceUsers: []*toggl.User{
+		in := &domain.UsersImport{
+			WorkspaceUsers: []*domain.User{
 				{
 					ID:             1,
 					Email:          "test",
@@ -501,10 +501,10 @@ func TestApiClient_PostUsers(t *testing.T) {
 	})
 }
 
-func generateTasks(nr int) []*toggl.Task {
-	var ts []*toggl.Task
+func generateTasks(nr int) []*domain.Task {
+	var ts []*domain.Task
 	for i := 0; i < nr; i++ {
-		t := toggl.Task{ID: i, Name: `Name`, Active: i%2 == 0, ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
+		t := domain.Task{ID: i, Name: `Name`, Active: i%2 == 0, ForeignID: fmt.Sprintf("%d", i), ProjectID: i}
 		ts = append(ts, &t)
 	}
 	return ts

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 const testIntegrations = `
@@ -34,20 +33,20 @@ func TestIntegrationStorage_IsValidPipe(t *testing.T) {
 	r := strings.NewReader(testIntegrations)
 	is := NewIntegrationStorage(r)
 
-	assert.True(t, is.IsValidPipe(integration.UsersPipe))
+	assert.True(t, is.IsValidPipe(domain.UsersPipe))
 }
 
 func TestIntegrationStorage_IsValidService(t *testing.T) {
 	r := strings.NewReader(testIntegrations)
 	is := NewIntegrationStorage(r)
 
-	assert.True(t, is.IsValidService(integration.BaseCamp))
+	assert.True(t, is.IsValidService(domain.BaseCamp))
 }
 
 func TestIntegrationStorage_LoadAuthorizationType(t *testing.T) {
 	r := strings.NewReader(testIntegrations)
 	is := NewIntegrationStorage(r)
-	s, err := is.LoadAuthorizationType(integration.BaseCamp)
+	s, err := is.LoadAuthorizationType(domain.BaseCamp)
 	assert.NoError(t, err)
 	assert.Equal(t, domain.TypeOauth2, s)
 }
@@ -66,10 +65,10 @@ func TestIntegrationStorage_SaveAuthorizationType(t *testing.T) {
 	r := strings.NewReader(testIntegrations)
 	is := NewIntegrationStorage(r)
 
-	err := is.SaveAuthorizationType(integration.BaseCamp, domain.TypeOauth1)
+	err := is.SaveAuthorizationType(domain.BaseCamp, domain.TypeOauth1)
 	assert.NoError(t, err)
 
-	s, err := is.LoadAuthorizationType(integration.BaseCamp)
+	s, err := is.LoadAuthorizationType(domain.BaseCamp)
 	assert.Equal(t, domain.TypeOauth1, s)
 }
 

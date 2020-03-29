@@ -1,4 +1,4 @@
-package toggl
+package domain
 
 // Workspace represents toggl workspace
 type Workspace struct {

@@ -10,8 +10,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/toggl/go-teamweek"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 type Service struct {
@@ -24,15 +23,15 @@ type TeamweekParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() integration.ID {
-	return integration.TeamWeek
+func (s *Service) ID() domain.ID {
+	return domain.TeamWeek
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integration.PipeID) string {
+func (s *Service) KeyFor(objectType domain.PipeID) string {
 	if s.TeamweekParams == nil {
 		return fmt.Sprintf("teamweek:account:%s", objectType)
 	}
@@ -57,14 +56,14 @@ func (s *Service) SetAuthData(b []byte) error {
 }
 
 // Map Teamweek accounts to local accounts
-func (s *Service) Accounts() ([]*toggl.Account, error) {
+func (s *Service) Accounts() ([]*domain.Account, error) {
 	foreignObject, err := s.client().GetUserProfile()
 	if err != nil {
 		return nil, err
 	}
-	var accounts []*toggl.Account
+	var accounts []*domain.Account
 	for _, object := range foreignObject.Workspaces {
-		account := toggl.Account{
+		account := domain.Account{
 			ID:   object.ID,
 			Name: object.Name,
 		}
@@ -74,17 +73,17 @@ func (s *Service) Accounts() ([]*toggl.Account, error) {
 }
 
 // Map Teamweek people to local users
-func (s *Service) Users() ([]*toggl.User, error) {
+func (s *Service) Users() ([]*domain.User, error) {
 	foreignObjects, err := s.client().ListWorkspaceMembers(int64(s.AccountID))
 	if err != nil {
 		return nil, err
 	}
-	var users []*toggl.User
+	var users []*domain.User
 	for _, object := range foreignObjects {
 		if object.Dummy {
 			continue
 		}
-		user := toggl.User{
+		user := domain.User{
 			ForeignID: strconv.FormatInt(object.ID, 10),
 			Name:      object.Name,
 			Email:     object.Email,
@@ -95,14 +94,14 @@ func (s *Service) Users() ([]*toggl.User, error) {
 }
 
 // Map Teamweek projects to projects
-func (s *Service) Projects() ([]*toggl.Project, error) {
+func (s *Service) Projects() ([]*domain.Project, error) {
 	foreignObjects, err := s.client().ListWorkspaceProjects(int64(s.AccountID))
 	if err != nil {
 		return nil, err
 	}
-	var projects []*toggl.Project
+	var projects []*domain.Project
 	for _, object := range foreignObjects {
-		project := toggl.Project{
+		project := domain.Project{
 			ForeignID: strconv.FormatInt(object.ID, 10),
 			Name:      object.Name,
 			Active:    true,
@@ -113,17 +112,17 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 }
 
 // Map Teamweek tasks to tasks
-func (s *Service) Tasks() ([]*toggl.Task, error) {
+func (s *Service) Tasks() ([]*domain.Task, error) {
 	foreignObjects, err := s.client().ListWorkspaceTasks(int64(s.AccountID))
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*toggl.Task
+	var tasks []*domain.Task
 	for _, object := range foreignObjects {
 		if object.Project == nil {
 			continue
 		}
-		task := toggl.Task{
+		task := domain.Task{
 			ForeignID:        strconv.FormatInt(object.ID, 10),
 			Name:             object.Name,
 			Active:           !object.Done,
@@ -136,15 +135,15 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 
 func (s *Service) SetSince(*time.Time) {}
 
-func (s *Service) TodoLists() ([]*toggl.Task, error) {
-	return []*toggl.Task{}, nil
+func (s *Service) TodoLists() ([]*domain.Task, error) {
+	return []*domain.Task{}, nil
 }
 
-func (s *Service) Clients() ([]*toggl.Client, error) {
-	return []*toggl.Client{}, nil
+func (s *Service) Clients() ([]*domain.Client, error) {
+	return []*domain.Client{}, nil
 }
 
-func (s *Service) ExportTimeEntry(*toggl.TimeEntry) (int, error) {
+func (s *Service) ExportTimeEntry(*domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 

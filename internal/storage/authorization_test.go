@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type AuthorizationsStorageTestSuite struct {
@@ -38,14 +37,14 @@ func (ts *AuthorizationsStorageTestSuite) SetupTest() {
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuthorization_Ok() {
 
-	a := domain.NewAuthorization(1, integration.GitHub)
+	a := domain.NewAuthorization(1, domain.GitHub)
 
 	s := &AuthorizationStorage{DB: ts.db}
 	err := s.Save(a)
 	ts.NoError(err)
 
-	aFromDb := domain.NewAuthorization(0, integration.GitHub)
-	err = s.Load(1, integration.GitHub, aFromDb)
+	aFromDb := domain.NewAuthorization(0, domain.GitHub)
+	err = s.Load(1, domain.GitHub, aFromDb)
 	ts.NoError(err)
 	ts.Equal(a, aFromDb)
 }
@@ -56,30 +55,30 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	cdb.Close()
 
 	s := &AuthorizationStorage{DB: cdb}
-	a := domain.NewAuthorization(2, integration.Asana)
+	a := domain.NewAuthorization(2, domain.Asana)
 	err = s.Save(a)
 	ts.Error(err)
 
-	err = s.Load(2, integration.Asana, a)
+	err = s.Load(2, domain.Asana, a)
 	ts.Error(err)
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
 	s := &AuthorizationStorage{DB: ts.db}
-	a := domain.NewAuthorization(1, integration.GitHub)
+	a := domain.NewAuthorization(1, domain.GitHub)
 
 	err := s.Save(a)
 	ts.NoError(err)
 
-	err = s.Delete(1, integration.GitHub)
+	err = s.Delete(1, domain.GitHub)
 	ts.NoError(err)
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
 	s := &AuthorizationStorage{DB: ts.db}
 
-	a1 := domain.NewAuthorization(1, integration.GitHub)
-	a2 := domain.NewAuthorization(1, integration.Asana)
+	a1 := domain.NewAuthorization(1, domain.GitHub)
+	a2 := domain.NewAuthorization(1, domain.Asana)
 
 	err := s.Save(a1)
 	ts.NoError(err)
@@ -89,8 +88,8 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWork
 
 	auth, err := s.LoadWorkspaceAuthorizations(1)
 	ts.NoError(err)
-	ts.Equal(true, auth[integration.GitHub])
-	ts.Equal(true, auth[integration.Asana])
+	ts.Equal(true, auth[domain.GitHub])
+	ts.Equal(true, auth[domain.Asana])
 	ts.Equal(false, auth["unknown"])
 }
 

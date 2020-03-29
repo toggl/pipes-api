@@ -8,8 +8,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 func TestBasecamp_WorkspaceID(t *testing.T) {
@@ -19,25 +18,25 @@ func TestBasecamp_WorkspaceID(t *testing.T) {
 
 func TestBasecamp_ID(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, integration.BaseCamp, s.ID())
+	assert.Equal(t, domain.BaseCamp, s.ID())
 }
 
 func TestBasecamp_KeyFor(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, "basecamp:account:accounts", s.KeyFor(integration.AccountsPipe))
+	assert.Equal(t, "basecamp:account:accounts", s.KeyFor(domain.AccountsPipe))
 
 	tests := []struct {
 		want string
-		got  integration.PipeID
+		got  domain.PipeID
 	}{
-		{want: "basecamp:account:1:users", got: integration.UsersPipe},
-		{want: "basecamp:account:1:clients", got: integration.ClientsPipe},
-		{want: "basecamp:account:1:projects", got: integration.ProjectsPipe},
-		{want: "basecamp:account:1:tasks", got: integration.TasksPipe},
-		{want: "basecamp:account:1:todolists", got: integration.TodoListsPipe},
-		{want: "basecamp:account:1:todos", got: integration.TodosPipe},
-		{want: "basecamp:account:1:timeentries", got: integration.TimeEntriesPipe},
-		{want: "basecamp:account:1:accounts", got: integration.AccountsPipe},
+		{want: "basecamp:account:1:users", got: domain.UsersPipe},
+		{want: "basecamp:account:1:clients", got: domain.ClientsPipe},
+		{want: "basecamp:account:1:projects", got: domain.ProjectsPipe},
+		{want: "basecamp:account:1:tasks", got: domain.TasksPipe},
+		{want: "basecamp:account:1:todolists", got: domain.TodoListsPipe},
+		{want: "basecamp:account:1:todos", got: domain.TodosPipe},
+		{want: "basecamp:account:1:timeentries", got: domain.TimeEntriesPipe},
+		{want: "basecamp:account:1:accounts", got: domain.AccountsPipe},
 	}
 
 	svc := &Service{BasecampParams: &BasecampParams{AccountID: 1}}
@@ -102,12 +101,12 @@ func TestIntegration_Basecamp_Clients(t *testing.T) {
 	s := &Service{}
 	c, err := s.Clients()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Client{}, c)
+	assert.Equal(t, []*domain.Client{}, c)
 }
 
 func TestIntegration_Basecamp_ExportTimeEntry(t *testing.T) {
 	s := &Service{}
-	te, err := s.ExportTimeEntry(&toggl.TimeEntry{})
+	te, err := s.ExportTimeEntry(&domain.TimeEntry{})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, te)
 }

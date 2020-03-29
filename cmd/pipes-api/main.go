@@ -19,7 +19,7 @@ import (
 	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/internal/sync"
 
-	"github.com/toggl/pipes-api/pkg/toggl/client"
+	"github.com/toggl/pipes-api/pkg/toggl"
 
 	"github.com/toggl/pipes-api/internal/storage"
 )
@@ -88,7 +88,7 @@ func main() {
 		log.Fatalf("couldn't create oauth provider, reason: %v", err)
 	}
 
-	togglApiClient := &client.TogglApiClient{URL: cfg.TogglAPIHost}
+	togglApiClient := &toggl.TogglApiClient{URL: cfg.TogglAPIHost}
 	pipeStorage := &storage.PipeStorage{DB: db}
 	importStorage := &storage.ImportStorage{DB: db}
 	idMappingStorage := &storage.IdMappingStorage{DB: db}

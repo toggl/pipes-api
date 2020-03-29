@@ -1,38 +1,13 @@
-package integration
+package domain
 
 import (
 	"time"
-
-	"github.com/toggl/pipes-api/pkg/toggl"
-)
-
-type ID string
-
-const (
-	BaseCamp   ID = "basecamp"
-	FreshBooks ID = "freshbooks"
-	TeamWeek   ID = "teamweek"
-	Asana      ID = "asana"
-	GitHub     ID = "github"
-)
-
-type PipeID string
-
-const (
-	UsersPipe       PipeID = "users"
-	ClientsPipe     PipeID = "clients"
-	ProjectsPipe    PipeID = "projects"
-	TasksPipe       PipeID = "tasks"
-	TodoListsPipe   PipeID = "todolists"
-	TodosPipe       PipeID = "todos"
-	TimeEntriesPipe PipeID = "timeentries"
-	AccountsPipe    PipeID = "accounts"
 )
 
 // Integration interface for external integrations
 // Example implementation: github.go
-//go:generate mockery -name Integration -case underscore -outpkg mocks
-type Integration interface {
+//go:generate mockery -name PipeIntegration -case underscore -outpkg mocks
+type PipeIntegration interface {
 	// ID returns an ID of the service
 	ID() ID
 
@@ -58,25 +33,25 @@ type Integration interface {
 	KeyFor(PipeID) string
 
 	// Accounts maps foreign account to Account models
-	Accounts() ([]*toggl.Account, error)
+	Accounts() ([]*Account, error)
 
 	// Users maps foreign users to User models
-	Users() ([]*toggl.User, error)
+	Users() ([]*User, error)
 
 	// Clients maps foreign clients to Client models
-	Clients() ([]*toggl.Client, error)
+	Clients() ([]*Client, error)
 
 	// Projects maps foreign projects to Project models
-	Projects() ([]*toggl.Project, error)
+	Projects() ([]*Project, error)
 
 	// Tasks maps foreign tasks to Task models
-	Tasks() ([]*toggl.Task, error)
+	Tasks() ([]*Task, error)
 
 	// TodoLists maps foreign to do lists to Task models
-	TodoLists() ([]*toggl.Task, error)
+	TodoLists() ([]*Task, error)
 
 	// ExportTimeEntry exports time entry model to foreign service
 	// should return foreign id of saved time entry
 	// Implemented only for "freshbook" integration
-	ExportTimeEntry(*toggl.TimeEntry) (int, error)
+	ExportTimeEntry(*TimeEntry) (int, error)
 }

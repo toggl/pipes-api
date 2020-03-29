@@ -9,13 +9,12 @@ import (
 	"github.com/tambet/oauthplain"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 func TestNewAuthorization(t *testing.T) {
-	a := domain.NewAuthorization(1, integration.GitHub)
+	a := domain.NewAuthorization(1, domain.GitHub)
 	assert.Equal(t, 1, a.WorkspaceID)
-	assert.Equal(t, integration.GitHub, a.ServiceID)
+	assert.Equal(t, domain.GitHub, a.ServiceID)
 	assert.NotNil(t, a.Data)
 }
 

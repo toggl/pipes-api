@@ -9,8 +9,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 func TestGitHub_WorkspaceID(t *testing.T) {
@@ -20,22 +19,22 @@ func TestGitHub_WorkspaceID(t *testing.T) {
 
 func TestGitHub_ID(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, integration.GitHub, s.ID())
+	assert.Equal(t, domain.GitHub, s.ID())
 }
 
 func TestGitHub_KeyFor(t *testing.T) {
 	tests := []struct {
 		want string
-		got  integration.PipeID
+		got  domain.PipeID
 	}{
-		{want: "github:users", got: integration.UsersPipe},
-		{want: "github:clients", got: integration.ClientsPipe},
-		{want: "github:projects", got: integration.ProjectsPipe},
-		{want: "github:tasks", got: integration.TasksPipe},
-		{want: "github:todolists", got: integration.TodoListsPipe},
-		{want: "github:todos", got: integration.TodosPipe},
-		{want: "github:timeentries", got: integration.TimeEntriesPipe},
-		{want: "github:accounts", got: integration.AccountsPipe},
+		{want: "github:users", got: domain.UsersPipe},
+		{want: "github:clients", got: domain.ClientsPipe},
+		{want: "github:projects", got: domain.ProjectsPipe},
+		{want: "github:tasks", got: domain.TasksPipe},
+		{want: "github:todolists", got: domain.TodoListsPipe},
+		{want: "github:todos", got: domain.TodosPipe},
+		{want: "github:timeentries", got: domain.TimeEntriesPipe},
+		{want: "github:accounts", got: domain.AccountsPipe},
 	}
 
 	svc := &Service{}
@@ -83,40 +82,40 @@ func TestIntegration_GitHub_Accounts(t *testing.T) {
 	s := &Service{}
 	c, err := s.Accounts()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Account{{1, "Self"}}, c)
+	assert.Equal(t, []*domain.Account{{1, "Self"}}, c)
 }
 
 func TestIntegration_GitHub_Users(t *testing.T) {
 	s := &Service{}
 	c, err := s.Users()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.User{}, c)
+	assert.Equal(t, []*domain.User{}, c)
 }
 
 func TestIntegration_GitHub_Tasks(t *testing.T) {
 	s := &Service{}
 	c, err := s.Tasks()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Task{}, c)
+	assert.Equal(t, []*domain.Task{}, c)
 }
 
 func TestIntegration_GitHub_TodoLists(t *testing.T) {
 	s := &Service{}
 	c, err := s.TodoLists()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Task{}, c)
+	assert.Equal(t, []*domain.Task{}, c)
 }
 
 func TestIntegration_GitHub_Clients(t *testing.T) {
 	s := &Service{}
 	c, err := s.Clients()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Client{}, c)
+	assert.Equal(t, []*domain.Client{}, c)
 }
 
 func TestIntegration_GitHub_ExportTimeEntry(t *testing.T) {
 	s := &Service{}
-	te, err := s.ExportTimeEntry(&toggl.TimeEntry{})
+	te, err := s.ExportTimeEntry(&domain.TimeEntry{})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, te)
 }

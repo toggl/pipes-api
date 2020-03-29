@@ -7,7 +7,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type Middleware struct {
@@ -17,12 +16,12 @@ type Middleware struct {
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		serviceID := integration.ID(mux.Vars(r)["service"])
+		serviceID := domain.ID(mux.Vars(r)["service"])
 		if !mw.IntegrationsStorage.IsValidService(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
-		pipeID := integration.PipeID(mux.Vars(r)["pipe"])
+		pipeID := domain.PipeID(mux.Vars(r)["pipe"])
 		if !mw.IntegrationsStorage.IsValidPipe(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return

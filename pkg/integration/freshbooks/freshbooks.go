@@ -9,8 +9,7 @@ import (
 	"github.com/tambet/oauthplain"
 	"github.com/toggl/go-freshbooks"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 type Service struct {
@@ -19,15 +18,15 @@ type Service struct {
 	token       oauthplain.Token
 }
 
-func (s *Service) ID() integration.ID {
-	return integration.FreshBooks
+func (s *Service) ID() domain.ID {
+	return domain.FreshBooks
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integration.PipeID) string {
+func (s *Service) KeyFor(objectType domain.PipeID) string {
 	return fmt.Sprintf("freshbooks:%s", objectType)
 }
 
@@ -45,14 +44,14 @@ func (s *Service) SetAuthData(b []byte) error {
 
 func (s *Service) SetSince(*time.Time) {}
 
-func (s *Service) Users() ([]*toggl.User, error) {
+func (s *Service) Users() ([]*domain.User, error) {
 	foreignObjects, err := s.client().Users()
 	if err != nil {
 		return nil, err
 	}
-	var users []*toggl.User
+	var users []*domain.User
 	for _, object := range foreignObjects {
-		user := toggl.User{
+		user := domain.User{
 			ForeignID: strconv.Itoa(object.UserId),
 			Name:      fmt.Sprintf("%s %s", object.FirstName, object.LastName),
 			Email:     object.Email,
@@ -62,14 +61,14 @@ func (s *Service) Users() ([]*toggl.User, error) {
 	return users, nil
 }
 
-func (s *Service) Clients() ([]*toggl.Client, error) {
+func (s *Service) Clients() ([]*domain.Client, error) {
 	foreignObjects, err := s.client().Clients()
 	if err != nil {
 		return nil, err
 	}
-	var clients []*toggl.Client
+	var clients []*domain.Client
 	for _, object := range foreignObjects {
-		client := toggl.Client{
+		client := domain.Client{
 			ForeignID: strconv.Itoa(object.ClientId),
 			Name:      object.Name,
 		}
@@ -78,14 +77,14 @@ func (s *Service) Clients() ([]*toggl.Client, error) {
 	return clients, nil
 }
 
-func (s *Service) Projects() ([]*toggl.Project, error) {
+func (s *Service) Projects() ([]*domain.Project, error) {
 	foreignObjects, err := s.client().Projects()
 	if err != nil {
 		return nil, err
 	}
-	var projects []*toggl.Project
+	var projects []*domain.Project
 	for _, object := range foreignObjects {
-		project := toggl.Project{
+		project := domain.Project{
 			Active:          true,
 			Billable:        true,
 			Name:            object.Name,
@@ -97,7 +96,7 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 	return projects, nil
 }
 
-func (s *Service) Tasks() ([]*toggl.Task, error) {
+func (s *Service) Tasks() ([]*domain.Task, error) {
 	foreignProjects, err := s.client().Projects()
 	if err != nil {
 		return nil, err
@@ -112,11 +111,11 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 		tasksMap[task.TaskId] = task
 	}
 
-	var tasks []*toggl.Task
+	var tasks []*domain.Task
 	for _, project := range foreignProjects {
 		for _, taskID := range project.TaskIds {
 			task := tasksMap[taskID]
-			tasks = append(tasks, &toggl.Task{
+			tasks = append(tasks, &domain.Task{
 				Active:           true,
 				Name:             task.Name,
 				ForeignID:        fmt.Sprintf("%d-%d", task.TaskId, project.ProjectId),
@@ -127,7 +126,7 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 	return tasks, nil
 }
 
-func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
+func (s *Service) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
 	start, err := time.Parse(time.RFC3339, t.Start)
 	if err != nil {
 		return 0, err
@@ -147,12 +146,12 @@ func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
 	return s.client().SaveTimeEntry(entry)
 }
 
-func (s *Service) Accounts() ([]*toggl.Account, error) {
-	return []*toggl.Account{}, nil
+func (s *Service) Accounts() ([]*domain.Account, error) {
+	return []*domain.Account{}, nil
 }
 
-func (s *Service) TodoLists() ([]*toggl.Task, error) {
-	return []*toggl.Task{}, nil
+func (s *Service) TodoLists() ([]*domain.Task, error) {
+	return []*domain.Task{}, nil
 }
 
 func (s *Service) client() *freshbooks.Api {

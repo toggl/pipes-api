@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 const defaultConnectionString = "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432"
@@ -18,6 +17,6 @@ func getConnectionStringForTests() string {
 	return connString
 }
 
-func createPipeForTests(workspaceID int, sid integration.ID, pid integration.PipeID) *domain.Pipe {
+func createPipeForTests(workspaceID int, sid domain.ID, pid domain.PipeID) *domain.Pipe {
 	return domain.NewPipe(workspaceID, sid, pid)
 }

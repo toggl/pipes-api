@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/internal/service"
+	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type ServiceTestSuite struct {
@@ -89,17 +89,17 @@ func TestServiceTestSuite(t *testing.T) {
 }
 
 func TestNewExternalService(t *testing.T) {
-	s1 := service.NewExternalService(integration.BaseCamp, 1)
-	s2 := service.NewExternalService(integration.Asana, 2)
-	s3 := service.NewExternalService(integration.GitHub, 3)
-	s4 := service.NewExternalService(integration.FreshBooks, 4)
-	s5 := service.NewExternalService(integration.TeamWeek, 5)
+	s1 := service.NewExternalService(domain.BaseCamp, 1)
+	s2 := service.NewExternalService(domain.Asana, 2)
+	s3 := service.NewExternalService(domain.GitHub, 3)
+	s4 := service.NewExternalService(domain.FreshBooks, 4)
+	s5 := service.NewExternalService(domain.TeamWeek, 5)
 
-	assert.Equal(t, integration.BaseCamp, s1.ID())
-	assert.Equal(t, integration.Asana, s2.ID())
-	assert.Equal(t, integration.GitHub, s3.ID())
-	assert.Equal(t, integration.FreshBooks, s4.ID())
-	assert.Equal(t, integration.TeamWeek, s5.ID())
+	assert.Equal(t, domain.BaseCamp, s1.ID())
+	assert.Equal(t, domain.Asana, s2.ID())
+	assert.Equal(t, domain.GitHub, s3.ID())
+	assert.Equal(t, domain.FreshBooks, s4.ID())
+	assert.Equal(t, domain.TeamWeek, s5.ID())
 }
 
 func TestNewExternalServicePanic(t *testing.T) {

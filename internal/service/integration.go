@@ -3,7 +3,7 @@ package service
 import (
 	"fmt"
 
-	"github.com/toggl/pipes-api/pkg/integration"
+	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration/asana"
 	"github.com/toggl/pipes-api/pkg/integration/basecamp"
 	"github.com/toggl/pipes-api/pkg/integration/freshbooks"
@@ -11,25 +11,25 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration/teamweek"
 )
 
-func NewExternalService(id integration.ID, workspaceID int) integration.Integration {
+func NewExternalService(id domain.ID, workspaceID int) domain.PipeIntegration {
 	switch id {
-	case integration.BaseCamp:
+	case domain.BaseCamp:
 		return &basecamp.Service{WorkspaceID: workspaceID}
-	case integration.FreshBooks:
+	case domain.FreshBooks:
 		return &freshbooks.Service{WorkspaceID: workspaceID}
-	case integration.TeamWeek:
+	case domain.TeamWeek:
 		return &teamweek.Service{WorkspaceID: workspaceID}
-	case integration.Asana:
+	case domain.Asana:
 		return &asana.Service{WorkspaceID: workspaceID}
-	case integration.GitHub:
+	case domain.GitHub:
 		return &github.Service{WorkspaceID: workspaceID}
 	default:
 		panic(fmt.Sprintf("getService: Unrecognized integrations.ID - %s", id))
 	}
 }
 
-var _ integration.Integration = (*basecamp.Service)(nil)
-var _ integration.Integration = (*freshbooks.Service)(nil)
-var _ integration.Integration = (*teamweek.Service)(nil)
-var _ integration.Integration = (*asana.Service)(nil)
-var _ integration.Integration = (*github.Service)(nil)
+var _ domain.PipeIntegration = (*basecamp.Service)(nil)
+var _ domain.PipeIntegration = (*freshbooks.Service)(nil)
+var _ domain.PipeIntegration = (*teamweek.Service)(nil)
+var _ domain.PipeIntegration = (*asana.Service)(nil)
+var _ domain.PipeIntegration = (*github.Service)(nil)

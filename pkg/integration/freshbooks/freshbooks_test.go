@@ -8,8 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tambet/oauthplain"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 func TestFreshbooks_WorkspaceID(t *testing.T) {
@@ -19,22 +18,22 @@ func TestFreshbooks_WorkspaceID(t *testing.T) {
 
 func TestFreshbooks_ID(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, integration.FreshBooks, s.ID())
+	assert.Equal(t, domain.FreshBooks, s.ID())
 }
 
 func TestFreshbooks_KeyFor(t *testing.T) {
 	tests := []struct {
 		want string
-		got  integration.PipeID
+		got  domain.PipeID
 	}{
-		{want: "freshbooks:users", got: integration.UsersPipe},
-		{want: "freshbooks:clients", got: integration.ClientsPipe},
-		{want: "freshbooks:projects", got: integration.ProjectsPipe},
-		{want: "freshbooks:tasks", got: integration.TasksPipe},
-		{want: "freshbooks:todolists", got: integration.TodoListsPipe},
-		{want: "freshbooks:todos", got: integration.TodosPipe},
-		{want: "freshbooks:timeentries", got: integration.TimeEntriesPipe},
-		{want: "freshbooks:accounts", got: integration.AccountsPipe},
+		{want: "freshbooks:users", got: domain.UsersPipe},
+		{want: "freshbooks:clients", got: domain.ClientsPipe},
+		{want: "freshbooks:projects", got: domain.ProjectsPipe},
+		{want: "freshbooks:tasks", got: domain.TasksPipe},
+		{want: "freshbooks:todolists", got: domain.TodoListsPipe},
+		{want: "freshbooks:todos", got: domain.TodosPipe},
+		{want: "freshbooks:timeentries", got: domain.TimeEntriesPipe},
+		{want: "freshbooks:accounts", got: domain.AccountsPipe},
 	}
 
 	svc := &Service{}
@@ -84,14 +83,14 @@ func TestIntegration_Freshbooks_Accounts(t *testing.T) {
 	s := &Service{}
 	c, err := s.Accounts()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Account{}, c)
+	assert.Equal(t, []*domain.Account{}, c)
 }
 
 func TestIntegration_Freshbooks_TodoLists(t *testing.T) {
 	s := &Service{}
 	te, err := s.TodoLists()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Task{}, te)
+	assert.Equal(t, []*domain.Task{}, te)
 }
 
 func TestFreshbooks_numberStrToInt64(t *testing.T) {

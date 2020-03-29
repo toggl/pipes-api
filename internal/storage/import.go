@@ -8,8 +8,7 @@ import (
 
 	"github.com/bugsnag/bugsnag-go"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 const (
@@ -36,66 +35,66 @@ type ImportStorage struct {
 	DB *sql.DB
 }
 
-func (is *ImportStorage) SaveAccountsFor(s integration.Integration, res toggl.AccountsResponse) error {
+func (is *ImportStorage) SaveAccountsFor(s domain.PipeIntegration, res domain.AccountsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
-	return is.saveObject(s, integration.AccountsPipe, b)
+	return is.saveObject(s, domain.AccountsPipe, b)
 }
 
-func (is *ImportStorage) SaveUsersFor(s integration.Integration, res toggl.UsersResponse) error {
-	b, err := json.Marshal(res)
-	if err != nil {
-		return err
-	}
-
-	return is.saveObject(s, integration.UsersPipe, b)
-}
-
-func (is *ImportStorage) SaveClientsFor(s integration.Integration, res toggl.ClientsResponse) error {
+func (is *ImportStorage) SaveUsersFor(s domain.PipeIntegration, res domain.UsersResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	return is.saveObject(s, integration.ClientsPipe, b)
+	return is.saveObject(s, domain.UsersPipe, b)
 }
 
-func (is *ImportStorage) SaveProjectsFor(s integration.Integration, res toggl.ProjectsResponse) error {
+func (is *ImportStorage) SaveClientsFor(s domain.PipeIntegration, res domain.ClientsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	return is.saveObject(s, integration.ProjectsPipe, b)
+	return is.saveObject(s, domain.ClientsPipe, b)
 }
 
-func (is *ImportStorage) SaveTasksFor(s integration.Integration, res toggl.TasksResponse) error {
+func (is *ImportStorage) SaveProjectsFor(s domain.PipeIntegration, res domain.ProjectsResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	return is.saveObject(s, integration.TasksPipe, b)
+	return is.saveObject(s, domain.ProjectsPipe, b)
 }
 
-func (is *ImportStorage) SaveTodoListsFor(s integration.Integration, res toggl.TasksResponse) error {
+func (is *ImportStorage) SaveTasksFor(s domain.PipeIntegration, res domain.TasksResponse) error {
 	b, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 
-	return is.saveObject(s, integration.TodoListsPipe, b)
+	return is.saveObject(s, domain.TasksPipe, b)
 }
 
-func (is *ImportStorage) LoadAccountsFor(s integration.Integration) (*toggl.AccountsResponse, error) {
-	b, err := is.loadObject(s, integration.AccountsPipe)
+func (is *ImportStorage) SaveTodoListsFor(s domain.PipeIntegration, res domain.TasksResponse) error {
+	b, err := json.Marshal(res)
+	if err != nil {
+		return err
+	}
+
+	return is.saveObject(s, domain.TodoListsPipe, b)
+}
+
+func (is *ImportStorage) LoadAccountsFor(s domain.PipeIntegration) (*domain.AccountsResponse, error) {
+	b, err := is.loadObject(s, domain.AccountsPipe)
 	if err != nil || b == nil {
 		return nil, err
 	}
 
-	var accountsResponse toggl.AccountsResponse
+	var accountsResponse domain.AccountsResponse
 	err = json.Unmarshal(b, &accountsResponse)
 	if err != nil {
 		return nil, err
@@ -103,13 +102,13 @@ func (is *ImportStorage) LoadAccountsFor(s integration.Integration) (*toggl.Acco
 	return &accountsResponse, nil
 }
 
-func (is *ImportStorage) LoadUsersFor(s integration.Integration) (*toggl.UsersResponse, error) {
-	b, err := is.loadObject(s, integration.UsersPipe)
+func (is *ImportStorage) LoadUsersFor(s domain.PipeIntegration) (*domain.UsersResponse, error) {
+	b, err := is.loadObject(s, domain.UsersPipe)
 	if err != nil || b == nil {
 		return nil, err
 	}
 
-	var usersResponse toggl.UsersResponse
+	var usersResponse domain.UsersResponse
 	err = json.Unmarshal(b, &usersResponse)
 	if err != nil {
 		return nil, err
@@ -117,13 +116,13 @@ func (is *ImportStorage) LoadUsersFor(s integration.Integration) (*toggl.UsersRe
 	return &usersResponse, nil
 }
 
-func (is *ImportStorage) LoadClientsFor(s integration.Integration) (*toggl.ClientsResponse, error) {
-	b, err := is.loadObject(s, integration.ClientsPipe)
+func (is *ImportStorage) LoadClientsFor(s domain.PipeIntegration) (*domain.ClientsResponse, error) {
+	b, err := is.loadObject(s, domain.ClientsPipe)
 	if err != nil || b == nil {
 		return nil, err
 	}
 
-	var clientsResponse toggl.ClientsResponse
+	var clientsResponse domain.ClientsResponse
 	err = json.Unmarshal(b, &clientsResponse)
 	if err != nil {
 		return nil, err
@@ -131,13 +130,13 @@ func (is *ImportStorage) LoadClientsFor(s integration.Integration) (*toggl.Clien
 	return &clientsResponse, nil
 }
 
-func (is *ImportStorage) LoadProjectsFor(s integration.Integration) (*toggl.ProjectsResponse, error) {
-	b, err := is.loadObject(s, integration.ProjectsPipe)
+func (is *ImportStorage) LoadProjectsFor(s domain.PipeIntegration) (*domain.ProjectsResponse, error) {
+	b, err := is.loadObject(s, domain.ProjectsPipe)
 	if err != nil || b == nil {
 		return nil, err
 	}
 
-	var projectsResponse toggl.ProjectsResponse
+	var projectsResponse domain.ProjectsResponse
 	err = json.Unmarshal(b, &projectsResponse)
 	if err != nil {
 		return nil, err
@@ -146,13 +145,13 @@ func (is *ImportStorage) LoadProjectsFor(s integration.Integration) (*toggl.Proj
 	return &projectsResponse, nil
 }
 
-func (is *ImportStorage) LoadTodoListsFor(s integration.Integration) (*toggl.TasksResponse, error) {
-	b, err := is.loadObject(s, integration.TodoListsPipe)
+func (is *ImportStorage) LoadTodoListsFor(s domain.PipeIntegration) (*domain.TasksResponse, error) {
+	b, err := is.loadObject(s, domain.TodoListsPipe)
 	if err != nil || b == nil {
 		return nil, err
 	}
 
-	var tasksResponse toggl.TasksResponse
+	var tasksResponse domain.TasksResponse
 	err = json.Unmarshal(b, &tasksResponse)
 	if err != nil {
 		return nil, err
@@ -160,13 +159,13 @@ func (is *ImportStorage) LoadTodoListsFor(s integration.Integration) (*toggl.Tas
 	return &tasksResponse, nil
 }
 
-func (is *ImportStorage) LoadTasksFor(s integration.Integration) (*toggl.TasksResponse, error) {
-	b, err := is.loadObject(s, integration.TasksPipe)
+func (is *ImportStorage) LoadTasksFor(s domain.PipeIntegration) (*domain.TasksResponse, error) {
+	b, err := is.loadObject(s, domain.TasksPipe)
 	if err != nil || b == nil {
 		return nil, err
 	}
 
-	var tasksResponse toggl.TasksResponse
+	var tasksResponse domain.TasksResponse
 	err = json.Unmarshal(b, &tasksResponse)
 	if err != nil {
 		return nil, err
@@ -174,17 +173,17 @@ func (is *ImportStorage) LoadTasksFor(s integration.Integration) (*toggl.TasksRe
 	return &tasksResponse, nil
 }
 
-func (is *ImportStorage) DeleteAccountsFor(s integration.Integration) error {
-	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integration.AccountsPipe))
+func (is *ImportStorage) DeleteAccountsFor(s domain.PipeIntegration) error {
+	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(domain.AccountsPipe))
 	return err
 }
 
-func (is *ImportStorage) DeleteUsersFor(s integration.Integration) error {
-	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(integration.UsersPipe))
+func (is *ImportStorage) DeleteUsersFor(s domain.PipeIntegration) error {
+	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(domain.UsersPipe))
 	return err
 }
 
-func (is *ImportStorage) loadObject(s integration.Integration, pid integration.PipeID) ([]byte, error) {
+func (is *ImportStorage) loadObject(s domain.PipeIntegration, pid domain.PipeID) ([]byte, error) {
 	var result []byte
 	rows, err := is.DB.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
@@ -200,7 +199,7 @@ func (is *ImportStorage) loadObject(s integration.Integration, pid integration.P
 	return result, nil
 }
 
-func (is *ImportStorage) saveObject(s integration.Integration, pid integration.PipeID, b []byte) error {
+func (is *ImportStorage) saveObject(s domain.PipeIntegration, pid domain.PipeID, b []byte) error {
 	_, err := is.DB.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
 	if err != nil {
 		bugsnag.Notify(err)

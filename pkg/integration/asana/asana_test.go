@@ -9,8 +9,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 func TestAsana_WorkspaceID(t *testing.T) {
@@ -20,25 +19,25 @@ func TestAsana_WorkspaceID(t *testing.T) {
 
 func TestAsana_ID(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, integration.Asana, s.ID())
+	assert.Equal(t, domain.Asana, s.ID())
 }
 
 func TestAsana_KeyFor(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, "asana:account:accounts", s.KeyFor(integration.AccountsPipe))
+	assert.Equal(t, "asana:account:accounts", s.KeyFor(domain.AccountsPipe))
 
 	tests := []struct {
 		want string
-		got  integration.PipeID
+		got  domain.PipeID
 	}{
-		{want: "asana:account:1:users", got: integration.UsersPipe},
-		{want: "asana:account:1:clients", got: integration.ClientsPipe},
-		{want: "asana:account:1:projects", got: integration.ProjectsPipe},
-		{want: "asana:account:1:tasks", got: integration.TasksPipe},
-		{want: "asana:account:1:todolists", got: integration.TodoListsPipe},
-		{want: "asana:account:1:todos", got: integration.TodosPipe},
-		{want: "asana:account:1:timeentries", got: integration.TimeEntriesPipe},
-		{want: "asana:account:1:accounts", got: integration.AccountsPipe},
+		{want: "asana:account:1:users", got: domain.UsersPipe},
+		{want: "asana:account:1:clients", got: domain.ClientsPipe},
+		{want: "asana:account:1:projects", got: domain.ProjectsPipe},
+		{want: "asana:account:1:tasks", got: domain.TasksPipe},
+		{want: "asana:account:1:todolists", got: domain.TodoListsPipe},
+		{want: "asana:account:1:todos", got: domain.TodosPipe},
+		{want: "asana:account:1:timeentries", got: domain.TimeEntriesPipe},
+		{want: "asana:account:1:accounts", got: domain.AccountsPipe},
 	}
 
 	svc := &Service{AsanaParams: &AsanaParams{AccountID: 1}}
@@ -111,19 +110,19 @@ func TestIntegration_Asana_Clients(t *testing.T) {
 	s := &Service{}
 	c, err := s.Clients()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Client{}, c)
+	assert.Equal(t, []*domain.Client{}, c)
 }
 
 func TestIntegration_Asana_TodoLists(t *testing.T) {
 	s := &Service{}
 	tl, err := s.TodoLists()
 	assert.NoError(t, err)
-	assert.Equal(t, []*toggl.Task{}, tl)
+	assert.Equal(t, []*domain.Task{}, tl)
 }
 
 func TestIntegration_Asana_ExportTimeEntry(t *testing.T) {
 	s := &Service{}
-	te, err := s.ExportTimeEntry(&toggl.TimeEntry{})
+	te, err := s.ExportTimeEntry(&domain.TimeEntry{})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, te)
 }

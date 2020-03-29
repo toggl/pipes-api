@@ -3,11 +3,11 @@ package service
 import (
 	"strings"
 
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
-func trimSpacesFromName(ps []*toggl.Project) []*toggl.Project {
-	var trimmedPs []*toggl.Project
+func trimSpacesFromName(ps []*domain.Project) []*domain.Project {
+	var trimmedPs []*domain.Project
 	for _, p := range ps {
 		p.Name = strings.TrimSpace(p.Name)
 		if len(p.Name) > 0 {

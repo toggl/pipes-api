@@ -8,15 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 func TestNewPipeStatus(t *testing.T) {
 	s := domain.NewPipeStatus(1, "github", "projects", "https://store.toggl.space")
 
 	assert.Equal(t, 1, s.WorkspaceID)
-	assert.Equal(t, integration.GitHub, s.ServiceID)
-	assert.Equal(t, integration.ProjectsPipe, s.PipeID)
+	assert.Equal(t, domain.GitHub, s.ServiceID)
+	assert.Equal(t, domain.ProjectsPipe, s.PipeID)
 	assert.Equal(t, domain.StatusRunning, s.Status)
 	assert.Equal(t, time.Now().Format(time.RFC3339), s.SyncDate)
 	assert.Equal(t, "github:projects", s.Key)

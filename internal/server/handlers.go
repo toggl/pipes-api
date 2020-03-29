@@ -11,7 +11,6 @@ import (
 
 	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 type Controller struct {
@@ -265,7 +264,7 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 	serviceID, pipeID := currentServicePipeID(req.r)
 
 	var selector domain.UserParams
-	if pipeID == integration.UsersPipe {
+	if pipeID == domain.UsersPipe {
 		if err := json.Unmarshal(req.body, &selector); err != nil {
 			return badRequest(fmt.Errorf("unable to parse users list, reason: %w", err))
 		}
@@ -305,20 +304,20 @@ func (c *Controller) GetStatusHandler(Request) Response {
 	})
 }
 
-func (c *Controller) getIntegrationParams(req Request) (integration.ID, integration.PipeID, error) {
-	serviceID := integration.ID(mux.Vars(req.r)["service"])
+func (c *Controller) getIntegrationParams(req Request) (domain.ID, domain.PipeID, error) {
+	serviceID := domain.ID(mux.Vars(req.r)["service"])
 	if !c.IntegrationsStorage.IsValidService(serviceID) {
 		return "", "", errors.New("missing or invalid service")
 	}
-	pipeID := integration.PipeID(mux.Vars(req.r)["pipe"])
+	pipeID := domain.PipeID(mux.Vars(req.r)["pipe"])
 	if !c.IntegrationsStorage.IsValidPipe(pipeID) {
 		return "", "", errors.New("Missing or invalid pipe")
 	}
 	return serviceID, pipeID, nil
 }
 
-func (c *Controller) getServiceId(req Request) (integration.ID, error) {
-	serviceID := integration.ID(mux.Vars(req.r)["service"])
+func (c *Controller) getServiceId(req Request) (domain.ID, error) {
+	serviceID := domain.ID(mux.Vars(req.r)["service"])
 	if !c.IntegrationsStorage.IsValidService(serviceID) {
 		return "", errors.New("missing or invalid service")
 	}

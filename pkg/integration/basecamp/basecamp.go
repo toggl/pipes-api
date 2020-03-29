@@ -10,8 +10,7 @@ import (
 	"code.google.com/p/goauth2/oauth"
 	"github.com/toggl/go-basecamp"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 type Service struct {
@@ -25,15 +24,15 @@ type BasecampParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() integration.ID {
-	return integration.BaseCamp
+func (s *Service) ID() domain.ID {
+	return domain.BaseCamp
 }
 
 func (s *Service) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType integration.PipeID) string {
+func (s *Service) KeyFor(objectType domain.PipeID) string {
 	if s.BasecampParams == nil {
 		return fmt.Sprintf("basecamp:account:%s", objectType)
 	}
@@ -59,14 +58,14 @@ func (s *Service) SetSince(since *time.Time) {
 }
 
 // Map basecamp accounts to local accounts
-func (s *Service) Accounts() ([]*toggl.Account, error) {
+func (s *Service) Accounts() ([]*domain.Account, error) {
 	foreignObjects, err := s.client().GetAccounts() // This will work only for Basecamp 2 account.
 	if err != nil {
 		return nil, err
 	}
-	var accounts []*toggl.Account
+	var accounts []*domain.Account
 	for _, object := range foreignObjects {
-		account := toggl.Account{
+		account := domain.Account{
 			ID:   int64(object.Id),
 			Name: object.Name,
 		}
@@ -76,14 +75,14 @@ func (s *Service) Accounts() ([]*toggl.Account, error) {
 }
 
 // Map basecamp people to local users
-func (s *Service) Users() ([]*toggl.User, error) {
+func (s *Service) Users() ([]*domain.User, error) {
 	foreignObjects, err := s.client().GetPeople(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
-	var users []*toggl.User
+	var users []*domain.User
 	for _, object := range foreignObjects {
-		user := toggl.User{
+		user := domain.User{
 			ForeignID: strconv.Itoa(object.Id),
 			Name:      object.Name,
 			Email:     object.Email,
@@ -94,22 +93,22 @@ func (s *Service) Users() ([]*toggl.User, error) {
 }
 
 // There are no clients in basecamp
-func (s *Service) Clients() ([]*toggl.Client, error) {
-	return []*toggl.Client{}, nil
+func (s *Service) Clients() ([]*domain.Client, error) {
+	return []*domain.Client{}, nil
 }
 
 // Map basecamp projects to projects
-func (s *Service) Projects() ([]*toggl.Project, error) {
+func (s *Service) Projects() ([]*domain.Project, error) {
 	foreignObjects, err := s.client().GetProjects(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
-	var projects []*toggl.Project
+	var projects []*domain.Project
 	for _, object := range foreignObjects {
 		if object.UpdatedAt.Before(*s.modifiedSince) {
 			continue
 		}
-		project := toggl.Project{
+		project := domain.Project{
 			Active:    true,
 			ForeignID: strconv.Itoa(object.Id),
 			Name:      object.Name,
@@ -120,13 +119,13 @@ func (s *Service) Projects() ([]*toggl.Project, error) {
 }
 
 // Map basecamp todos to tasks
-func (s *Service) Tasks() ([]*toggl.Task, error) {
+func (s *Service) Tasks() ([]*domain.Task, error) {
 	c := s.client()
 	foreignObjects, err := c.GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*toggl.Task
+	var tasks []*domain.Task
 	if len(foreignObjects) == 0 {
 		return tasks, nil
 	}
@@ -145,7 +144,7 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 			//if todo.UpdatedAt.Before(*s.modifiedSince) {
 			// 	continue
 			// }
-			task := toggl.Task{
+			task := domain.Task{
 				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
 				Active:           true,
@@ -157,7 +156,7 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 			// if todo.UpdatedAt.Before(*s.modifiedSince) {
 			// 	continue
 			// }
-			task := toggl.Task{
+			task := domain.Task{
 				ForeignID:        strconv.Itoa(todo.Id),
 				Name:             fmt.Sprintf("[%s] %s", object.Name, todo.Content),
 				Active:           false,
@@ -170,17 +169,17 @@ func (s *Service) Tasks() ([]*toggl.Task, error) {
 }
 
 // Map basecamp todolists to tasks
-func (s *Service) TodoLists() ([]*toggl.Task, error) {
+func (s *Service) TodoLists() ([]*domain.Task, error) {
 	foreignObjects, err := s.client().GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
 	}
-	var tasks []*toggl.Task
+	var tasks []*domain.Task
 	for _, object := range foreignObjects {
 		if object.UpdatedAt.Before(*s.modifiedSince) {
 			continue
 		}
-		task := toggl.Task{
+		task := domain.Task{
 			ForeignID:        strconv.Itoa(object.Id),
 			Name:             object.Name,
 			Active:           !object.Completed,
@@ -191,7 +190,7 @@ func (s *Service) TodoLists() ([]*toggl.Task, error) {
 	return tasks, nil
 }
 
-func (s *Service) ExportTimeEntry(t *toggl.TimeEntry) (int, error) {
+func (s *Service) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 

@@ -6,7 +6,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/toggl/pipes-api/pkg/domain"
-	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 // AuthorizationStorage SQL queries
@@ -49,7 +48,7 @@ func (as *AuthorizationStorage) Save(a *domain.Authorization) error {
 	return nil
 }
 
-func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID integration.ID, a *domain.Authorization) error {
+func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID domain.ID, a *domain.Authorization) error {
 	rows, err := as.DB.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return err
@@ -65,22 +64,22 @@ func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID integrat
 	return nil
 }
 
-func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID integration.ID) error {
+func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID domain.ID) error {
 	_, err := as.DB.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
 
 // LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
 // Map format: map[externalServiceID]isAuthorized
-func (as *AuthorizationStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[integration.ID]bool, error) {
-	authorizations := make(map[integration.ID]bool)
+func (as *AuthorizationStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[domain.ID]bool, error) {
+	authorizations := make(map[domain.ID]bool)
 	rows, err := as.DB.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return authorizations, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var service integration.ID
+		var service domain.ID
 		if err := rows.Scan(&service); err != nil {
 			return authorizations, err
 		}

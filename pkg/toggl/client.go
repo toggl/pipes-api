@@ -1,4 +1,4 @@
-package client
+package toggl
 
 import (
 	"bytes"
@@ -13,8 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/toggl/pipes-api/pkg/integration"
-	"github.com/toggl/pipes-api/pkg/toggl"
+	"github.com/toggl/pipes-api/pkg/domain"
 )
 
 const maxPayloadSizeBytes = 800 * 1000
@@ -62,7 +61,7 @@ func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 		return 0, fmt.Errorf("GET workspace failed %d", resp.StatusCode)
 	}
 
-	var response toggl.WorkspaceResponse
+	var response domain.WorkspaceResponse
 	if err := json.Unmarshal(b, &response); err != nil {
 		return 0, err
 	}
@@ -70,13 +69,13 @@ func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (c *TogglApiClient) PostClients(clientsPipeID integration.PipeID, clients interface{}) (*toggl.ClientsImport, error) {
+func (c *TogglApiClient) PostClients(clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
 	b, err := c.postPipesAPI(clientsPipeID, clients)
 	if err != nil {
 		return nil, err
 	}
 
-	clientsImport := new(toggl.ClientsImport)
+	clientsImport := new(domain.ClientsImport)
 	if err := json.Unmarshal(b, clientsImport); err != nil {
 		return nil, err
 	}
@@ -84,13 +83,13 @@ func (c *TogglApiClient) PostClients(clientsPipeID integration.PipeID, clients i
 	return clientsImport, nil
 }
 
-func (c *TogglApiClient) PostProjects(projectsPipeID integration.PipeID, projects interface{}) (*toggl.ProjectsImport, error) {
+func (c *TogglApiClient) PostProjects(projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
 	b, err := c.postPipesAPI(projectsPipeID, projects)
 	if err != nil {
 		return nil, err
 	}
 
-	projectsImport := new(toggl.ProjectsImport)
+	projectsImport := new(domain.ProjectsImport)
 	if err := json.Unmarshal(b, projectsImport); err != nil {
 		return nil, err
 	}
@@ -98,13 +97,13 @@ func (c *TogglApiClient) PostProjects(projectsPipeID integration.PipeID, project
 	return projectsImport, nil
 }
 
-func (c *TogglApiClient) PostTasks(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
+func (c *TogglApiClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
 	}
 
-	var tasksImport *toggl.TasksImport
+	var tasksImport *domain.TasksImport
 	if err := json.Unmarshal(b, &tasksImport); err != nil {
 		return nil, err
 	}
@@ -112,13 +111,13 @@ func (c *TogglApiClient) PostTasks(tasksPipeID integration.PipeID, tasks interfa
 	return tasksImport, nil
 }
 
-func (c *TogglApiClient) PostTodoLists(tasksPipeID integration.PipeID, tasks interface{}) (*toggl.TasksImport, error) {
+func (c *TogglApiClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
 	}
 
-	var tasksImport *toggl.TasksImport
+	var tasksImport *domain.TasksImport
 	if err := json.Unmarshal(b, &tasksImport); err != nil {
 		return nil, err
 	}
@@ -126,20 +125,20 @@ func (c *TogglApiClient) PostTodoLists(tasksPipeID integration.PipeID, tasks int
 	return tasksImport, nil
 }
 
-func (c *TogglApiClient) PostUsers(usersPipeID integration.PipeID, users interface{}) (*toggl.UsersImport, error) {
+func (c *TogglApiClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
 	b, err := c.postPipesAPI(usersPipeID, users)
 	if err != nil {
 		return nil, err
 	}
 
-	var usersImport *toggl.UsersImport
+	var usersImport *domain.UsersImport
 	if err := json.Unmarshal(b, &usersImport); err != nil {
 		return nil, err
 	}
 	return usersImport, nil
 }
 
-func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]toggl.TimeEntry, error) {
+func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]domain.TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
 		c.URL, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
@@ -163,7 +162,7 @@ func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs
 	if http.StatusOK != resp.StatusCode {
 		return nil, fmt.Errorf("GET time_entries failed %d", resp.StatusCode)
 	}
-	var timeEntries []toggl.TimeEntry
+	var timeEntries []domain.TimeEntry
 	if err := json.Unmarshal(b, &timeEntries); err != nil {
 		return nil, err
 	}
@@ -184,8 +183,8 @@ func (c *TogglApiClient) Ping() error {
 	return nil
 }
 
-func (c *TogglApiClient) AdjustRequestSize(tasks []*toggl.Task, split int) ([]*toggl.TaskRequest, error) {
-	var trs []*toggl.TaskRequest
+func (c *TogglApiClient) AdjustRequestSize(tasks []*domain.Task, split int) ([]*domain.TaskRequest, error) {
+	var trs []*domain.TaskRequest
 	var size int
 	size = len(tasks) / split
 	for i := 0; i < split; i++ {
@@ -195,7 +194,7 @@ func (c *TogglApiClient) AdjustRequestSize(tasks []*toggl.Task, split int) ([]*t
 			endIndex = len(tasks)
 		}
 		if endIndex > startIndex {
-			t := toggl.TaskRequest{
+			t := domain.TaskRequest{
 				Tasks: tasks[startIndex:endIndex],
 			}
 			trs = append(trs, &t)
@@ -213,7 +212,7 @@ func (c *TogglApiClient) AdjustRequestSize(tasks []*toggl.Task, split int) ([]*t
 	return trs, nil
 }
 
-func (c *TogglApiClient) postPipesAPI(pipeID integration.PipeID, payload interface{}) ([]byte, error) {
+func (c *TogglApiClient) postPipesAPI(pipeID domain.PipeID, payload interface{}) ([]byte, error) {
 	start := time.Now()
 	url := fmt.Sprintf("%s/api/pipes/%s", c.URL, pipeID)
 	b, err := json.Marshal(payload)
