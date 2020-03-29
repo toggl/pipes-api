@@ -10,8 +10,8 @@ import (
 )
 
 type Middleware struct {
-	domain.IntegrationsStorage
-	domain.TogglClient
+	IntegrationsStorage domain.IntegrationsStorage
+	TogglClient         domain.TogglClient
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {

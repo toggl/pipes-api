@@ -1,6 +1,8 @@
 package server
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bugsnag/bugsnag-go"
@@ -59,20 +62,12 @@ func ok(content interface{}) Response {
 	return Response{http.StatusOK, content, "application/json"}
 }
 
-func accepted(content interface{}) Response {
-	return Response{http.StatusAccepted, content, "application/json"}
-}
-
 func found(location string) Response {
 	return Response{http.StatusFound, location, "application/json"}
 }
 
 func noContent() Response {
 	return Response{http.StatusNoContent, nil, "application/json"}
-}
-
-func badGateway(err string) Response {
-	return Response{http.StatusBadGateway, err, "application/json"}
 }
 
 func serviceUnavailable(reasons interface{}) Response {
@@ -212,4 +207,36 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		w.WriteHeader(resp.status)
 		w.Write(output)
 	}
+}
+
+// authData wraps basic auth pairs
+type authData struct {
+	Username string
+	Password string
+}
+
+func parseToken(r *http.Request) (*authData, error) {
+	auth := r.Header.Get("Authorization")
+	if 0 == len(auth) {
+		return nil, nil
+	}
+	if !strings.Contains(auth, "Basic ") {
+		// Unsupported auth scheme, for example, NTLM
+		return nil, nil
+	}
+	encodedToken := strings.Replace(auth, "Basic ", "", -1)
+	b, err := base64.StdEncoding.DecodeString(encodedToken)
+	if err != nil {
+		return nil, err
+	}
+	pair := strings.SplitN(bytes.NewBuffer(b).String(), ":", 2)
+	if len(pair) != 2 {
+		return nil, nil
+	}
+	username := strings.TrimSpace(pair[0])
+	password := strings.TrimSpace(pair[1])
+	if len(username) == 0 || len(password) == 0 {
+		return nil, nil
+	}
+	return &authData{Username: username, Password: password}, nil
 }
