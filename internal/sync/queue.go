@@ -65,7 +65,7 @@ func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 }
 
 func (pq *Queue) MarkPipeSynchronized(pipe *domain.Pipe) error {
-	_, err := pq.DB.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key)
+	_, err := pq.DB.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key())
 	return err
 }
 
