@@ -11,7 +11,7 @@ import (
 )
 
 func TestNewPipeStatus(t *testing.T) {
-	s := domain.NewPipeStatus(1, "github", "projects", "https://store.toggl.space")
+	s := domain.NewStatus(1, "github", "projects", "https://store.toggl.space")
 
 	assert.Equal(t, 1, s.WorkspaceID)
 	assert.Equal(t, domain.GitHub, s.ServiceID)
@@ -23,7 +23,7 @@ func TestNewPipeStatus(t *testing.T) {
 }
 
 func TestStatus_AddError(t *testing.T) {
-	s := domain.NewPipeStatus(1, "github", "projects", "https://store.toggl.space")
+	s := domain.NewStatus(1, "github", "projects", "https://store.toggl.space")
 	s.AddError(errors.New("test error"))
 
 	assert.Equal(t, domain.StatusError, s.Status)
@@ -31,7 +31,7 @@ func TestStatus_AddError(t *testing.T) {
 }
 
 func TestStatus_Complete(t *testing.T) {
-	s := domain.NewPipeStatus(1, "github", "projects", "https://store.toggl.space")
+	s := domain.NewStatus(1, "github", "projects", "https://store.toggl.space")
 	s.Complete("clients", []string{"test", "test2"}, 5)
 
 	assert.Equal(t, domain.StatusSuccess, s.Status)
@@ -41,7 +41,7 @@ func TestStatus_Complete(t *testing.T) {
 }
 
 func TestStatus_Complete_Err(t *testing.T) {
-	s := domain.NewPipeStatus(1, "github", "projects", "https://store.toggl.space")
+	s := domain.NewStatus(1, "github", "projects", "https://store.toggl.space")
 	s.AddError(errors.New("test error"))
 	s.Complete("clients", []string{"test", "test2"}, 5)
 
@@ -52,7 +52,7 @@ func TestStatus_Complete_Err(t *testing.T) {
 }
 
 func TestStatus_GenerateLog(t *testing.T) {
-	s := domain.NewPipeStatus(1, "github", "projects", "https://store.toggl.space")
+	s := domain.NewStatus(1, "github", "projects", "https://store.toggl.space")
 	s.Message = "msg"
 	s.Notifications = []string{"notify1", "notify2"}
 	log := s.GenerateLog()

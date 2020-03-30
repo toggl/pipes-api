@@ -5,18 +5,16 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/toggl/pipes-api/internal/service"
-	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
 )
 
 type ServiceTestSuite struct {
 	suite.Suite
 	db  *sql.DB
-	svc *service.Service
+	svc *service.PipeService
 }
 
 func (ts *ServiceTestSuite) SetupTest() {
@@ -28,7 +26,7 @@ func (ts *ServiceTestSuite) SetupTest() {
 	authorizationStorage := &mocks.AuthorizationsStorage{}
 	oauthProvider := &mocks.OAuthProvider{}
 
-	ts.svc = &service.Service{
+	ts.svc = &service.PipeService{
 		PipesStorage:          pipeStorage,
 		AuthorizationsStorage: authorizationStorage,
 		IntegrationsStorage:   integrationStorage,
@@ -86,23 +84,4 @@ func (ts *ServiceTestSuite) TestService_Ready_Ping() {
 // a normal test function and pass our suite to suite.Run
 func TestServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(ServiceTestSuite))
-}
-
-func TestNewExternalService(t *testing.T) {
-	s1 := service.NewPipeIntegration(domain.BaseCamp, 1)
-	s2 := service.NewPipeIntegration(domain.Asana, 2)
-	s3 := service.NewPipeIntegration(domain.GitHub, 3)
-	s4 := service.NewPipeIntegration(domain.FreshBooks, 4)
-	s5 := service.NewPipeIntegration(domain.TeamWeek, 5)
-
-	assert.Equal(t, domain.BaseCamp, s1.ID())
-	assert.Equal(t, domain.Asana, s2.ID())
-	assert.Equal(t, domain.GitHub, s3.ID())
-	assert.Equal(t, domain.FreshBooks, s4.ID())
-	assert.Equal(t, domain.TeamWeek, s5.ID())
-}
-
-func TestNewExternalServicePanic(t *testing.T) {
-	pf := func() { service.NewPipeIntegration("Unknown", 1) }
-	assert.Panics(t, pf)
 }

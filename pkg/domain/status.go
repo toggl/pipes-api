@@ -27,7 +27,7 @@ type Status struct {
 	PipesApiHost string        `json:"-"`
 }
 
-func NewPipeStatus(workspaceID int, externalServiceID IntegrationID, pipeID PipeID, pipesApiHost string) *Status {
+func NewStatus(workspaceID int, externalServiceID IntegrationID, pipeID PipeID, pipesApiHost string) *Status {
 	return &Status{
 		Status:       StatusRunning,
 		SyncDate:     time.Now().Format(time.RFC3339),

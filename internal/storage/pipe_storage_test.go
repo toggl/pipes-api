@@ -66,7 +66,7 @@ func (ts *StorageTestSuite) TestStorage_Save_Load() {
 func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := domain.NewPipeStatus(1, domain.GitHub, domain.UsersPipe, "")
+	p1 := domain.NewStatus(1, domain.GitHub, domain.UsersPipe, "")
 	p1.Status = domain.StatusSuccess
 	p1.ObjectCounts = []string{"obj1", "obj2"}
 
@@ -80,7 +80,7 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 	ts.Equal(p1.PipeID, p2.PipeID)
 	ts.Contains(p2.Message, "successfully imported/exported")
 
-	p3 := domain.NewPipeStatus(2, domain.GitHub, domain.UsersPipe, "")
+	p3 := domain.NewStatus(2, domain.GitHub, domain.UsersPipe, "")
 	p3.Status = domain.StatusSuccess
 	err = s.SaveStatus(p3)
 	ts.NoError(err)
@@ -94,8 +94,8 @@ func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatus() {
 func (ts *StorageTestSuite) TestStorage_SavePipeStatus_LoadPipeStatuses() {
 	s := &PipeStorage{DB: ts.db}
 
-	p1 := domain.NewPipeStatus(1, domain.GitHub, domain.UsersPipe, "")
-	p2 := domain.NewPipeStatus(1, domain.Asana, domain.UsersPipe, "")
+	p1 := domain.NewStatus(1, domain.GitHub, domain.UsersPipe, "")
+	p2 := domain.NewStatus(1, domain.Asana, domain.UsersPipe, "")
 
 	err := s.SaveStatus(p1)
 	ts.NoError(err)

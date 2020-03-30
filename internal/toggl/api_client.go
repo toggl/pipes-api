@@ -22,21 +22,21 @@ var (
 	ErrApiNotHealthy = errors.New("toggl api is not healthy, got status code")
 )
 
-type TogglApiClient struct {
+type ApiClient struct {
 	URL string
 
 	autoToken string
 	mx        sync.Mutex
 }
 
-func (c *TogglApiClient) WithAuthToken(authToken string) {
+func (c *ApiClient) WithAuthToken(authToken string) {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
 	c.autoToken = authToken
 }
 
-func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
+func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	c.WithAuthToken(token)
 
 	url := fmt.Sprintf("%s/api/pipes/workspace", c.URL)
@@ -69,7 +69,7 @@ func (c *TogglApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (c *TogglApiClient) PostClients(clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
+func (c *ApiClient) PostClients(clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
 	b, err := c.postPipesAPI(clientsPipeID, clients)
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (c *TogglApiClient) PostClients(clientsPipeID domain.PipeID, clients interf
 	return clientsImport, nil
 }
 
-func (c *TogglApiClient) PostProjects(projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
+func (c *ApiClient) PostProjects(projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
 	b, err := c.postPipesAPI(projectsPipeID, projects)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (c *TogglApiClient) PostProjects(projectsPipeID domain.PipeID, projects int
 	return projectsImport, nil
 }
 
-func (c *TogglApiClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
+func (c *ApiClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (c *TogglApiClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{})
 	return tasksImport, nil
 }
 
-func (c *TogglApiClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
+func (c *ApiClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
 	b, err := c.postPipesAPI(tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func (c *TogglApiClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interfac
 	return tasksImport, nil
 }
 
-func (c *TogglApiClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
+func (c *ApiClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
 	b, err := c.postPipesAPI(usersPipeID, users)
 	if err != nil {
 		return nil, err
@@ -138,7 +138,7 @@ func (c *TogglApiClient) PostUsers(usersPipeID domain.PipeID, users interface{})
 	return usersImport, nil
 }
 
-func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]domain.TimeEntry, error) {
+func (c *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]domain.TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
 		c.URL, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
@@ -169,7 +169,7 @@ func (c *TogglApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs
 	return timeEntries, nil
 }
 
-func (c *TogglApiClient) Ping() error {
+func (c *ApiClient) Ping() error {
 	var client = &http.Client{Timeout: 3 * time.Second}
 
 	url := fmt.Sprintf("%s/api/v9/status", c.URL)
@@ -183,7 +183,7 @@ func (c *TogglApiClient) Ping() error {
 	return nil
 }
 
-func (c *TogglApiClient) AdjustRequestSize(tasks []*domain.Task, split int) ([]*domain.TaskRequest, error) {
+func (c *ApiClient) AdjustRequestSize(tasks []*domain.Task, split int) ([]*domain.TaskRequest, error) {
 	var trs []*domain.TaskRequest
 	var size int
 	size = len(tasks) / split
@@ -212,7 +212,7 @@ func (c *TogglApiClient) AdjustRequestSize(tasks []*domain.Task, split int) ([]*
 	return trs, nil
 }
 
-func (c *TogglApiClient) postPipesAPI(pipeID domain.PipeID, payload interface{}) ([]byte, error) {
+func (c *ApiClient) postPipesAPI(pipeID domain.PipeID, payload interface{}) ([]byte, error) {
 	start := time.Now()
 	url := fmt.Sprintf("%s/api/pipes/%s", c.URL, pipeID)
 	b, err := json.Marshal(payload)

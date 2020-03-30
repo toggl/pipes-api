@@ -86,7 +86,7 @@ func main() {
 		log.Fatalf("couldn't create oauth provider, reason: %v", err)
 	}
 
-	togglApiClient := &toggl.TogglApiClient{URL: cfg.TogglAPIHost}
+	apiClient := &toggl.ApiClient{URL: cfg.TogglAPIHost}
 	pipeStorage := &storage.PipeStorage{DB: db}
 	importStorage := &storage.ImportStorage{DB: db}
 	idMappingStorage := &storage.IdMappingStorage{DB: db}
@@ -94,14 +94,14 @@ func main() {
 
 	integrationStorage := storage.NewIntegrationStorage(integrationsConfig)
 
-	pipesService := &service.Service{
+	pipesService := &service.PipeService{
 		PipesStorage:          pipeStorage,
 		AuthorizationsStorage: authorizationStorage,
 		IntegrationsStorage:   integrationStorage,
 		IDMappingsStorage:     idMappingStorage,
 		ImportsStorage:        importStorage,
 		OAuthProvider:         oauthProvider,
-		TogglClient:           togglApiClient,
+		TogglClient:           apiClient,
 	}
 
 	pipesQueue := &sync.Queue{
@@ -130,7 +130,7 @@ func main() {
 
 	middleware := &server.Middleware{
 		IntegrationsStorage: integrationStorage,
-		TogglClient:         togglApiClient,
+		TogglClient:         apiClient,
 	}
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(controller, middleware)
