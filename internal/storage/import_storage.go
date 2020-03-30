@@ -32,7 +32,14 @@ const (
 )
 
 type ImportStorage struct {
-	DB *sql.DB
+	db *sql.DB
+}
+
+func NewImportStorage(db *sql.DB) *ImportStorage {
+	if db == nil {
+		panic("ImportStorage.db should not be nil")
+	}
+	return &ImportStorage{db: db}
 }
 
 func (is *ImportStorage) SaveAccountsFor(s domain.PipeIntegration, res domain.AccountsResponse) error {
@@ -174,18 +181,18 @@ func (is *ImportStorage) LoadTasksFor(s domain.PipeIntegration) (*domain.TasksRe
 }
 
 func (is *ImportStorage) DeleteAccountsFor(s domain.PipeIntegration) error {
-	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(domain.AccountsPipe))
+	_, err := is.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(domain.AccountsPipe))
 	return err
 }
 
 func (is *ImportStorage) DeleteUsersFor(s domain.PipeIntegration) error {
-	_, err := is.DB.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(domain.UsersPipe))
+	_, err := is.db.Exec(clearImportsSQL, s.GetWorkspaceID(), s.KeyFor(domain.UsersPipe))
 	return err
 }
 
 func (is *ImportStorage) loadObject(s domain.PipeIntegration, pid domain.PipeID) ([]byte, error) {
 	var result []byte
-	rows, err := is.DB.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
+	rows, err := is.db.Query(loadImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid))
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +207,7 @@ func (is *ImportStorage) loadObject(s domain.PipeIntegration, pid domain.PipeID)
 }
 
 func (is *ImportStorage) saveObject(s domain.PipeIntegration, pid domain.PipeID, b []byte) error {
-	_, err := is.DB.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
+	_, err := is.db.Exec(saveImportsSQL, s.GetWorkspaceID(), s.KeyFor(pid), b)
 	if err != nil {
 		bugsnag.Notify(err)
 		return err

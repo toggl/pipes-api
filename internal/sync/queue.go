@@ -22,19 +22,32 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Queue struct {
-	DB           *sql.DB
-	PipeService  domain.PipeService
-	PipesStorage domain.PipesStorage
+	db          *sql.DB
+	pipeService domain.PipeService
+	pipeStorage domain.PipesStorage
+}
+
+func NewQueue(db *sql.DB, pipeService domain.PipeService, pipesStorage domain.PipesStorage) *Queue {
+	if db == nil {
+		panic("Queue.db should not be nil")
+	}
+	if pipeService == nil {
+		panic("Queue.pipeService should not be nil")
+	}
+	if pipesStorage == nil {
+		panic("Queue.pipeStorage should not be nil")
+	}
+	return &Queue{db: db, pipeService: pipeService, pipeStorage: pipesStorage}
 }
 
 func (pq *Queue) ScheduleAutomaticPipesSynchronization() error {
-	_, err := pq.DB.Exec(queueAutomaticPipesSQL)
+	_, err := pq.db.Exec(queueAutomaticPipesSQL)
 	return err
 }
 
 func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 	var pipes []*domain.Pipe
-	rows, err := pq.DB.Query(selectPipesFromQueueSQL)
+	rows, err := pq.db.Query(selectPipesFromQueueSQL)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -55,7 +68,7 @@ func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 			sid, pid := domain.GetSidPidFromKey(key)
 
 			p := domain.NewPipe(workspaceID, sid, pid)
-			if err := pq.PipesStorage.Load(p); err != nil {
+			if err := pq.pipeStorage.Load(p); err != nil {
 				return nil, err
 			}
 			pipes = append(pipes, p)
@@ -65,13 +78,13 @@ func (pq *Queue) LoadScheduledPipes() ([]*domain.Pipe, error) {
 }
 
 func (pq *Queue) MarkPipeSynchronized(pipe *domain.Pipe) error {
-	_, err := pq.DB.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key())
+	_, err := pq.db.Exec(setQueuedPipeSyncedSQL, pipe.WorkspaceID, pipe.Key())
 	return err
 }
 
 func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID, usersSelector domain.UserParams) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
-	if err := pq.PipesStorage.Load(p); err != nil {
+	if err := pq.pipeStorage.Load(p); err != nil {
 		return err
 	}
 	if p == nil {
@@ -96,7 +109,7 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.I
 
 		go func() {
 			wsLock.Lock()
-			pq.PipeService.Synchronize(p)
+			pq.pipeService.Synchronize(p)
 			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D
@@ -107,6 +120,6 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.I
 }
 
 func (pq *Queue) queuePipeAsFirst(workspaceId int, key string) error {
-	_, err := pq.DB.Exec(queuePipeAsFirstSQL, workspaceId, key)
+	_, err := pq.db.Exec(queuePipeAsFirstSQL, workspaceId, key)
 	return err
 }

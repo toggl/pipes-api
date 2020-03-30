@@ -39,7 +39,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 
 	a := domain.NewAuthorization(1, domain.GitHub)
 
-	s := &AuthorizationStorage{DB: ts.db}
+	s := &AuthorizationStorage{db: ts.db}
 	err := s.Save(a)
 	ts.NoError(err)
 
@@ -54,7 +54,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := &AuthorizationStorage{DB: cdb}
+	s := &AuthorizationStorage{db: cdb}
 	a := domain.NewAuthorization(2, domain.Asana)
 	err = s.Save(a)
 	ts.Error(err)
@@ -64,7 +64,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadAuth
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyAuthorization_Ok() {
-	s := &AuthorizationStorage{DB: ts.db}
+	s := &AuthorizationStorage{db: ts.db}
 	a := domain.NewAuthorization(1, domain.GitHub)
 
 	err := s.Save(a)
@@ -75,7 +75,7 @@ func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_DestroyA
 }
 
 func (ts *AuthorizationsStorageTestSuite) TestStorage_SaveAuthorization_LoadWorkspaceAuthorizations_Ok() {
-	s := &AuthorizationStorage{DB: ts.db}
+	s := &AuthorizationStorage{db: ts.db}
 
 	a1 := domain.NewAuthorization(1, domain.GitHub)
 	a2 := domain.NewAuthorization(1, domain.Asana)

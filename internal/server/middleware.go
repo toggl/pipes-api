@@ -10,19 +10,32 @@ import (
 )
 
 type Middleware struct {
-	IntegrationsStorage domain.IntegrationsStorage
-	TogglClient         domain.TogglClient
+	integrationsStorage domain.IntegrationsStorage
+	togglClient         domain.TogglClient
+}
+
+func NewMiddleware(integrationsStorage domain.IntegrationsStorage, togglClient domain.TogglClient) *Middleware {
+	if integrationsStorage == nil {
+		panic("Middleware.integrationsStorage should not be nil")
+	}
+	if togglClient == nil {
+		panic("Middleware.togglClient should not be nil")
+	}
+	return &Middleware{
+		integrationsStorage: integrationsStorage,
+		togglClient:         togglClient,
+	}
 }
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		serviceID := domain.IntegrationID(mux.Vars(r)["service"])
-		if !mw.IntegrationsStorage.IsValidService(serviceID) {
+		if !mw.integrationsStorage.IsValidService(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return
 		}
 		pipeID := domain.PipeID(mux.Vars(r)["pipe"])
-		if !mw.IntegrationsStorage.IsValidPipe(pipeID) {
+		if !mw.integrationsStorage.IsValidPipe(pipeID) {
 			http.Error(w, "Missing or invalid pipe", http.StatusBadRequest)
 			return
 		}
@@ -45,7 +58,7 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var workspaceID int
-		workspaceID, err = mw.TogglClient.GetWorkspaceIdByToken(authData.Username)
+		workspaceID, err = mw.togglClient.GetWorkspaceIdByToken(authData.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

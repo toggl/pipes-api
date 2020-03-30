@@ -14,9 +14,9 @@ import (
 )
 
 type Controller struct {
-	domain.PipeService
-	domain.IntegrationsStorage
-	domain.Queue
+	pipeService         domain.PipeService
+	integrationsStorage domain.IntegrationsStorage
+	queue               domain.Queue
 	Params
 }
 
@@ -26,9 +26,28 @@ type Params struct {
 	BuildTime string
 }
 
+func NewController(pipeService domain.PipeService, integrationsStorage domain.IntegrationsStorage, queue domain.Queue, params Params) *Controller {
+	if pipeService == nil {
+		panic("Controller.pipeService should not be nil")
+	}
+	if integrationsStorage == nil {
+		panic("Controller.integrationsStorage should not be nil")
+	}
+	if queue == nil {
+		panic("Controller.queue should not be nil")
+	}
+
+	return &Controller{
+		pipeService:         pipeService,
+		integrationsStorage: integrationsStorage,
+		queue:               queue,
+		Params:              params,
+	}
+}
+
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	resp, err := c.PipeService.GetIntegrations(workspaceID)
+	resp, err := c.pipeService.GetIntegrations(workspaceID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -41,7 +60,7 @@ func (c *Controller) ReadPipeHandler(req Request) Response {
 	if err != nil {
 		return badRequest(err.Error())
 	}
-	p, err := c.PipeService.GetPipe(workspaceID, serviceID, pipeID)
+	p, err := c.pipeService.GetPipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -54,7 +73,7 @@ func (c *Controller) CreatePipeHandler(req Request) Response {
 	if err != nil {
 		return badRequest(err.Error())
 	}
-	err = c.PipeService.CreatePipe(workspaceID, serviceID, pipeID, req.body)
+	err = c.pipeService.CreatePipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
 		if errors.As(err, &service.SetParamsError{}) {
 			return badRequest(err.Error())
@@ -74,7 +93,7 @@ func (c *Controller) UpdatePipeHandler(req Request) Response {
 		return badRequest("Missing payload")
 	}
 
-	err = c.PipeService.UpdatePipe(workspaceID, serviceID, pipeID, req.body)
+	err = c.pipeService.UpdatePipe(workspaceID, serviceID, pipeID, req.body)
 	if err != nil {
 		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
@@ -90,7 +109,7 @@ func (c *Controller) DeletePipeHandler(req Request) Response {
 	if err != nil {
 		return badRequest(err.Error())
 	}
-	err = c.PipeService.DeletePipe(workspaceID, serviceID, pipeID)
+	err = c.pipeService.DeletePipe(workspaceID, serviceID, pipeID)
 	if err != nil {
 		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
@@ -114,7 +133,7 @@ func (c *Controller) GetAuthURLHandler(req Request) Response {
 		return badRequest("Missing or invalid callback_url")
 	}
 
-	url, err := c.PipeService.GetAuthURL(serviceID, accountName, callbackURL)
+	url, err := c.pipeService.GetAuthURL(serviceID, accountName, callbackURL)
 	if err != nil {
 		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
@@ -143,7 +162,7 @@ func (c *Controller) CreateAuthorizationHandler(req Request) Response {
 		return badRequest("Bad payload")
 	}
 
-	err = c.PipeService.CreateAuthorization(workspaceID, serviceID, currentToken, params)
+	err = c.pipeService.CreateAuthorization(workspaceID, serviceID, currentToken, params)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -156,7 +175,7 @@ func (c *Controller) DeleteAuthorizationHandler(req Request) Response {
 	if err != nil {
 		return badRequest(err.Error())
 	}
-	err = c.PipeService.DeleteAuthorization(workspaceID, serviceID)
+	err = c.pipeService.DeleteAuthorization(workspaceID, serviceID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -176,7 +195,7 @@ func (c *Controller) GetServiceAccountsHandler(req Request) Response {
 		fi = false
 	}
 
-	accountsResponse, err := c.PipeService.GetServiceAccounts(workspaceID, serviceID, fi)
+	accountsResponse, err := c.pipeService.GetServiceAccounts(workspaceID, serviceID, fi)
 	if err != nil {
 		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
@@ -207,7 +226,7 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 		fi = false
 	}
 
-	usersResponse, err := c.PipeService.GetServiceUsers(workspaceID, serviceID, fi)
+	usersResponse, err := c.pipeService.GetServiceUsers(workspaceID, serviceID, fi)
 	if err != nil {
 		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
@@ -232,7 +251,7 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 func (c *Controller) GetServicePipeLogHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
-	pipesLog, err := c.PipeService.GetServicePipeLog(workspaceID, serviceID, pipeID)
+	pipesLog, err := c.pipeService.GetServicePipeLog(workspaceID, serviceID, pipeID)
 	if err != nil {
 		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
@@ -248,7 +267,7 @@ func (c *Controller) PostServicePipeClearIDMappingsHandler(req Request) Response
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	err := c.PipeService.ClearIDMappings(workspaceID, serviceID, pipeID)
+	err := c.pipeService.ClearIDMappings(workspaceID, serviceID, pipeID)
 	if err != nil {
 		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
@@ -270,7 +289,7 @@ func (c *Controller) PostPipeRunHandler(req Request) Response {
 		}
 	}
 
-	err := c.Queue.SchedulePipeSynchronization(workspaceID, serviceID, pipeID, selector)
+	err := c.queue.SchedulePipeSynchronization(workspaceID, serviceID, pipeID, selector)
 	if err != nil {
 		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
@@ -288,7 +307,7 @@ func (c *Controller) GetStatusHandler(Request) Response {
 		Reasons []string `json:"reasons"`
 	}{}
 
-	errs := c.PipeService.Ready()
+	errs := c.pipeService.Ready()
 	for _, err := range errs {
 		resp.Reasons = append(resp.Reasons, err.Error())
 	}
@@ -306,11 +325,11 @@ func (c *Controller) GetStatusHandler(Request) Response {
 
 func (c *Controller) getIntegrationParams(req Request) (domain.IntegrationID, domain.PipeID, error) {
 	serviceID := domain.IntegrationID(mux.Vars(req.r)["service"])
-	if !c.IntegrationsStorage.IsValidService(serviceID) {
+	if !c.integrationsStorage.IsValidService(serviceID) {
 		return "", "", errors.New("missing or invalid service")
 	}
 	pipeID := domain.PipeID(mux.Vars(req.r)["pipe"])
-	if !c.IntegrationsStorage.IsValidPipe(pipeID) {
+	if !c.integrationsStorage.IsValidPipe(pipeID) {
 		return "", "", errors.New("Missing or invalid pipe")
 	}
 	return serviceID, pipeID, nil
@@ -318,7 +337,7 @@ func (c *Controller) getIntegrationParams(req Request) (domain.IntegrationID, do
 
 func (c *Controller) getServiceId(req Request) (domain.IntegrationID, error) {
 	serviceID := domain.IntegrationID(mux.Vars(req.r)["service"])
-	if !c.IntegrationsStorage.IsValidService(serviceID) {
+	if !c.integrationsStorage.IsValidService(serviceID) {
 		return "", errors.New("missing or invalid service")
 	}
 	return serviceID, nil

@@ -39,7 +39,7 @@ func (ts *IDMappingsStorageTestSuite) SetupTest() {
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_Ok() {
-	s := &IdMappingStorage{DB: ts.db}
+	s := &IdMappingStorage{db: ts.db}
 	c := domain.NewIDMapping(1, "test1")
 
 	err := s.Save(c)
@@ -55,7 +55,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_
 	require.NoError(ts.T(), err)
 	cdb.Close()
 
-	s := &IdMappingStorage{DB: cdb}
+	s := &IdMappingStorage{db: cdb}
 	c := domain.NewIDMapping(2, "test2")
 
 	err = s.Save(c)
@@ -67,7 +67,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadConnection_
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedConnection_Ok() {
-	s := &IdMappingStorage{DB: ts.db}
+	s := &IdMappingStorage{db: ts.db}
 	c := domain.NewIDMapping(3, "test3")
 	c.Data["1-test"] = 10
 	c.Data["2-test"] = 20
@@ -85,7 +85,7 @@ func (ts *IDMappingsStorageTestSuite) TestStorage_SaveConnection_LoadReversedCon
 }
 
 func (ts *IDMappingsStorageTestSuite) TestStorage_DeletePipeConnections() {
-	s := &IdMappingStorage{DB: ts.db}
+	s := &IdMappingStorage{db: ts.db}
 
 	p1 := createPipeForTests(1, domain.GitHub, domain.UsersPipe)
 	p1.PipeStatus = domain.NewStatus(1, domain.GitHub, domain.UsersPipe, "test")

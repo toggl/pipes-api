@@ -21,7 +21,7 @@ type Provider struct {
 	mx            sync.RWMutex
 }
 
-func Create(envType string, oauth1Config, oauth2Config io.Reader) (*Provider, error) {
+func NewProvider(envType string, oauth1Config, oauth2Config io.Reader) (*Provider, error) {
 	svc := &Provider{
 		envType:       envType,
 		oAuth2Configs: map[string]*oauth.Config{},

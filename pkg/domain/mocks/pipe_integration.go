@@ -95,7 +95,7 @@ func (_m *PipeIntegration) GetWorkspaceID() int {
 	return r0
 }
 
-// IntegrationID provides a mock function with given fields:
+// ID provides a mock function with given fields:
 func (_m *PipeIntegration) ID() domain.IntegrationID {
 	ret := _m.Called()
 

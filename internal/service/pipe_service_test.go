@@ -13,69 +13,67 @@ import (
 
 type ServiceTestSuite struct {
 	suite.Suite
-	db  *sql.DB
-	svc *service.PipeService
+	db                   *sql.DB
+	svc                  *service.PipeService
+	pipeStorage          *mocks.PipesStorage
+	importStorage        *mocks.ImportsStorage
+	integrationStorage   *mocks.IntegrationsStorage
+	idMappingStorage     *mocks.IDMappingsStorage
+	authorizationStorage *mocks.AuthorizationsStorage
+	togglClient          *mocks.TogglClient
+	oauthProvider        *mocks.OAuthProvider
 }
 
 func (ts *ServiceTestSuite) SetupTest() {
-	pipeStorage := &mocks.PipesStorage{}
-	importStorage := &mocks.ImportsStorage{}
-	integrationStorage := &mocks.IntegrationsStorage{}
-	idMappingStorage := &mocks.IDMappingsStorage{}
-	togglClient := &mocks.TogglClient{}
-	authorizationStorage := &mocks.AuthorizationsStorage{}
-	oauthProvider := &mocks.OAuthProvider{}
+	ts.pipeStorage = &mocks.PipesStorage{}
+	ts.importStorage = &mocks.ImportsStorage{}
+	ts.integrationStorage = &mocks.IntegrationsStorage{}
+	ts.idMappingStorage = &mocks.IDMappingsStorage{}
+	ts.togglClient = &mocks.TogglClient{}
+	ts.authorizationStorage = &mocks.AuthorizationsStorage{}
+	ts.oauthProvider = &mocks.OAuthProvider{}
 
-	ts.svc = &service.PipeService{
-		PipesStorage:          pipeStorage,
-		AuthorizationsStorage: authorizationStorage,
-		IntegrationsStorage:   integrationStorage,
-		IDMappingsStorage:     idMappingStorage,
-		ImportsStorage:        importStorage,
-		OAuthProvider:         oauthProvider,
-		TogglClient:           togglClient,
-	}
+	ts.svc = service.NewPipeService(
+		ts.pipeStorage,
+		ts.authorizationStorage,
+		ts.integrationStorage,
+		ts.idMappingStorage,
+		ts.importStorage,
+		ts.oauthProvider,
+		ts.togglClient,
+	)
 }
 
 func (ts *ServiceTestSuite) TearDownTest() {
 	ts.svc = nil
+	ts.pipeStorage = nil
+	ts.importStorage = nil
+	ts.integrationStorage = nil
+	ts.idMappingStorage = nil
+	ts.authorizationStorage = nil
+	ts.togglClient = nil
+	ts.oauthProvider = nil
 }
 
 func (ts *ServiceTestSuite) TestService_Ready() {
-	ps := &mocks.PipesStorage{}
-	ps.On("IsDown").Return(false)
-
-	tc := &mocks.TogglClient{}
-	tc.On("Ping").Return(nil)
-
-	ts.svc.PipesStorage = ps
-	ts.svc.TogglClient = tc
+	ts.pipeStorage.On("IsDown").Return(false)
+	ts.togglClient.On("Ping").Return(nil)
 	err := ts.svc.Ready()
 	ts.Empty(err)
 }
 
 func (ts *ServiceTestSuite) TestService_Ready_IsDown() {
-	ps := &mocks.PipesStorage{}
-	ps.On("IsDown").Return(true)
+	ts.pipeStorage.On("IsDown").Return(true)
+	ts.togglClient.On("Ping").Return(nil)
 
-	tc := &mocks.TogglClient{}
-	tc.On("Ping").Return(nil)
-
-	ts.svc.PipesStorage = ps
-	ts.svc.TogglClient = tc
 	err := ts.svc.Ready()
 	ts.NotEmpty(err)
 }
 
 func (ts *ServiceTestSuite) TestService_Ready_Ping() {
-	ps := &mocks.PipesStorage{}
-	ps.On("IsDown").Return(false)
+	ts.pipeStorage.On("IsDown").Return(false)
+	ts.togglClient.On("Ping").Return(errors.New("error"))
 
-	tc := &mocks.TogglClient{}
-	tc.On("Ping").Return(errors.New("error"))
-
-	ts.svc.PipesStorage = ps
-	ts.svc.TogglClient = tc
 	err := ts.svc.Ready()
 	ts.NotEmpty(err)
 }

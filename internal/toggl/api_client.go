@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,6 +28,13 @@ type ApiClient struct {
 
 	autoToken string
 	mx        sync.Mutex
+}
+
+func NewApiClient(URL string) *ApiClient {
+	if _, err := url.Parse(URL); err != nil {
+		panic("ApiClient.URL should be a valid URL")
+	}
+	return &ApiClient{URL: URL}
 }
 
 func (c *ApiClient) WithAuthToken(authToken string) {

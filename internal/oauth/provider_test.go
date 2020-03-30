@@ -17,7 +17,7 @@ import (
 )
 
 func TestNewProvider(t *testing.T) {
-	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+	p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
 	assert.Equal(t, "development", p.envType)
@@ -27,32 +27,32 @@ func TestNewProvider(t *testing.T) {
 	assert.Equal(t, 1, len(p.oAuth2Configs))
 
 	t.Run("Wrong OAuth2 Reader", func(t *testing.T) {
-		p, err := Create("development", &errReader{}, getOauth2ConfigForTests(""))
+		p, err := NewProvider("development", &errReader{}, getOauth2ConfigForTests(""))
 		assert.Nil(t, p)
 		assert.Error(t, err)
 	})
 
 	t.Run("Wrong OAuth1 Reader", func(t *testing.T) {
-		p, err := Create("development", getOauth1ConfigForTests(""), &errReader{})
+		p, err := NewProvider("development", getOauth1ConfigForTests(""), &errReader{})
 		assert.Nil(t, p)
 		assert.Error(t, err)
 	})
 
 	t.Run("Wrong OAuth2 Format", func(t *testing.T) {
-		p, err := Create("development", getOauth1ConfigForTests(""), strings.NewReader(""))
+		p, err := NewProvider("development", getOauth1ConfigForTests(""), strings.NewReader(""))
 		assert.Nil(t, p)
 		assert.Error(t, err)
 	})
 
 	t.Run("Wrong OAuth1 Format", func(t *testing.T) {
-		p, err := Create("development", strings.NewReader(""), getOauth2ConfigForTests(""))
+		p, err := NewProvider("development", strings.NewReader(""), getOauth2ConfigForTests(""))
 		assert.Nil(t, p)
 		assert.Error(t, err)
 	})
 }
 
 func TestProvider_OAuth1Configs(t *testing.T) {
-	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+	p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
 	c, exists := p.OAuth1Configs(domain.FreshBooks)
@@ -67,7 +67,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 			w.Write([]byte(`oauth_token=valid&oauth_token_secret=secret`))
 		}))
 
-		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
+		p, err := NewProvider("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
 		token, err := p.OAuth1Exchange(domain.FreshBooks, "client", "token", "verifier")
@@ -82,7 +82,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 			w.WriteHeader(401)
 		}))
 
-		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
+		p, err := NewProvider("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
 		token, err := p.OAuth1Exchange(domain.FreshBooks, "client", "token", "verifier")
@@ -91,7 +91,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 	})
 
 	t.Run("Missing parameter", func(t *testing.T) {
-		p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+		p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 		require.NoError(t, err)
 
 		_, err = p.OAuth1Exchange(domain.FreshBooks, "", "secret", "verifier")
@@ -103,7 +103,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 	})
 
 	t.Run("Unknown Service", func(t *testing.T) {
-		p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+		p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 		require.NoError(t, err)
 
 		token, err := p.OAuth1Exchange("unknown", "toggl", "token", "verifier")
@@ -113,7 +113,7 @@ func TestProvider_OAuth1Exchange(t *testing.T) {
 }
 
 func TestProvider_OAuth2Configs(t *testing.T) {
-	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+	p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
 	c, exists := p.OAuth2Configs(domain.GitHub)
@@ -128,7 +128,7 @@ func TestProvider_OAuth2Exchange(t *testing.T) {
 			w.Write([]byte(`{"access_token":"valid", "refresh_token":"test"}`))
 		}))
 
-		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
+		p, err := NewProvider("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
 		token, err := p.OAuth2Exchange(domain.GitHub, "test_code")
@@ -142,7 +142,7 @@ func TestProvider_OAuth2Exchange(t *testing.T) {
 			w.WriteHeader(401)
 		}))
 
-		p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
+		p, err := NewProvider("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 		require.NoError(t, err)
 
 		token, err := p.OAuth2Exchange(domain.GitHub, "test_code")
@@ -151,7 +151,7 @@ func TestProvider_OAuth2Exchange(t *testing.T) {
 	})
 
 	t.Run("Unknown Service", func(t *testing.T) {
-		p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+		p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 		require.NoError(t, err)
 
 		token, err := p.OAuth2Exchange("unknown", "test_code")
@@ -166,7 +166,7 @@ func TestProvider_OAuth2Refresh(t *testing.T) {
 		w.Write([]byte(`{"access_token":"valid", "refresh_token":"test"}`))
 	}))
 
-	p, err := Create("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
+	p, err := NewProvider("development", getOauth1ConfigForTests(ts.URL), getOauth2ConfigForTests(ts.URL))
 	require.NoError(t, err)
 
 	token := &oauth.Token{
@@ -186,7 +186,7 @@ func TestProvider_OAuth2Refresh(t *testing.T) {
 }
 
 func TestProvider_OAuth2URL(t *testing.T) {
-	p, err := Create("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
+	p, err := NewProvider("development", getOauth1ConfigForTests(""), getOauth2ConfigForTests(""))
 	require.NoError(t, err)
 
 	url := p.OAuth2URL(domain.GitHub)

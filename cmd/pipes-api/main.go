@@ -81,57 +81,44 @@ func main() {
 	}
 	defer oAuth2Config.Close()
 
-	oauthProvider, err := oauth.Create(env.Environment, oAuth1Config, oAuth2Config)
+	oauthProvider, err := oauth.NewProvider(env.Environment, oAuth1Config, oAuth2Config)
 	if err != nil {
 		log.Fatalf("couldn't create oauth provider, reason: %v", err)
 	}
 
-	apiClient := &toggl.ApiClient{URL: cfg.TogglAPIHost}
-	pipeStorage := &storage.PipeStorage{DB: db}
-	importStorage := &storage.ImportStorage{DB: db}
-	idMappingStorage := &storage.IdMappingStorage{DB: db}
-	authorizationStorage := &storage.AuthorizationStorage{DB: db}
-
+	apiClient := toggl.NewApiClient(cfg.TogglAPIHost)
+	pipeStorage := storage.NewPipeStorage(db)
+	importStorage := storage.NewImportStorage(db)
+	idMappingStorage := storage.NewIdMappingStorage(db)
+	authorizationStorage := storage.NewAuthorizationStorage(db)
 	integrationStorage := storage.NewIntegrationStorage(integrationsConfig)
 
-	pipesService := &service.PipeService{
-		PipesStorage:          pipeStorage,
-		AuthorizationsStorage: authorizationStorage,
-		IntegrationsStorage:   integrationStorage,
-		IDMappingsStorage:     idMappingStorage,
-		ImportsStorage:        importStorage,
-		OAuthProvider:         oauthProvider,
-		TogglClient:           apiClient,
-	}
+	pipeService := service.NewPipeService(
+		pipeStorage,
+		authorizationStorage,
+		integrationStorage,
+		idMappingStorage,
+		importStorage,
+		oauthProvider,
+		apiClient,
+	)
 
-	pipesQueue := &sync.Queue{
-		DB:           db,
-		PipeService:  pipesService,
-		PipesStorage: pipeStorage,
-	}
+	pipeQueue := sync.NewQueue(db, pipeService, pipeStorage)
 
-	syncService := sync.WorkerPool{
-		Debug:       env.Debug,
-		Queue:       pipesQueue,
-		PipeService: pipesService,
-	}
+	syncService := sync.NewWorkerPool(pipeQueue, pipeService, env.Debug)
 	syncService.Start()
 
-	controller := &server.Controller{
-		PipeService:         pipesService,
-		IntegrationsStorage: integrationStorage,
-		Queue:               pipesQueue,
-		Params: server.Params{
+	controller := server.NewController(
+		pipeService,
+		integrationStorage,
+		pipeQueue,
+		server.Params{
 			Version:   Version,
 			Revision:  Revision,
 			BuildTime: BuildTime,
-		},
-	}
+		})
 
-	middleware := &server.Middleware{
-		IntegrationsStorage: integrationStorage,
-		TogglClient:         apiClient,
-	}
+	middleware := server.NewMiddleware(integrationStorage, apiClient)
 
 	router := server.NewRouter(cfg.CorsWhitelist).AttachHandlers(controller, middleware)
 	server.Start(env.Port, router)

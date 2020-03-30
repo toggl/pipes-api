@@ -22,8 +22,18 @@ const (
 
 type WorkerPool struct {
 	Debug       bool
-	Queue       domain.Queue
-	PipeService domain.PipeService
+	queue       domain.Queue
+	pipeService domain.PipeService
+}
+
+func NewWorkerPool(queue domain.Queue, pipeService domain.PipeService, debug bool) *WorkerPool {
+	if queue == nil {
+		panic("WorkerPool.queue should not be nil")
+	}
+	if pipeService == nil {
+		panic("WorkerPool.pipeService should not be nil")
+	}
+	return &WorkerPool{Debug: debug, queue: queue, pipeService: pipeService}
 }
 
 func (s *WorkerPool) Start() {
@@ -38,7 +48,7 @@ func (s *WorkerPool) pipeWorker(id int) {
 		wg.Done()
 	}()
 	for {
-		pipes, err := s.Queue.LoadScheduledPipes()
+		pipes, err := s.queue.LoadScheduledPipes()
 		if err != nil {
 			bugsnag.Notify(err)
 			continue
@@ -57,9 +67,9 @@ func (s *WorkerPool) pipeWorker(id int) {
 		for _, pipe := range pipes {
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key())
 
-			s.PipeService.Synchronize(pipe)
+			s.pipeService.Synchronize(pipe)
 
-			err := s.Queue.MarkPipeSynchronized(pipe)
+			err := s.queue.MarkPipeSynchronized(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
@@ -103,7 +113,7 @@ func (s *WorkerPool) startQueue() {
 
 		log.Println("-- startQueue started")
 
-		if err := s.Queue.ScheduleAutomaticPipesSynchronization(); err != nil {
+		if err := s.queue.ScheduleAutomaticPipesSynchronization(); err != nil {
 			if !strings.Contains(err.Error(), `duplicate key value violates unique constraint`) {
 				bugsnag.Notify(err)
 			}

@@ -33,11 +33,18 @@ const (
 )
 
 type IdMappingStorage struct {
-	DB *sql.DB
+	db *sql.DB
+}
+
+func NewIdMappingStorage(db *sql.DB) *IdMappingStorage {
+	if db == nil {
+		panic("IdMappingStorage.db should not be nil")
+	}
+	return &IdMappingStorage{db: db}
 }
 
 func (ims *IdMappingStorage) Delete(workspaceID int, pipeConnectionKey, pipeStatusKey string) (err error) {
-	tx, err := ims.DB.Begin()
+	tx, err := ims.db.Begin()
 	if err != nil {
 		return
 	}
@@ -65,7 +72,7 @@ func (ims *IdMappingStorage) Save(c *domain.IDMapping) error {
 	if err != nil {
 		return err
 	}
-	_, err = ims.DB.Exec(insertConnectionSQL, c.WorkspaceID, c.Key, b)
+	_, err = ims.db.Exec(insertConnectionSQL, c.WorkspaceID, c.Key, b)
 	if err != nil {
 		return err
 	}
@@ -89,7 +96,7 @@ func (ims *IdMappingStorage) LoadReversed(workspaceID int, key string) (*domain.
 }
 
 func (ims *IdMappingStorage) loadIDMapping(workspaceID int, key string) (*domain.IDMapping, error) {
-	rows, err := ims.DB.Query(selectConnectionSQL, workspaceID, key)
+	rows, err := ims.db.Query(selectConnectionSQL, workspaceID, key)
 	if err != nil {
 		return nil, err
 	}
