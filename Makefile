@@ -57,3 +57,8 @@ production: build-release
 	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/production.tgz && \
 	crap production && \
 	curl --silent --show-error --fail --include --request POST --header "Content-Type: application/json" --data-binary "{\"apiKey\": \"$(BUGSNAG_API_KEY)\",\"appVersion\": \"$(APP_VERSION)\",\"builderName\": \"$(BUILD_AUTHOR)\",\"sourceControl\": {\"repository\": \"$(REPOSITORY)\",\"revision\": \"$(APP_REVISION)\"},\"releaseStage\":\"production\"}" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+
+dependency-graph:
+	mkdir -p out
+	godepgraph -p code.google.com,github.com/bugsnag,github.com/lib/pq,github.com/tambet,github.com/google \
+ 		-nostdlib -novendor ./cmd/pipes-api | dot -Tpng -o out/deps.png
