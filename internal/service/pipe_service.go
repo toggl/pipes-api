@@ -343,27 +343,24 @@ func (svc *PipeService) GetIntegrations(workspaceID int) ([]domain.Integration, 
 	var resultIntegrations []domain.Integration
 	for _, current := range availableIntegrations {
 
-		var ci = current
-		ci.AuthURL = svc.oAuthProvider.OAuth2URL(ci.ID)
-		ci.Authorized = authorizations[ci.ID]
+		current.AuthURL = svc.oAuthProvider.OAuth2URL(current.ID)
+		current.Authorized = authorizations[current.ID]
 
 		var pipes []*domain.Pipe
-		for i := range ci.Pipes {
+		for _, pipe := range current.Pipes {
+			key := domain.PipesKey(current.ID, pipe.ID)
 
-			var p = *ci.Pipes[i]
-			key := domain.PipesKey(ci.ID, p.ID)
 			var existing = workspacePipes[key]
-
 			if existing != nil {
-				p.Automatic = existing.Automatic
-				p.Configured = existing.Configured
+				pipe.Automatic = existing.Automatic
+				pipe.Configured = existing.Configured
 			}
 
-			p.PipeStatus = pipeStatuses[key]
-			pipes = append(pipes, &p)
+			pipe.PipeStatus = pipeStatuses[key]
+			pipes = append(pipes, pipe)
 		}
-		ci.Pipes = pipes
-		resultIntegrations = append(resultIntegrations, *ci)
+		current.Pipes = pipes
+		resultIntegrations = append(resultIntegrations, *current)
 	}
 	return resultIntegrations, nil
 }
