@@ -1,4 +1,4 @@
-package teamweek
+package togglplan
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ func TestTeamWeek_WorkspaceID(t *testing.T) {
 
 func TestTeamWeek_ID(t *testing.T) {
 	s := &Service{}
-	assert.Equal(t, domain.TeamWeek, s.ID())
+	assert.Equal(t, domain.TogglPlan, s.ID())
 }
 
 func TestTeamWeek_KeyFor(t *testing.T) {
@@ -39,7 +39,7 @@ func TestTeamWeek_KeyFor(t *testing.T) {
 		{want: "teamweek:account:1:accounts", got: domain.AccountsPipe},
 	}
 
-	svc := &Service{TeamweekParams: &TeamweekParams{AccountID: 1}}
+	svc := &Service{Params: &Params{AccountID: 1}}
 	for _, v := range tests {
 		assert.Equal(t, v.want, svc.KeyFor(v.got))
 	}
@@ -69,15 +69,15 @@ func TestTeamWeek_SetAuthData(t *testing.T) {
 
 func TestTeamWeek_SetParams(t *testing.T) {
 	s := &Service{}
-	ap := TeamweekParams{AccountID: 5}
+	ap := Params{AccountID: 5}
 	b, err := json.Marshal(ap)
 	assert.NoError(t, err)
 
 	err = s.SetParams(b)
 	assert.NoError(t, err)
-	assert.Equal(t, ap, *s.TeamweekParams)
+	assert.Equal(t, ap, *s.Params)
 
-	b2, err := json.Marshal(TeamweekParams{AccountID: 0})
+	b2, err := json.Marshal(Params{AccountID: 0})
 	assert.NoError(t, err)
 
 	s2 := &Service{}

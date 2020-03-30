@@ -8,7 +8,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration/basecamp"
 	"github.com/toggl/pipes-api/pkg/integration/freshbooks"
 	"github.com/toggl/pipes-api/pkg/integration/github"
-	"github.com/toggl/pipes-api/pkg/integration/teamweek"
+	"github.com/toggl/pipes-api/pkg/integration/togglplan"
 )
 
 func NewPipeIntegration(id domain.IntegrationID, workspaceID int) domain.PipeIntegration {
@@ -17,8 +17,8 @@ func NewPipeIntegration(id domain.IntegrationID, workspaceID int) domain.PipeInt
 		return &basecamp.Service{WorkspaceID: workspaceID}
 	case domain.FreshBooks:
 		return &freshbooks.Service{WorkspaceID: workspaceID}
-	case domain.TeamWeek:
-		return &teamweek.Service{WorkspaceID: workspaceID}
+	case domain.TogglPlan:
+		return &togglplan.Service{WorkspaceID: workspaceID}
 	case domain.Asana:
 		return &asana.Service{WorkspaceID: workspaceID}
 	case domain.GitHub:
@@ -30,6 +30,6 @@ func NewPipeIntegration(id domain.IntegrationID, workspaceID int) domain.PipeInt
 
 var _ domain.PipeIntegration = (*basecamp.Service)(nil)
 var _ domain.PipeIntegration = (*freshbooks.Service)(nil)
-var _ domain.PipeIntegration = (*teamweek.Service)(nil)
+var _ domain.PipeIntegration = (*togglplan.Service)(nil)
 var _ domain.PipeIntegration = (*asana.Service)(nil)
 var _ domain.PipeIntegration = (*github.Service)(nil)

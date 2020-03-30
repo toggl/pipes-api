@@ -11,7 +11,7 @@ type IntegrationID string
 const (
 	BaseCamp   IntegrationID = "basecamp"
 	FreshBooks IntegrationID = "freshbooks"
-	TeamWeek   IntegrationID = "teamweek"
+	TogglPlan  IntegrationID = "teamweek" // should not be changed to "togglplan", because active customers lost their synchronized data.
 	Asana      IntegrationID = "asana"
 	GitHub     IntegrationID = "github"
 )

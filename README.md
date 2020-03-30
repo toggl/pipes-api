@@ -55,7 +55,7 @@ To register application use this link: https://app.asana.com/0/developer-console
 
 To register OAuth2 application: https://github.com/settings/developers
 
-### [Toggl.Plan](https://plan.toggl.com)
+### [Toggl.Plan](https://plan.toggl.com) (ex. TeamWeek)
 
 **WORKS FINE**
 

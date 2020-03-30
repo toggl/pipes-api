@@ -1,4 +1,4 @@
-package teamweek
+package togglplan
 
 import (
 	"encoding/json"
@@ -15,16 +15,16 @@ import (
 
 type Service struct {
 	WorkspaceID int
-	*TeamweekParams
+	*Params
 	token oauth.Token
 }
 
-type TeamweekParams struct {
+type Params struct {
 	AccountID int `json:"account_id"`
 }
 
 func (s *Service) ID() domain.IntegrationID {
-	return domain.TeamWeek
+	return domain.TogglPlan
 }
 
 func (s *Service) GetWorkspaceID() int {
@@ -32,17 +32,17 @@ func (s *Service) GetWorkspaceID() int {
 }
 
 func (s *Service) KeyFor(objectType domain.PipeID) string {
-	if s.TeamweekParams == nil {
-		return fmt.Sprintf("teamweek:account:%s", objectType)
+	if s.Params == nil {
+		return fmt.Sprintf("%s:account:%s", domain.TogglPlan, objectType)
 	}
-	return fmt.Sprintf("teamweek:account:%d:%s", s.AccountID, objectType)
+	return fmt.Sprintf("%s:account:%d:%s", domain.TogglPlan, s.AccountID, objectType)
 }
 
 func (s *Service) SetParams(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
-	if s.TeamweekParams == nil || s.AccountID == 0 {
+	if s.Params == nil || s.AccountID == 0 {
 		return errors.New("account_id must be present")
 	}
 	return nil
