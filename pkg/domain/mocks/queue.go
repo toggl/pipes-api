@@ -64,11 +64,11 @@ func (_m *Queue) ScheduleAutomaticPipesSynchronization() error {
 }
 
 // SchedulePipeSynchronization provides a mock function with given fields: workspaceID, serviceID, pipeID, usersSelector
-func (_m *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.ID, pipeID domain.PipeID, usersSelector domain.UserParams) error {
+func (_m *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID, usersSelector domain.UserParams) error {
 	ret := _m.Called(workspaceID, serviceID, pipeID, usersSelector)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID, domain.UserParams) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID, domain.UserParams) error); ok {
 		r0 = rf(workspaceID, serviceID, pipeID, usersSelector)
 	} else {
 		r0 = ret.Error(0)

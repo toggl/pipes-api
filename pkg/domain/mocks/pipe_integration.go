@@ -95,15 +95,15 @@ func (_m *PipeIntegration) GetWorkspaceID() int {
 	return r0
 }
 
-// ID provides a mock function with given fields:
-func (_m *PipeIntegration) ID() domain.ID {
+// IntegrationID provides a mock function with given fields:
+func (_m *PipeIntegration) ID() domain.IntegrationID {
 	ret := _m.Called()
 
-	var r0 domain.ID
-	if rf, ok := ret.Get(0).(func() domain.ID); ok {
+	var r0 domain.IntegrationID
+	if rf, ok := ret.Get(0).(func() domain.IntegrationID); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(domain.ID)
+		r0 = ret.Get(0).(domain.IntegrationID)
 	}
 
 	return r0

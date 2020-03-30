@@ -89,11 +89,11 @@ func TestServiceTestSuite(t *testing.T) {
 }
 
 func TestNewExternalService(t *testing.T) {
-	s1 := service.NewExternalService(domain.BaseCamp, 1)
-	s2 := service.NewExternalService(domain.Asana, 2)
-	s3 := service.NewExternalService(domain.GitHub, 3)
-	s4 := service.NewExternalService(domain.FreshBooks, 4)
-	s5 := service.NewExternalService(domain.TeamWeek, 5)
+	s1 := service.NewPipeIntegration(domain.BaseCamp, 1)
+	s2 := service.NewPipeIntegration(domain.Asana, 2)
+	s3 := service.NewPipeIntegration(domain.GitHub, 3)
+	s4 := service.NewPipeIntegration(domain.FreshBooks, 4)
+	s5 := service.NewPipeIntegration(domain.TeamWeek, 5)
 
 	assert.Equal(t, domain.BaseCamp, s1.ID())
 	assert.Equal(t, domain.Asana, s2.ID())
@@ -103,6 +103,6 @@ func TestNewExternalService(t *testing.T) {
 }
 
 func TestNewExternalServicePanic(t *testing.T) {
-	pf := func() { service.NewExternalService("Unknown", 1) }
+	pf := func() { service.NewPipeIntegration("Unknown", 1) }
 	assert.Panics(t, pf)
 }

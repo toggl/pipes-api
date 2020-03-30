@@ -39,7 +39,7 @@ func (svc *Service) Ready() []error {
 	return errs
 }
 
-func (svc *Service) GetPipe(workspaceID int, serviceID domain.ID, pipeID domain.PipeID) (*domain.Pipe, error) {
+func (svc *Service) GetPipe(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID) (*domain.Pipe, error) {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return nil, err
@@ -53,10 +53,10 @@ func (svc *Service) GetPipe(workspaceID int, serviceID domain.ID, pipeID domain.
 	return p, nil
 }
 
-func (svc *Service) CreatePipe(workspaceID int, serviceID domain.ID, pipeID domain.PipeID, params []byte) error {
+func (svc *Service) CreatePipe(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID, params []byte) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 
-	service := NewExternalService(serviceID, workspaceID)
+	service := NewPipeIntegration(serviceID, workspaceID)
 	err := service.SetParams(params)
 	if err != nil {
 		return SetParamsError{err}
@@ -69,7 +69,7 @@ func (svc *Service) CreatePipe(workspaceID int, serviceID domain.ID, pipeID doma
 	return nil
 }
 
-func (svc *Service) UpdatePipe(workspaceID int, serviceID domain.ID, pipeID domain.PipeID, params []byte) error {
+func (svc *Service) UpdatePipe(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID, params []byte) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
@@ -86,7 +86,7 @@ func (svc *Service) UpdatePipe(workspaceID int, serviceID domain.ID, pipeID doma
 	return nil
 }
 
-func (svc *Service) DeletePipe(workspaceID int, serviceID domain.ID, pipeID domain.PipeID) error {
+func (svc *Service) DeletePipe(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
@@ -99,7 +99,7 @@ func (svc *Service) DeletePipe(workspaceID int, serviceID domain.ID, pipeID doma
 
 var ErrNoContent = errors.New("no content")
 
-func (svc *Service) GetServicePipeLog(workspaceID int, serviceID domain.ID, pipeID domain.PipeID) (string, error) {
+func (svc *Service) GetServicePipeLog(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID) (string, error) {
 	pipeStatus, err := svc.PipesStorage.LoadStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
 		return "", err
@@ -111,7 +111,7 @@ func (svc *Service) GetServicePipeLog(workspaceID int, serviceID domain.ID, pipe
 }
 
 // Deprecated: TODO: Remove dead method. It's used only in h4xx0rz(old Backoffice) https://github.com/toggl/support/blob/master/app/controllers/workspaces_controller.rb#L145
-func (svc *Service) ClearIDMappings(workspaceID int, serviceID domain.ID, pipeID domain.PipeID) error {
+func (svc *Service) ClearIDMappings(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := svc.PipesStorage.Load(p); err != nil {
 		return err
@@ -119,7 +119,7 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID domain.ID, pipeID
 	if !p.Configured {
 		return ErrPipeNotConfigured
 	}
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -145,8 +145,8 @@ func (svc *Service) ClearIDMappings(workspaceID int, serviceID domain.ID, pipeID
 	return nil
 }
 
-func (svc *Service) GetServiceUsers(workspaceID int, serviceID domain.ID, forceImport bool) (*domain.UsersResponse, error) {
-	service := NewExternalService(serviceID, workspaceID)
+func (svc *Service) GetServiceUsers(workspaceID int, serviceID domain.IntegrationID, forceImport bool) (*domain.UsersResponse, error) {
+	service := NewPipeIntegration(serviceID, workspaceID)
 	auth := domain.NewAuthorization(workspaceID, serviceID)
 	err := svc.AuthorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth)
 	if err != nil {
@@ -195,8 +195,8 @@ func (svc *Service) GetServiceUsers(workspaceID int, serviceID domain.ID, forceI
 	return usersResponse, nil
 }
 
-func (svc *Service) GetServiceAccounts(workspaceID int, serviceID domain.ID, forceImport bool) (*domain.AccountsResponse, error) {
-	service := NewExternalService(serviceID, workspaceID)
+func (svc *Service) GetServiceAccounts(workspaceID int, serviceID domain.IntegrationID, forceImport bool) (*domain.AccountsResponse, error) {
+	service := NewPipeIntegration(serviceID, workspaceID)
 	auth := domain.NewAuthorization(workspaceID, serviceID)
 	err := svc.AuthorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth)
 	if err != nil {
@@ -236,7 +236,7 @@ func (svc *Service) GetServiceAccounts(workspaceID int, serviceID domain.ID, for
 	return accountsResponse, nil
 }
 
-func (svc *Service) GetAuthURL(serviceID domain.ID, accountName, callbackURL string) (string, error) {
+func (svc *Service) GetAuthURL(serviceID domain.IntegrationID, accountName, callbackURL string) (string, error) {
 	config, found := svc.OAuthProvider.OAuth1Configs(serviceID)
 	if !found {
 		return "", LoadError{errors.New("env OAuth config not found")}
@@ -251,7 +251,7 @@ func (svc *Service) GetAuthURL(serviceID domain.ID, accountName, callbackURL str
 	return token.AuthorizeUrl, nil
 }
 
-func (svc *Service) CreateAuthorization(workspaceID int, serviceID domain.ID, workspaceToken string, params domain.AuthParams) error {
+func (svc *Service) CreateAuthorization(workspaceID int, serviceID domain.IntegrationID, workspaceToken string, params domain.AuthParams) error {
 	auth := domain.NewAuthorization(workspaceID, serviceID)
 	auth.WorkspaceToken = workspaceToken
 
@@ -287,7 +287,7 @@ func (svc *Service) CreateAuthorization(workspaceID int, serviceID domain.ID, wo
 	return nil
 }
 
-func (svc *Service) DeleteAuthorization(workspaceID int, serviceID domain.ID) error {
+func (svc *Service) DeleteAuthorization(workspaceID int, serviceID domain.IntegrationID) error {
 	if err := svc.AuthorizationsStorage.Delete(workspaceID, serviceID); err != nil {
 		return err
 	}
@@ -413,7 +413,7 @@ func (svc *Service) syncUsers(p *domain.Pipe) {
 }
 
 func (svc *Service) FetchUsers(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -461,7 +461,7 @@ func (svc *Service) FetchUsers(p *domain.Pipe) error {
 }
 
 func (svc *Service) postUsers(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -537,7 +537,7 @@ func (svc *Service) syncProjects(p *domain.Pipe) {
 
 func (svc *Service) fetchProjects(p *domain.Pipe) error {
 	response := domain.ProjectsResponse{}
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 
 	defer func() {
 		if err := service.SetParams(p.ServiceParams); err != nil {
@@ -612,7 +612,7 @@ func (svc *Service) fetchProjects(p *domain.Pipe) error {
 }
 
 func (svc *Service) postProjects(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -674,7 +674,7 @@ func (svc *Service) syncTodoLists(p *domain.Pipe) {
 
 func (svc *Service) fetchTodoLists(p *domain.Pipe) error {
 	response := domain.TasksResponse{}
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 
 	defer func() {
 		if err := service.SetParams(p.ServiceParams); err != nil {
@@ -751,7 +751,7 @@ func (svc *Service) fetchTodoLists(p *domain.Pipe) error {
 }
 
 func (svc *Service) postTodoLists(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -819,7 +819,7 @@ func (svc *Service) syncTasks(p *domain.Pipe) {
 
 func (svc *Service) fetchTasks(p *domain.Pipe) error {
 	response := domain.TasksResponse{}
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	defer func() {
 		if err := service.SetParams(p.ServiceParams); err != nil {
 			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
@@ -896,7 +896,7 @@ func (svc *Service) fetchTasks(p *domain.Pipe) error {
 }
 
 func (svc *Service) postTasks(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -949,7 +949,7 @@ func (svc *Service) postTasks(p *domain.Pipe) error {
 // --------------------------- Time Entries ------------------------------------
 
 func (svc *Service) syncTEs(p *domain.Pipe) {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		log.Printf("could not set service params: %v, reason: %v", p.ID, err)
 		return
@@ -1012,13 +1012,13 @@ func (svc *Service) postTimeEntries(p *domain.Pipe, service domain.PipeIntegrati
 		if err != nil {
 			bugsnag.Notify(err, bugsnag.MetaData{
 				"Workspace": {
-					"ID": service.GetWorkspaceID(),
+					"IntegrationID": service.GetWorkspaceID(),
 				},
 				"Entry": {
-					"ID":        entry.ID,
-					"TaskID":    entry.TaskID,
-					"UserID":    entry.UserID,
-					"ProjectID": entry.ProjectID,
+					"IntegrationID": entry.ID,
+					"TaskID":        entry.TaskID,
+					"UserID":        entry.UserID,
+					"ProjectID":     entry.ProjectID,
 				},
 				"Foreign Entry": {
 					"ForeignID":        entry.ForeignID,
@@ -1043,7 +1043,7 @@ func (svc *Service) postTimeEntries(p *domain.Pipe, service domain.PipeIntegrati
 // -------------------------------- CLIENTS ------------------------------------
 
 func (svc *Service) fetchClients(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -1096,7 +1096,7 @@ func (svc *Service) fetchClients(p *domain.Pipe) error {
 }
 
 func (svc *Service) postClients(p *domain.Pipe) error {
-	service := NewExternalService(p.ServiceID, p.WorkspaceID)
+	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
@@ -1174,7 +1174,7 @@ func (svc *Service) refresh(a *domain.Authorization) error {
 func (svc *Service) notifyBugsnag(p *domain.Pipe, err error) {
 	meta := bugsnag.MetaData{
 		"pipe": {
-			"ID":            p.ID,
+			"IntegrationID": p.ID,
 			"Name":          p.Name,
 			"ServiceParams": string(p.ServiceParams),
 			"WorkspaceID":   p.WorkspaceID,

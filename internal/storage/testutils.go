@@ -17,6 +17,6 @@ func getConnectionStringForTests() string {
 	return connString
 }
 
-func createPipeForTests(workspaceID int, sid domain.ID, pid domain.PipeID) *domain.Pipe {
+func createPipeForTests(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) *domain.Pipe {
 	return domain.NewPipe(workspaceID, sid, pid)
 }

@@ -37,7 +37,7 @@ func Create(envType string, oauth1Config, oauth2Config io.Reader) (*Provider, er
 	return svc, nil
 }
 
-func (p *Provider) OAuth2URL(sid domain.ID) string {
+func (p *Provider) OAuth2URL(sid domain.IntegrationID) string {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	config, ok := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -47,7 +47,7 @@ func (p *Provider) OAuth2URL(sid domain.ID) string {
 	return config.AuthCodeURL("__STATE__") + "&type=web_server"
 }
 
-func (p *Provider) OAuth1Exchange(sid domain.ID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
+func (p *Provider) OAuth1Exchange(sid domain.IntegrationID, accountName, oAuthToken, oAuthVerifier string) (*oauthplain.Token, error) {
 	if accountName == "" {
 		return nil, errors.New("missing account_name")
 	}
@@ -81,7 +81,7 @@ func (p *Provider) OAuth1Exchange(sid domain.ID, accountName, oAuthToken, oAuthV
 	return token, nil
 }
 
-func (p *Provider) OAuth2Exchange(sid domain.ID, code string) (*oauth.Token, error) {
+func (p *Provider) OAuth2Exchange(sid domain.IntegrationID, code string) (*oauth.Token, error) {
 
 	p.mx.RLock()
 	config, res := p.oAuth2Configs[string(sid)+"_"+p.envType]
@@ -99,14 +99,14 @@ func (p *Provider) OAuth2Exchange(sid domain.ID, code string) (*oauth.Token, err
 	return token, nil
 }
 
-func (p *Provider) OAuth1Configs(sid domain.ID) (*oauthplain.Config, bool) {
+func (p *Provider) OAuth1Configs(sid domain.IntegrationID) (*oauthplain.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth1Configs[string(sid)+"_"+p.envType]
 	return v, found
 }
 
-func (p *Provider) OAuth2Configs(sid domain.ID) (*oauth.Config, bool) {
+func (p *Provider) OAuth2Configs(sid domain.IntegrationID) (*oauth.Config, bool) {
 	p.mx.RLock()
 	defer p.mx.RUnlock()
 	v, found := p.oAuth2Configs[string(sid)+"_"+p.envType]

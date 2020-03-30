@@ -17,11 +17,11 @@ type OAuthProvider struct {
 }
 
 // OAuth1Configs provides a mock function with given fields: _a0
-func (_m *OAuthProvider) OAuth1Configs(_a0 domain.ID) (*oauthplain.Config, bool) {
+func (_m *OAuthProvider) OAuth1Configs(_a0 domain.IntegrationID) (*oauthplain.Config, bool) {
 	ret := _m.Called(_a0)
 
 	var r0 *oauthplain.Config
-	if rf, ok := ret.Get(0).(func(domain.ID) *oauthplain.Config); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID) *oauthplain.Config); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -30,7 +30,7 @@ func (_m *OAuthProvider) OAuth1Configs(_a0 domain.ID) (*oauthplain.Config, bool)
 	}
 
 	var r1 bool
-	if rf, ok := ret.Get(1).(func(domain.ID) bool); ok {
+	if rf, ok := ret.Get(1).(func(domain.IntegrationID) bool); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Get(1).(bool)
@@ -40,11 +40,11 @@ func (_m *OAuthProvider) OAuth1Configs(_a0 domain.ID) (*oauthplain.Config, bool)
 }
 
 // OAuth1Exchange provides a mock function with given fields: sid, accountName, oAuthToken, oAuthVerifier
-func (_m *OAuthProvider) OAuth1Exchange(sid domain.ID, accountName string, oAuthToken string, oAuthVerifier string) (*oauthplain.Token, error) {
+func (_m *OAuthProvider) OAuth1Exchange(sid domain.IntegrationID, accountName string, oAuthToken string, oAuthVerifier string) (*oauthplain.Token, error) {
 	ret := _m.Called(sid, accountName, oAuthToken, oAuthVerifier)
 
 	var r0 *oauthplain.Token
-	if rf, ok := ret.Get(0).(func(domain.ID, string, string, string) *oauthplain.Token); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID, string, string, string) *oauthplain.Token); ok {
 		r0 = rf(sid, accountName, oAuthToken, oAuthVerifier)
 	} else {
 		if ret.Get(0) != nil {
@@ -53,7 +53,7 @@ func (_m *OAuthProvider) OAuth1Exchange(sid domain.ID, accountName string, oAuth
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.ID, string, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(domain.IntegrationID, string, string, string) error); ok {
 		r1 = rf(sid, accountName, oAuthToken, oAuthVerifier)
 	} else {
 		r1 = ret.Error(1)
@@ -63,11 +63,11 @@ func (_m *OAuthProvider) OAuth1Exchange(sid domain.ID, accountName string, oAuth
 }
 
 // OAuth2Configs provides a mock function with given fields: _a0
-func (_m *OAuthProvider) OAuth2Configs(_a0 domain.ID) (*oauth.Config, bool) {
+func (_m *OAuthProvider) OAuth2Configs(_a0 domain.IntegrationID) (*oauth.Config, bool) {
 	ret := _m.Called(_a0)
 
 	var r0 *oauth.Config
-	if rf, ok := ret.Get(0).(func(domain.ID) *oauth.Config); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID) *oauth.Config); ok {
 		r0 = rf(_a0)
 	} else {
 		if ret.Get(0) != nil {
@@ -76,7 +76,7 @@ func (_m *OAuthProvider) OAuth2Configs(_a0 domain.ID) (*oauth.Config, bool) {
 	}
 
 	var r1 bool
-	if rf, ok := ret.Get(1).(func(domain.ID) bool); ok {
+	if rf, ok := ret.Get(1).(func(domain.IntegrationID) bool); ok {
 		r1 = rf(_a0)
 	} else {
 		r1 = ret.Get(1).(bool)
@@ -86,11 +86,11 @@ func (_m *OAuthProvider) OAuth2Configs(_a0 domain.ID) (*oauth.Config, bool) {
 }
 
 // OAuth2Exchange provides a mock function with given fields: sid, code
-func (_m *OAuthProvider) OAuth2Exchange(sid domain.ID, code string) (*oauth.Token, error) {
+func (_m *OAuthProvider) OAuth2Exchange(sid domain.IntegrationID, code string) (*oauth.Token, error) {
 	ret := _m.Called(sid, code)
 
 	var r0 *oauth.Token
-	if rf, ok := ret.Get(0).(func(domain.ID, string) *oauth.Token); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID, string) *oauth.Token); ok {
 		r0 = rf(sid, code)
 	} else {
 		if ret.Get(0) != nil {
@@ -99,7 +99,7 @@ func (_m *OAuthProvider) OAuth2Exchange(sid domain.ID, code string) (*oauth.Toke
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.ID, string) error); ok {
+	if rf, ok := ret.Get(1).(func(domain.IntegrationID, string) error); ok {
 		r1 = rf(sid, code)
 	} else {
 		r1 = ret.Error(1)
@@ -123,11 +123,11 @@ func (_m *OAuthProvider) OAuth2Refresh(_a0 *oauth.Config, _a1 *oauth.Token) erro
 }
 
 // OAuth2URL provides a mock function with given fields: _a0
-func (_m *OAuthProvider) OAuth2URL(_a0 domain.ID) string {
+func (_m *OAuthProvider) OAuth2URL(_a0 domain.IntegrationID) string {
 	ret := _m.Called(_a0)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(domain.ID) string); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID) string); ok {
 		r0 = rf(_a0)
 	} else {
 		r0 = ret.Get(0).(string)

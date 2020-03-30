@@ -27,11 +27,11 @@ func (_m *PipesStorage) Delete(p *domain.Pipe, workspaceID int) error {
 }
 
 // DeleteByWorkspaceIDServiceID provides a mock function with given fields: workspaceID, sid
-func (_m *PipesStorage) DeleteByWorkspaceIDServiceID(workspaceID int, sid domain.ID) error {
+func (_m *PipesStorage) DeleteByWorkspaceIDServiceID(workspaceID int, sid domain.IntegrationID) error {
 	ret := _m.Called(workspaceID, sid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID) error); ok {
 		r0 = rf(workspaceID, sid)
 	} else {
 		r0 = ret.Error(0)
@@ -120,11 +120,11 @@ func (_m *PipesStorage) LoadLastSyncFor(p *domain.Pipe) {
 }
 
 // LoadStatus provides a mock function with given fields: workspaceID, sid, pid
-func (_m *PipesStorage) LoadStatus(workspaceID int, sid domain.ID, pid domain.PipeID) (*domain.Status, error) {
+func (_m *PipesStorage) LoadStatus(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) (*domain.Status, error) {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 *domain.Status
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID) *domain.Status); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID) *domain.Status); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		if ret.Get(0) != nil {
@@ -133,7 +133,7 @@ func (_m *PipesStorage) LoadStatus(workspaceID int, sid domain.ID, pid domain.Pi
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, domain.ID, domain.PipeID) error); ok {
+	if rf, ok := ret.Get(1).(func(int, domain.IntegrationID, domain.PipeID) error); ok {
 		r1 = rf(workspaceID, sid, pid)
 	} else {
 		r1 = ret.Error(1)

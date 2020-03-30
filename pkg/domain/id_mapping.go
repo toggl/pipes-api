@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// IDMapping describes service ID connection between external services end Toggl.
+// IDMapping describes service IntegrationID connection between external services end Toggl.
 //
 // It can store "users", "clients", "projects", "tasks", "todolists" or "time_entries" id mappings.
 // The "Key" field will store different types of data described above.

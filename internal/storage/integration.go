@@ -19,14 +19,14 @@ type IntegrationStorage struct {
 	availableIntegrations []*domain.Integration
 	// Stores available authorization types for each service
 	// Map format: map[externalServiceID]authType
-	availableAuthTypes map[domain.ID]string
+	availableAuthTypes map[domain.IntegrationID]string
 	mx                 sync.RWMutex
 }
 
 func NewIntegrationStorage(configFile io.Reader) *IntegrationStorage {
 	svc := &IntegrationStorage{
 		availableIntegrations: []*domain.Integration{},
-		availableAuthTypes:    map[domain.ID]string{},
+		availableAuthTypes:    map[domain.IntegrationID]string{},
 	}
 	svc.loadIntegrations(configFile).fillAvailableServices().fillAvailablePipeTypes()
 	svc.mx.RLock()
@@ -41,11 +41,11 @@ func (is *IntegrationStorage) IsValidPipe(pipeID domain.PipeID) bool {
 	return is.availablePipeType.MatchString(string(pipeID))
 }
 
-func (is *IntegrationStorage) IsValidService(serviceID domain.ID) bool {
+func (is *IntegrationStorage) IsValidService(serviceID domain.IntegrationID) bool {
 	return is.availableServiceType.MatchString(string(serviceID))
 }
 
-func (is *IntegrationStorage) LoadAuthorizationType(serviceID domain.ID) (string, error) {
+func (is *IntegrationStorage) LoadAuthorizationType(serviceID domain.IntegrationID) (string, error) {
 	is.mx.RLock()
 	defer is.mx.RUnlock()
 	return is.availableAuthTypes[serviceID], nil
@@ -57,7 +57,7 @@ func (is *IntegrationStorage) LoadIntegrations() ([]*domain.Integration, error) 
 	return is.availableIntegrations, nil
 }
 
-func (is *IntegrationStorage) SaveAuthorizationType(serviceID domain.ID, authType string) error {
+func (is *IntegrationStorage) SaveAuthorizationType(serviceID domain.IntegrationID, authType string) error {
 	is.mx.Lock()
 	defer is.mx.Unlock()
 	is.availableAuthTypes[serviceID] = authType

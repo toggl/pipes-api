@@ -18,7 +18,7 @@ type Service struct {
 	token       oauthplain.Token
 }
 
-func (s *Service) ID() domain.ID {
+func (s *Service) ID() domain.IntegrationID {
 	return domain.FreshBooks
 }
 

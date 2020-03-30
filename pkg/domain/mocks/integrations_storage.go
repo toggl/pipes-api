@@ -27,11 +27,11 @@ func (_m *IntegrationsStorage) IsValidPipe(pipeID domain.PipeID) bool {
 }
 
 // IsValidService provides a mock function with given fields: serviceID
-func (_m *IntegrationsStorage) IsValidService(serviceID domain.ID) bool {
+func (_m *IntegrationsStorage) IsValidService(serviceID domain.IntegrationID) bool {
 	ret := _m.Called(serviceID)
 
 	var r0 bool
-	if rf, ok := ret.Get(0).(func(domain.ID) bool); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID) bool); ok {
 		r0 = rf(serviceID)
 	} else {
 		r0 = ret.Get(0).(bool)
@@ -41,18 +41,18 @@ func (_m *IntegrationsStorage) IsValidService(serviceID domain.ID) bool {
 }
 
 // LoadAuthorizationType provides a mock function with given fields: serviceID
-func (_m *IntegrationsStorage) LoadAuthorizationType(serviceID domain.ID) (string, error) {
+func (_m *IntegrationsStorage) LoadAuthorizationType(serviceID domain.IntegrationID) (string, error) {
 	ret := _m.Called(serviceID)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(domain.ID) string); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID) string); ok {
 		r0 = rf(serviceID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.ID) error); ok {
+	if rf, ok := ret.Get(1).(func(domain.IntegrationID) error); ok {
 		r1 = rf(serviceID)
 	} else {
 		r1 = ret.Error(1)
@@ -85,11 +85,11 @@ func (_m *IntegrationsStorage) LoadIntegrations() ([]*domain.Integration, error)
 }
 
 // SaveAuthorizationType provides a mock function with given fields: serviceID, authType
-func (_m *IntegrationsStorage) SaveAuthorizationType(serviceID domain.ID, authType string) error {
+func (_m *IntegrationsStorage) SaveAuthorizationType(serviceID domain.IntegrationID, authType string) error {
 	ret := _m.Called(serviceID, authType)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(domain.ID, string) error); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID, string) error); ok {
 		r0 = rf(serviceID, authType)
 	} else {
 		r0 = ret.Error(0)

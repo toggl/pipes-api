@@ -89,11 +89,11 @@ func currentWorkspaceID(r *http.Request) int {
 	return 0
 }
 
-func currentServicePipeID(r *http.Request) (domain.ID, domain.PipeID) {
-	var serviceID domain.ID
+func currentServicePipeID(r *http.Request) (domain.IntegrationID, domain.PipeID) {
+	var serviceID domain.IntegrationID
 	var pipeID domain.PipeID
 	if v, ok := context.GetOk(r, serviceIDKey); ok {
-		serviceID = v.(domain.ID)
+		serviceID = v.(domain.IntegrationID)
 	}
 	if v, ok := context.GetOk(r, pipeIDKey); ok {
 		pipeID = v.(domain.PipeID)

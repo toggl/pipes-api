@@ -63,7 +63,7 @@ func (s *WorkerPool) pipeWorker(id int) {
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{
 					"pipe": {
-						"ID":            pipe.ID,
+						"IntegrationID": pipe.ID,
 						"Name":          pipe.Name,
 						"ServiceParams": string(pipe.ServiceParams),
 						"WorkspaceID":   pipe.WorkspaceID,

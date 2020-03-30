@@ -27,7 +27,7 @@ type AsanaParams struct {
 	AccountID int64 `json:"account_id"`
 }
 
-func (s *Service) ID() domain.ID {
+func (s *Service) ID() domain.IntegrationID {
 	return domain.Asana
 }
 

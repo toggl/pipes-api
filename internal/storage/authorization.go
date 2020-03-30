@@ -48,7 +48,7 @@ func (as *AuthorizationStorage) Save(a *domain.Authorization) error {
 	return nil
 }
 
-func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID domain.ID, a *domain.Authorization) error {
+func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID domain.IntegrationID, a *domain.Authorization) error {
 	rows, err := as.DB.Query(selectAuthorizationSQL, workspaceID, externalServiceID)
 	if err != nil {
 		return err
@@ -64,22 +64,22 @@ func (as *AuthorizationStorage) Load(workspaceID int, externalServiceID domain.I
 	return nil
 }
 
-func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID domain.ID) error {
+func (as *AuthorizationStorage) Delete(workspaceID int, externalServiceID domain.IntegrationID) error {
 	_, err := as.DB.Exec(deleteAuthorizationSQL, workspaceID, externalServiceID)
 	return err
 }
 
 // LoadWorkspaceAuthorizations loads map with authorizations status for each externalService.
 // Map format: map[externalServiceID]isAuthorized
-func (as *AuthorizationStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[domain.ID]bool, error) {
-	authorizations := make(map[domain.ID]bool)
+func (as *AuthorizationStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[domain.IntegrationID]bool, error) {
+	authorizations := make(map[domain.IntegrationID]bool)
 	rows, err := as.DB.Query(`SELECT service FROM authorizations WHERE workspace_id = $1`, workspaceID)
 	if err != nil {
 		return authorizations, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var service domain.ID
+		var service domain.IntegrationID
 		if err := rows.Scan(&service); err != nil {
 			return authorizations, err
 		}

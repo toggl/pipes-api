@@ -13,11 +13,11 @@ type AuthorizationsStorage struct {
 }
 
 // Delete provides a mock function with given fields: workspaceID, externalServiceID
-func (_m *AuthorizationsStorage) Delete(workspaceID int, externalServiceID domain.ID) error {
+func (_m *AuthorizationsStorage) Delete(workspaceID int, externalServiceID domain.IntegrationID) error {
 	ret := _m.Called(workspaceID, externalServiceID)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID) error); ok {
 		r0 = rf(workspaceID, externalServiceID)
 	} else {
 		r0 = ret.Error(0)
@@ -27,11 +27,11 @@ func (_m *AuthorizationsStorage) Delete(workspaceID int, externalServiceID domai
 }
 
 // Load provides a mock function with given fields: workspaceID, externalServiceID, a
-func (_m *AuthorizationsStorage) Load(workspaceID int, externalServiceID domain.ID, a *domain.Authorization) error {
+func (_m *AuthorizationsStorage) Load(workspaceID int, externalServiceID domain.IntegrationID, a *domain.Authorization) error {
 	ret := _m.Called(workspaceID, externalServiceID, a)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, *domain.Authorization) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, *domain.Authorization) error); ok {
 		r0 = rf(workspaceID, externalServiceID, a)
 	} else {
 		r0 = ret.Error(0)
@@ -41,15 +41,15 @@ func (_m *AuthorizationsStorage) Load(workspaceID int, externalServiceID domain.
 }
 
 // LoadWorkspaceAuthorizations provides a mock function with given fields: workspaceID
-func (_m *AuthorizationsStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[domain.ID]bool, error) {
+func (_m *AuthorizationsStorage) LoadWorkspaceAuthorizations(workspaceID int) (map[domain.IntegrationID]bool, error) {
 	ret := _m.Called(workspaceID)
 
-	var r0 map[domain.ID]bool
-	if rf, ok := ret.Get(0).(func(int) map[domain.ID]bool); ok {
+	var r0 map[domain.IntegrationID]bool
+	if rf, ok := ret.Get(0).(func(int) map[domain.IntegrationID]bool); ok {
 		r0 = rf(workspaceID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[domain.ID]bool)
+			r0 = ret.Get(0).(map[domain.IntegrationID]bool)
 		}
 	}
 

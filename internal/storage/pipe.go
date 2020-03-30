@@ -109,7 +109,7 @@ func (ps *PipeStorage) Delete(p *domain.Pipe, workspaceID int) error {
 	return tx.Commit()
 }
 
-func (ps *PipeStorage) LoadStatus(workspaceID int, sid domain.ID, pid domain.PipeID) (*domain.Status, error) {
+func (ps *PipeStorage) LoadStatus(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) (*domain.Status, error) {
 	key := domain.PipesKey(sid, pid)
 	rows, err := ps.DB.Query(singlePipeStatusSQL, workspaceID, key)
 	if err != nil {
@@ -133,7 +133,7 @@ func (ps *PipeStorage) LoadStatus(workspaceID int, sid domain.ID, pid domain.Pip
 	return &pipeStatus, nil
 }
 
-func (ps *PipeStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID domain.ID) error {
+func (ps *PipeStorage) DeleteByWorkspaceIDServiceID(workspaceID int, serviceID domain.IntegrationID) error {
 	_, err := ps.DB.Exec(deletePipeSQL, workspaceID, serviceID+"%")
 	return err
 }
@@ -240,6 +240,6 @@ func (ps *PipeStorage) load(rows *sql.Rows, p *domain.Pipe) error {
 		return err
 	}
 	p.WorkspaceID = wid
-	p.ServiceID = domain.ID(strings.Split(key, ":")[0])
+	p.ServiceID = domain.IntegrationID(strings.Split(key, ":")[0])
 	return nil
 }

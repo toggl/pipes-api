@@ -69,7 +69,7 @@ func (pq *Queue) MarkPipeSynchronized(pipe *domain.Pipe) error {
 	return err
 }
 
-func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.ID, pipeID domain.PipeID, usersSelector domain.UserParams) error {
+func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID, usersSelector domain.UserParams) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := pq.PipesStorage.Load(p); err != nil {
 		return err

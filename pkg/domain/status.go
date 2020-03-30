@@ -20,14 +20,14 @@ type Status struct {
 	ObjectCounts  []string `json:"object_counts,omitempty"`
 	Notifications []string `json:"notifications,omitempty"`
 
-	WorkspaceID  int    `json:"-"`
-	ServiceID    ID     `json:"-"`
-	PipeID       PipeID `json:"-"`
-	Key          string `json:"-"`
-	PipesApiHost string `json:"-"`
+	WorkspaceID  int           `json:"-"`
+	ServiceID    IntegrationID `json:"-"`
+	PipeID       PipeID        `json:"-"`
+	Key          string        `json:"-"`
+	PipesApiHost string        `json:"-"`
 }
 
-func NewPipeStatus(workspaceID int, externalServiceID ID, pipeID PipeID, pipesApiHost string) *Status {
+func NewPipeStatus(workspaceID int, externalServiceID IntegrationID, pipeID PipeID, pipesApiHost string) *Status {
 	return &Status{
 		Status:       StatusRunning,
 		SyncDate:     time.Now().Format(time.RFC3339),

@@ -23,7 +23,7 @@ type TeamweekParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() domain.ID {
+func (s *Service) ID() domain.IntegrationID {
 	return domain.TeamWeek
 }
 

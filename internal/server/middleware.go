@@ -16,7 +16,7 @@ type Middleware struct {
 
 func (mw *Middleware) withService(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		serviceID := domain.ID(mux.Vars(r)["service"])
+		serviceID := domain.IntegrationID(mux.Vars(r)["service"])
 		if !mw.IntegrationsStorage.IsValidService(serviceID) {
 			http.Error(w, "Missing or invalid service", http.StatusBadRequest)
 			return

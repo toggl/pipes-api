@@ -13,11 +13,11 @@ type PipeService struct {
 }
 
 // ClearIDMappings provides a mock function with given fields: workspaceID, sid, pid
-func (_m *PipeService) ClearIDMappings(workspaceID int, sid domain.ID, pid domain.PipeID) error {
+func (_m *PipeService) ClearIDMappings(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) error {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID) error); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		r0 = ret.Error(0)
@@ -27,11 +27,11 @@ func (_m *PipeService) ClearIDMappings(workspaceID int, sid domain.ID, pid domai
 }
 
 // CreateAuthorization provides a mock function with given fields: workspaceID, sid, workspaceToken, params
-func (_m *PipeService) CreateAuthorization(workspaceID int, sid domain.ID, workspaceToken string, params domain.AuthParams) error {
+func (_m *PipeService) CreateAuthorization(workspaceID int, sid domain.IntegrationID, workspaceToken string, params domain.AuthParams) error {
 	ret := _m.Called(workspaceID, sid, workspaceToken, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, string, domain.AuthParams) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, string, domain.AuthParams) error); ok {
 		r0 = rf(workspaceID, sid, workspaceToken, params)
 	} else {
 		r0 = ret.Error(0)
@@ -41,11 +41,11 @@ func (_m *PipeService) CreateAuthorization(workspaceID int, sid domain.ID, works
 }
 
 // CreatePipe provides a mock function with given fields: workspaceID, sid, pid, params
-func (_m *PipeService) CreatePipe(workspaceID int, sid domain.ID, pid domain.PipeID, params []byte) error {
+func (_m *PipeService) CreatePipe(workspaceID int, sid domain.IntegrationID, pid domain.PipeID, params []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID, []byte) error); ok {
 		r0 = rf(workspaceID, sid, pid, params)
 	} else {
 		r0 = ret.Error(0)
@@ -55,11 +55,11 @@ func (_m *PipeService) CreatePipe(workspaceID int, sid domain.ID, pid domain.Pip
 }
 
 // DeleteAuthorization provides a mock function with given fields: workspaceID, sid
-func (_m *PipeService) DeleteAuthorization(workspaceID int, sid domain.ID) error {
+func (_m *PipeService) DeleteAuthorization(workspaceID int, sid domain.IntegrationID) error {
 	ret := _m.Called(workspaceID, sid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID) error); ok {
 		r0 = rf(workspaceID, sid)
 	} else {
 		r0 = ret.Error(0)
@@ -69,11 +69,11 @@ func (_m *PipeService) DeleteAuthorization(workspaceID int, sid domain.ID) error
 }
 
 // DeletePipe provides a mock function with given fields: workspaceID, sid, pid
-func (_m *PipeService) DeletePipe(workspaceID int, sid domain.ID, pid domain.PipeID) error {
+func (_m *PipeService) DeletePipe(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) error {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID) error); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		r0 = ret.Error(0)
@@ -83,18 +83,18 @@ func (_m *PipeService) DeletePipe(workspaceID int, sid domain.ID, pid domain.Pip
 }
 
 // GetAuthURL provides a mock function with given fields: sid, accountName, callbackURL
-func (_m *PipeService) GetAuthURL(sid domain.ID, accountName string, callbackURL string) (string, error) {
+func (_m *PipeService) GetAuthURL(sid domain.IntegrationID, accountName string, callbackURL string) (string, error) {
 	ret := _m.Called(sid, accountName, callbackURL)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(domain.ID, string, string) string); ok {
+	if rf, ok := ret.Get(0).(func(domain.IntegrationID, string, string) string); ok {
 		r0 = rf(sid, accountName, callbackURL)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.ID, string, string) error); ok {
+	if rf, ok := ret.Get(1).(func(domain.IntegrationID, string, string) error); ok {
 		r1 = rf(sid, accountName, callbackURL)
 	} else {
 		r1 = ret.Error(1)
@@ -127,11 +127,11 @@ func (_m *PipeService) GetIntegrations(workspaceID int) ([]domain.Integration, e
 }
 
 // GetPipe provides a mock function with given fields: workspaceID, sid, pid
-func (_m *PipeService) GetPipe(workspaceID int, sid domain.ID, pid domain.PipeID) (*domain.Pipe, error) {
+func (_m *PipeService) GetPipe(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) (*domain.Pipe, error) {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 *domain.Pipe
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID) *domain.Pipe); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID) *domain.Pipe); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		if ret.Get(0) != nil {
@@ -140,7 +140,7 @@ func (_m *PipeService) GetPipe(workspaceID int, sid domain.ID, pid domain.PipeID
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, domain.ID, domain.PipeID) error); ok {
+	if rf, ok := ret.Get(1).(func(int, domain.IntegrationID, domain.PipeID) error); ok {
 		r1 = rf(workspaceID, sid, pid)
 	} else {
 		r1 = ret.Error(1)
@@ -150,11 +150,11 @@ func (_m *PipeService) GetPipe(workspaceID int, sid domain.ID, pid domain.PipeID
 }
 
 // GetServiceAccounts provides a mock function with given fields: workspaceID, sid, forceImport
-func (_m *PipeService) GetServiceAccounts(workspaceID int, sid domain.ID, forceImport bool) (*domain.AccountsResponse, error) {
+func (_m *PipeService) GetServiceAccounts(workspaceID int, sid domain.IntegrationID, forceImport bool) (*domain.AccountsResponse, error) {
 	ret := _m.Called(workspaceID, sid, forceImport)
 
 	var r0 *domain.AccountsResponse
-	if rf, ok := ret.Get(0).(func(int, domain.ID, bool) *domain.AccountsResponse); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, bool) *domain.AccountsResponse); ok {
 		r0 = rf(workspaceID, sid, forceImport)
 	} else {
 		if ret.Get(0) != nil {
@@ -163,7 +163,7 @@ func (_m *PipeService) GetServiceAccounts(workspaceID int, sid domain.ID, forceI
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, domain.ID, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(int, domain.IntegrationID, bool) error); ok {
 		r1 = rf(workspaceID, sid, forceImport)
 	} else {
 		r1 = ret.Error(1)
@@ -173,18 +173,18 @@ func (_m *PipeService) GetServiceAccounts(workspaceID int, sid domain.ID, forceI
 }
 
 // GetServicePipeLog provides a mock function with given fields: workspaceID, sid, pid
-func (_m *PipeService) GetServicePipeLog(workspaceID int, sid domain.ID, pid domain.PipeID) (string, error) {
+func (_m *PipeService) GetServicePipeLog(workspaceID int, sid domain.IntegrationID, pid domain.PipeID) (string, error) {
 	ret := _m.Called(workspaceID, sid, pid)
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID) string); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID) string); ok {
 		r0 = rf(workspaceID, sid, pid)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, domain.ID, domain.PipeID) error); ok {
+	if rf, ok := ret.Get(1).(func(int, domain.IntegrationID, domain.PipeID) error); ok {
 		r1 = rf(workspaceID, sid, pid)
 	} else {
 		r1 = ret.Error(1)
@@ -194,11 +194,11 @@ func (_m *PipeService) GetServicePipeLog(workspaceID int, sid domain.ID, pid dom
 }
 
 // GetServiceUsers provides a mock function with given fields: workspaceID, sid, forceImport
-func (_m *PipeService) GetServiceUsers(workspaceID int, sid domain.ID, forceImport bool) (*domain.UsersResponse, error) {
+func (_m *PipeService) GetServiceUsers(workspaceID int, sid domain.IntegrationID, forceImport bool) (*domain.UsersResponse, error) {
 	ret := _m.Called(workspaceID, sid, forceImport)
 
 	var r0 *domain.UsersResponse
-	if rf, ok := ret.Get(0).(func(int, domain.ID, bool) *domain.UsersResponse); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, bool) *domain.UsersResponse); ok {
 		r0 = rf(workspaceID, sid, forceImport)
 	} else {
 		if ret.Get(0) != nil {
@@ -207,7 +207,7 @@ func (_m *PipeService) GetServiceUsers(workspaceID int, sid domain.ID, forceImpo
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(int, domain.ID, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(int, domain.IntegrationID, bool) error); ok {
 		r1 = rf(workspaceID, sid, forceImport)
 	} else {
 		r1 = ret.Error(1)
@@ -238,11 +238,11 @@ func (_m *PipeService) Synchronize(p *domain.Pipe) {
 }
 
 // UpdatePipe provides a mock function with given fields: workspaceID, sid, pid, params
-func (_m *PipeService) UpdatePipe(workspaceID int, sid domain.ID, pid domain.PipeID, params []byte) error {
+func (_m *PipeService) UpdatePipe(workspaceID int, sid domain.IntegrationID, pid domain.PipeID, params []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, params)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.ID, domain.PipeID, []byte) error); ok {
+	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID, []byte) error); ok {
 		r0 = rf(workspaceID, sid, pid, params)
 	} else {
 		r0 = ret.Error(0)

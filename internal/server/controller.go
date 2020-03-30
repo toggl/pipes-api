@@ -304,8 +304,8 @@ func (c *Controller) GetStatusHandler(Request) Response {
 	})
 }
 
-func (c *Controller) getIntegrationParams(req Request) (domain.ID, domain.PipeID, error) {
-	serviceID := domain.ID(mux.Vars(req.r)["service"])
+func (c *Controller) getIntegrationParams(req Request) (domain.IntegrationID, domain.PipeID, error) {
+	serviceID := domain.IntegrationID(mux.Vars(req.r)["service"])
 	if !c.IntegrationsStorage.IsValidService(serviceID) {
 		return "", "", errors.New("missing or invalid service")
 	}
@@ -316,8 +316,8 @@ func (c *Controller) getIntegrationParams(req Request) (domain.ID, domain.PipeID
 	return serviceID, pipeID, nil
 }
 
-func (c *Controller) getServiceId(req Request) (domain.ID, error) {
-	serviceID := domain.ID(mux.Vars(req.r)["service"])
+func (c *Controller) getServiceId(req Request) (domain.IntegrationID, error) {
+	serviceID := domain.IntegrationID(mux.Vars(req.r)["service"])
 	if !c.IntegrationsStorage.IsValidService(serviceID) {
 		return "", errors.New("missing or invalid service")
 	}

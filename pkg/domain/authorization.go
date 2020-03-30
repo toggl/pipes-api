@@ -14,7 +14,7 @@ const (
 
 type Authorization struct {
 	WorkspaceID    int
-	ServiceID      ID
+	ServiceID      IntegrationID
 	WorkspaceToken string
 	// Data can store 2 different structures encoded to JSON depends on Authorization type.
 	// For oAuth v1 it will store "*oauthplain.Token" and for oAuth v2 it will store "*goauth2.Token".
@@ -39,7 +39,7 @@ func (a *Authorization) SetOAuth1Token(t *oauthplain.Token) error {
 	return nil
 }
 
-func NewAuthorization(workspaceID int, id ID) *Authorization {
+func NewAuthorization(workspaceID int, id IntegrationID) *Authorization {
 	return &Authorization{
 		WorkspaceID: workspaceID,
 		ServiceID:   id,

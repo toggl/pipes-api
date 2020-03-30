@@ -8,8 +8,8 @@ import (
 // Example implementation: github.go
 //go:generate mockery -name PipeIntegration -case underscore -outpkg mocks
 type PipeIntegration interface {
-	// ID returns an ID of the service
-	ID() ID
+	// IntegrationID returns an IntegrationID of the service
+	ID() IntegrationID
 
 	// GetWorkspaceID helper function, should just return workspaceID
 	GetWorkspaceID() int

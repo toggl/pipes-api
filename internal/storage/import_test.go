@@ -38,21 +38,21 @@ func (ts *ImportsStorageTestSuite) SetupTest() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteAccountsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 	err := s.DeleteAccountsFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_DeleteUsersFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 	err := s.DeleteUsersFor(svc)
 	ts.NoError(err)
 }
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 
 	resp := &domain.AccountsResponse{
 		Error: "",
@@ -72,7 +72,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveAccountsFor_LoadAccountsFor()
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 
 	resp := &domain.UsersResponse{
 		Error: "",
@@ -92,7 +92,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveUsersFor_LoadUsersFor() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 
 	resp := &domain.ClientsResponse{
 		Error: "",
@@ -112,7 +112,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveClientsFor_LoadClientsFor() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 
 	resp := &domain.ProjectsResponse{
 		Error: "",
@@ -144,7 +144,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveProjectsFor_LoadProjectsFor()
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 
 	resp := &domain.TasksResponse{
 		Error: "",
@@ -174,7 +174,7 @@ func (ts *ImportsStorageTestSuite) TestStorage_SaveTasksFor_LoadTasksFor() {
 
 func (ts *ImportsStorageTestSuite) TestStorage_SaveTodoListsFor_LoadTodoListsFor() {
 	s := &ImportStorage{DB: ts.db}
-	svc := service.NewExternalService(domain.GitHub, 1)
+	svc := service.NewPipeIntegration(domain.GitHub, 1)
 
 	resp := &domain.TasksResponse{
 		Error: "",

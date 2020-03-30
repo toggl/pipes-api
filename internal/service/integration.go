@@ -11,7 +11,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/integration/teamweek"
 )
 
-func NewExternalService(id domain.ID, workspaceID int) domain.PipeIntegration {
+func NewPipeIntegration(id domain.IntegrationID, workspaceID int) domain.PipeIntegration {
 	switch id {
 	case domain.BaseCamp:
 		return &basecamp.Service{WorkspaceID: workspaceID}
@@ -24,7 +24,7 @@ func NewExternalService(id domain.ID, workspaceID int) domain.PipeIntegration {
 	case domain.GitHub:
 		return &github.Service{WorkspaceID: workspaceID}
 	default:
-		panic(fmt.Sprintf("getService: Unrecognized integrations.ID - %s", id))
+		panic(fmt.Sprintf("getService: Unrecognized integrations.IntegrationID - %s", id))
 	}
 }
 
