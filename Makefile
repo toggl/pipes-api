@@ -60,5 +60,4 @@ production: build-release
 
 dependency-graph:
 	mkdir -p out
-	godepgraph -p code.google.com,github.com/bugsnag,github.com/lib/pq,github.com/tambet,github.com/google \
- 		-nostdlib -novendor ./cmd/pipes-api | dot -Tpng -o out/deps.png
+	godepgraph -s -o github.com/toggl/pipes-api ./cmd/pipes-api | dot -Tpng -o out/deps.png
