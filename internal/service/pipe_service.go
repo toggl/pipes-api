@@ -581,11 +581,7 @@ func (svc *PipeService) fetchProjects(p *domain.Pipe) error {
 		}
 	}()
 
-	if err := svc.fetchClients(p); err != nil {
-		response.Error = err.Error()
-		return err
-	}
-	if err := svc.postClients(p); err != nil {
+	if err := svc.syncClients(p); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -1062,6 +1058,16 @@ func (svc *PipeService) postTimeEntries(p *domain.Pipe, service domain.PipeInteg
 }
 
 // -------------------------------- CLIENTS ------------------------------------
+
+func (svc *PipeService) syncClients(p *domain.Pipe) error {
+	if err := svc.fetchClients(p); err != nil {
+		return err
+	}
+	if err := svc.postClients(p); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (svc *PipeService) fetchClients(p *domain.Pipe) error {
 	service := NewPipeIntegration(p.ServiceID, p.WorkspaceID)
