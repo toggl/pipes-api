@@ -6,8 +6,8 @@ import (
 	"github.com/toggl/pipes-api/pkg/domain"
 )
 
-const defaultConnectionString = "dbname=pipes_test user=pipes_user host=localhost sslmode=disable port=5432"
-const defaultConnStringEnv = "PIPES_API_DSN"
+const defaultConnectionString = "dbname=pipes_test user=pipes_user host=127.0.0.1 sslmode=disable port=54320"
+const defaultConnStringEnv = "PIPES_API_POSTGRES_DSN"
 
 func getConnectionStringForTests() string {
 	connString := os.Getenv(defaultConnStringEnv)

@@ -17,7 +17,7 @@ To see original source code use [legacy](https://github.com/toggl/pipes-api/tree
 
 * [goenv](https://github.com/syndbg/goenv)
     * [Go 1.14](http://golang.org/)
-* [PostgreSQL 9.6](http://www.postgresql.org/)
+* [PostgreSQL 9.6](http://www.postgresql.org/) (for development you can use provided Docker file)
 
 ## Getting Started
 
@@ -31,21 +31,22 @@ To see original source code use [legacy](https://github.com/toggl/pipes-api/tree
 - `pkg` - Stores all abstract business and application logic.
 - `internal` - Stores all infrastructure packages.
 
-
 ## Testing
 
 ```bash
-# Firstly make testing database. This can be done only once:
-$ make init-test-db
+# First make testing database works. You can use provided Docker container for that:
+$ make docker-services-up
 
 # Then just run tests. You also can use Goland IDE for testing:
 $ make test
 
-# To generate mocks from source code run:
+# To generate mocks from source code use:
 $ make mocks
 ```
 
-* To generate Mocks, you should have [mockery](https://github.com/syndbg/goenv) installed.
+- To generate Mocks, you should have [mockery](https://github.com/syndbg/goenv) installed.
+- In case there is no database installed, all database related tests will be **SKIPPED**.
+- All database related tests uses `PIPES_API_POSTGRES_DSN` environment variable to customize database connection string.
 
 ## Supported Integrations
 

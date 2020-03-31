@@ -11,20 +11,11 @@ LD_FLAGS:=-X 'main.Version=$(APP_VERSION)' -X 'main.Revision=$(APP_REVISION)' -X
 # Used for debugging purposes. To have possibility connect to a process with Delve debugger
 GC_FLAGS:=all=-N -l
 
-all: init-dev-db init-test-db build test
+all: build test
 
-clean:
+clean: docker-services-down
 	rm -Rf ./bin ./dist ./out
-
-init-test-db:
-	psql -c 'DROP DATABASE IF EXISTS pipes_test;' -U postgres
-	psql -c 'CREATE DATABASE pipes_test;' -U postgres
-	psql pipes_test < db/schema.sql
-
-init-dev-db:
-	psql -c 'DROP DATABASE IF EXISTS pipes_development;' -U postgres
-	psql -c 'CREATE DATABASE pipes_development;' -U postgres
-	psql pipes_development < db/schema.sql
+	go clean -testcache
 
 mocks:
 	go generate ./internal/... ./pkg/...
@@ -61,3 +52,10 @@ production: build-release
 dependency-graph:
 	mkdir -p out
 	godepgraph -s -o github.com/toggl/pipes-api ./cmd/pipes-api | dot -Tpng -o out/deps.png
+
+docker-services-up:
+	docker-compose -f ./build/docker/postgres/docker-compose.yml up -d --remove-orphans --force-recreate --build
+
+docker-services-down:
+	docker-compose -f ./build/docker/postgres/docker-compose.yml down --rmi local --remove-orphans --volumes
+
