@@ -68,7 +68,6 @@ func (s *WorkerPool) pipeWorker(id int) {
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key())
 
 			s.pipeSyncService.Synchronize(pipe)
-
 			err := s.queue.MarkPipeSynchronized(pipe)
 			if err != nil {
 				bugsnag.Notify(err, bugsnag.MetaData{

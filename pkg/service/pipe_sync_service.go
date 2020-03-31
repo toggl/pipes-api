@@ -100,12 +100,12 @@ func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.In
 		return nil, RefreshError{errors.New("oAuth refresh failed")}
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to set auth data, reason: %w", err)
 	}
 
 	usersPipe := domain.NewPipe(workspaceID, serviceID, domain.UsersPipe)
 	if err := svc.pipesStorage.Load(usersPipe); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to load users pipe, reason: %w", err)
 	}
 	if usersPipe == nil {
 		return nil, ErrPipeNotConfigured
@@ -116,13 +116,13 @@ func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.In
 
 	if forceImport {
 		if err := svc.importsStorage.DeleteUsersFor(service); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unable to force delete users for service, reason: %w", err)
 		}
 	}
 
 	usersResponse, err := svc.importsStorage.LoadUsersFor(service)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to load users for service, reason: %w", err)
 	}
 
 	if usersResponse == nil {

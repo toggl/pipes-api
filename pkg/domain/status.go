@@ -45,13 +45,14 @@ func NewStatus(workspaceID int, externalServiceID IntegrationID, pipeID PipeID, 
 }
 
 func (p *Status) AddError(err error) {
+	if err == nil {
+		return
+	}
 	p.Status = StatusError
-
 	// If it is JSON marshalling error suppress it for status
 	if _, ok := err.(*json.UnmarshalTypeError); ok {
 		err = ErrJSONParsing
 	}
-
 	p.Message = err.Error()
 }
 

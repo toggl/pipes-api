@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/integration"
@@ -24,12 +25,12 @@ func NewPipeService(pipesStorage domain.PipesStorage) *PipeService {
 func (svc *PipeService) GetPipe(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID) (*domain.Pipe, error) {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 	if err := svc.pipesStorage.Load(p); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to load users pipe, reason: %w", err)
 	}
 	var err error
 	p.PipeStatus, err = svc.pipesStorage.LoadStatus(workspaceID, serviceID, pipeID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to load users pipe status, reason: %w", err)
 	}
 
 	return p, nil
