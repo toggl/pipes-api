@@ -45,6 +45,8 @@ github.com/stretchr/testify v1.5.1 h1:nOGnQDM7FYENwehXlg/kFVnos3rEvtKTjRvOWSzb6H
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701 h1:gPK6+Vr+O9LdwguJ/aMUwVz6I7hVxd1ozhq1F5dEzFA=
 github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701/go.mod h1:JAZs1u1S6Ze+pLZ/DvPyul+8uh5bQIbZIMcoGCun8ok=
+github.com/toggl/go-basecamp v0.1.0 h1:jCdNUZ3FfyZPWvegXX8p4uh10xKJg0iKqysRKbehszs=
+github.com/toggl/go-basecamp v0.1.0/go.mod h1:ZTi3L9elLsNCv6TYZx1m8KpDzzYFtYTrqMv27HP/ga0=
 github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d h1:zyDpPPCCH0xPLxuDiCMZpHpjt4t6KteM7kLQDD2XWt4=
 github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d/go.mod h1:t2USv7kvpEAs0rQ9yq/eehOnLGpNp8PFg8hyzx4uA04=
 github.com/toggl/go-teamweek v0.3.0 h1:P1PvY5vRBaLjcfrI/VMvA3jSXuHg9NpxaZopDGs+VoE=

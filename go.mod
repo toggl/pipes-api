@@ -1,15 +1,9 @@
 module github.com/toggl/pipes-api
 
-replace (
-	code.google.com/p/goauth2/oauth => ./vendor/code.google.com/goauth2/oauth
-	github.com/toggl/go-basecamp => ./vendor/github.com/toggl/go-basecamp
-)
+replace code.google.com/p/goauth2/oauth => ./vendor/code.google.com/goauth2/oauth
 
 // replaced packages
-require (
-	code.google.com/p/goauth2/oauth v0.0.0
-	github.com/toggl/go-basecamp v0.0.0
-)
+require code.google.com/p/goauth2/oauth v0.0.0
 
 require (
 	github.com/bitly/go-simplejson v0.5.0 // indirect
@@ -31,6 +25,7 @@ require (
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.5.1
 	github.com/tambet/oauthplain v0.0.0-20140905172838-bbbd263fa701
+	github.com/toggl/go-basecamp v0.1.0
 	github.com/toggl/go-freshbooks v0.0.0-20140904111550-aacdf55e408d
 	github.com/toggl/go-teamweek v0.3.0
 )
