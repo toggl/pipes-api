@@ -128,7 +128,7 @@ func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.In
 	if usersResponse == nil {
 		if forceImport {
 			go func() {
-				fetchErr := svc.FetchUsers(usersPipe)
+				fetchErr := svc.FetchUsers(usersPipe, auth)
 				if fetchErr != nil {
 					log.Print(fetchErr.Error())
 				}
@@ -240,15 +240,15 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 		svc.togglClient.WithAuthToken(auth.WorkspaceToken)
 		switch p.ID {
 		case domain.UsersPipe:
-			err = svc.syncUsers(p)
+			err = svc.syncUsers(p, auth)
 		case domain.ProjectsPipe:
-			err = svc.syncProjects(p)
+			err = svc.syncProjects(p, auth)
 		case domain.TodoListsPipe:
-			err = svc.syncTodoLists(p)
+			err = svc.syncTodoLists(p, auth)
 		case domain.TodosPipe, domain.TasksPipe:
-			err = svc.syncTasks(p)
+			err = svc.syncTasks(p, auth)
 		case domain.TimeEntriesPipe:
-			err = svc.syncTEs(p)
+			err = svc.syncTEs(p, auth)
 		}
 		p.PipeStatus.AddError(err)
 	}
@@ -261,34 +261,27 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 
 // --------------------------- USERS -------------------------------------------
 
-func (svc *PipeSyncService) syncUsers(p *domain.Pipe) error {
-	err := svc.FetchUsers(p)
+func (svc *PipeSyncService) syncUsers(p *domain.Pipe, a *domain.Authorization) error {
+	err := svc.FetchUsers(p, a)
 	if err != nil {
 		return err
 	}
 
-	err = svc.postUsers(p)
+	err = svc.postUsers(p, a)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) FetchUsers(p *domain.Pipe) error {
+func (svc *PipeSyncService) FetchUsers(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
-
-	if err := service.SetAuthData(auth.Data); err != nil {
-		return err
-	}
-
 	users, err := service.Users()
 	response := domain.UsersResponse{Users: users}
 	defer func() {
@@ -318,18 +311,12 @@ func (svc *PipeSyncService) FetchUsers(p *domain.Pipe) error {
 	return nil
 }
 
-func (svc *PipeSyncService) postUsers(p *domain.Pipe) error {
+func (svc *PipeSyncService) postUsers(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -377,20 +364,20 @@ func (svc *PipeSyncService) postUsers(p *domain.Pipe) error {
 
 // --------------------------- PROJECTS ----------------------------------------
 
-func (svc *PipeSyncService) syncProjects(p *domain.Pipe) error {
-	err := svc.fetchProjects(p)
+func (svc *PipeSyncService) syncProjects(p *domain.Pipe, a *domain.Authorization) error {
+	err := svc.fetchProjects(p, a)
 	if err != nil {
 		return err
 	}
 
-	err = svc.postProjects(p)
+	err = svc.postProjects(p, a)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchProjects(p *domain.Pipe) error {
+func (svc *PipeSyncService) fetchProjects(p *domain.Pipe, a *domain.Authorization) error {
 	response := domain.ProjectsResponse{}
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 
@@ -415,7 +402,7 @@ func (svc *PipeSyncService) fetchProjects(p *domain.Pipe) error {
 		}
 	}()
 
-	if err := svc.syncClients(p); err != nil {
+	if err := svc.syncClients(p, a); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -424,11 +411,7 @@ func (svc *PipeSyncService) fetchProjects(p *domain.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -459,17 +442,13 @@ func (svc *PipeSyncService) fetchProjects(p *domain.Pipe) error {
 	return nil
 }
 
-func (svc *PipeSyncService) postProjects(p *domain.Pipe) error {
+func (svc *PipeSyncService) postProjects(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
 
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -503,19 +482,19 @@ func (svc *PipeSyncService) postProjects(p *domain.Pipe) error {
 
 // --------------------------- TO-DO LISTS -------------------------------------
 
-func (svc *PipeSyncService) syncTodoLists(p *domain.Pipe) error {
-	err := svc.fetchTodoLists(p)
+func (svc *PipeSyncService) syncTodoLists(p *domain.Pipe, a *domain.Authorization) error {
+	err := svc.fetchTodoLists(p, a)
 	if err != nil {
 		return err
 	}
-	err = svc.postTodoLists(p)
+	err = svc.postTodoLists(p, a)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe) error {
+func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe, a *domain.Authorization) error {
 	response := domain.TasksResponse{}
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 
@@ -540,11 +519,7 @@ func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe) error {
 		}
 	}()
 
-	if err := svc.fetchProjects(p); err != nil {
-		response.Error = err.Error()
-		return err
-	}
-	if err := svc.postProjects(p); err != nil {
+	if err := svc.syncProjects(p, a); err != nil {
 		response.Error = err.Error()
 		return err
 	}
@@ -553,12 +528,7 @@ func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe) error {
 		return err
 	}
 
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -592,17 +562,13 @@ func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe) error {
 	return nil
 }
 
-func (svc *PipeSyncService) postTodoLists(p *domain.Pipe) error {
+func (svc *PipeSyncService) postTodoLists(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
 
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -643,19 +609,19 @@ func (svc *PipeSyncService) postTodoLists(p *domain.Pipe) error {
 
 // --------------------------- TASKS -------------------------------------------
 
-func (svc *PipeSyncService) syncTasks(p *domain.Pipe) error {
-	err := svc.fetchTasks(p)
+func (svc *PipeSyncService) syncTasks(p *domain.Pipe, a *domain.Authorization) error {
+	err := svc.fetchTasks(p, a)
 	if err != nil {
 		return err
 	}
-	err = svc.postTasks(p)
+	err = svc.postTasks(p, a)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchTasks(p *domain.Pipe) error {
+func (svc *PipeSyncService) fetchTasks(p *domain.Pipe, a *domain.Authorization) error {
 	response := domain.TasksResponse{}
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	defer func() {
@@ -680,24 +646,14 @@ func (svc *PipeSyncService) fetchTasks(p *domain.Pipe) error {
 		}
 	}()
 
-	if err := svc.fetchProjects(p); err != nil {
+	if err := svc.syncProjects(p, a); err != nil {
 		response.Error = err.Error()
 		return err
 	}
-	if err := svc.postProjects(p); err != nil {
-		response.Error = err.Error()
-		return err
-	}
-
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -730,16 +686,12 @@ func (svc *PipeSyncService) fetchTasks(p *domain.Pipe) error {
 	return nil
 }
 
-func (svc *PipeSyncService) postTasks(p *domain.Pipe) error {
+func (svc *PipeSyncService) postTasks(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -780,17 +732,12 @@ func (svc *PipeSyncService) postTasks(p *domain.Pipe) error {
 
 // --------------------------- Time Entries ------------------------------------
 
-func (svc *PipeSyncService) syncTEs(p *domain.Pipe) error {
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-
+func (svc *PipeSyncService) syncTEs(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -865,26 +812,22 @@ func (svc *PipeSyncService) syncTEs(p *domain.Pipe) error {
 
 // -------------------------------- CLIENTS ------------------------------------
 
-func (svc *PipeSyncService) syncClients(p *domain.Pipe) error {
-	if err := svc.fetchClients(p); err != nil {
+func (svc *PipeSyncService) syncClients(p *domain.Pipe, a *domain.Authorization) error {
+	if err := svc.fetchClients(p, a); err != nil {
 		return err
 	}
-	if err := svc.postClients(p); err != nil {
+	if err := svc.postClients(p, a); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchClients(p *domain.Pipe) error {
+func (svc *PipeSyncService) fetchClients(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
-		return err
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
 
@@ -925,19 +868,14 @@ func (svc *PipeSyncService) fetchClients(p *domain.Pipe) error {
 	return nil
 }
 
-func (svc *PipeSyncService) postClients(p *domain.Pipe) error {
+func (svc *PipeSyncService) postClients(p *domain.Pipe, a *domain.Authorization) error {
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
-	if err != nil {
+	if err := service.SetAuthData(a.Data); err != nil {
 		return err
 	}
-	if err := service.SetAuthData(auth.Data); err != nil {
-		return err
-	}
-
 	clientsResponse, err := svc.importsStorage.LoadClientsFor(service)
 	if err != nil {
 		return errors.New("unable to get clients from DB")
