@@ -94,13 +94,9 @@ func (svc *PipeSyncService) ClearIDMappings(workspaceID int, serviceID domain.In
 }
 
 func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.IntegrationID, forceImport bool) (*domain.UsersResponse, error) {
-	service := integration.NewPipeIntegration(serviceID, workspaceID)
 	auth, err := svc.refreshAuthorization(workspaceID, serviceID)
 	if err != nil {
 		return nil, RefreshError{errors.New("oAuth refresh failed")}
-	}
-	if err := service.SetAuthData(auth.Data); err != nil {
-		return nil, fmt.Errorf("unable to set auth data, reason: %w", err)
 	}
 
 	usersPipe := domain.NewPipe(workspaceID, serviceID, domain.UsersPipe)
@@ -110,17 +106,22 @@ func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.In
 	if usersPipe == nil {
 		return nil, ErrPipeNotConfigured
 	}
-	if err := service.SetParams(usersPipe.ServiceParams); err != nil {
+
+	pipeIntegration := integration.NewPipeIntegration(serviceID, workspaceID)
+	if err := pipeIntegration.SetAuthData(auth.Data); err != nil {
+		return nil, fmt.Errorf("unable to set auth data, reason: %w", err)
+	}
+	if err := pipeIntegration.SetParams(usersPipe.ServiceParams); err != nil {
 		return nil, SetParamsError{err}
 	}
 
 	if forceImport {
-		if err := svc.importsStorage.DeleteUsersFor(service); err != nil {
+		if err := svc.importsStorage.DeleteUsersFor(pipeIntegration); err != nil {
 			return nil, fmt.Errorf("unable to force delete users for service, reason: %w", err)
 		}
 	}
 
-	usersResponse, err := svc.importsStorage.LoadUsersFor(service)
+	usersResponse, err := svc.importsStorage.LoadUsersFor(pipeIntegration)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load users for service, reason: %w", err)
 	}
@@ -128,7 +129,7 @@ func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.In
 	if usersResponse == nil {
 		if forceImport {
 			go func() {
-				fetchErr := svc.FetchUsers(usersPipe, auth)
+				fetchErr := svc.fetchUsers(usersPipe, pipeIntegration)
 				if fetchErr != nil {
 					log.Print(fetchErr.Error())
 				}
@@ -225,7 +226,7 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 	svc.pipesStorage.LoadLastSyncFor(p)
 	p.PipeStatus = domain.NewStatus(p.WorkspaceID, p.ServiceID, p.ID, p.PipesApiHost)
 	if err := svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
-		svc.notifyBugsnag(p, err)
+		svc.notifyBugSnag(p, err)
 		log.Println(err)
 		return
 	}
@@ -235,92 +236,64 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 		p.PipeStatus.AddError(err)
 	}
 
+	pipeIntegration := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
+	if err := pipeIntegration.SetParams(p.ServiceParams); err != nil {
+		p.PipeStatus.AddError(err)
+	}
+	if err := pipeIntegration.SetAuthData(auth.Data); err != nil {
+		p.PipeStatus.AddError(err)
+	}
+
 	// We start pipes synchronization only if there are no errors on initialization steps above.
 	if err == nil {
 		svc.togglClient.WithAuthToken(auth.WorkspaceToken)
 		switch p.ID {
 		case domain.UsersPipe:
-			err = svc.syncUsers(p, auth)
+			err = svc.syncUsers(p, pipeIntegration)
 		case domain.ProjectsPipe:
-			err = svc.syncProjects(p, auth)
+			err = svc.syncProjects(p, pipeIntegration)
 		case domain.TodoListsPipe:
-			err = svc.syncTodoLists(p, auth)
+			err = svc.syncTodoLists(p, pipeIntegration)
 		case domain.TodosPipe, domain.TasksPipe:
-			err = svc.syncTasks(p, auth)
+			err = svc.syncTasks(p, pipeIntegration)
 		case domain.TimeEntriesPipe:
-			err = svc.syncTEs(p, auth)
+			err = svc.syncTEs(p, pipeIntegration)
 		}
 		p.PipeStatus.AddError(err)
 	}
 
 	if err = svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
-		svc.notifyBugsnag(p, err)
+		svc.notifyBugSnag(p, err)
 		log.Println(err)
 	}
 }
 
 // --------------------------- USERS -------------------------------------------
-
-func (svc *PipeSyncService) syncUsers(p *domain.Pipe, a *domain.Authorization) error {
-	err := svc.FetchUsers(p, a)
+func (svc *PipeSyncService) syncUsers(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	err := svc.fetchUsers(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
 
-	err = svc.postUsers(p, a)
+	err = svc.postUsers(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) FetchUsers(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-	users, err := service.Users()
+func (svc *PipeSyncService) fetchUsers(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	users, err := pipeIntegration.Users()
 	response := domain.UsersResponse{Users: users}
-	defer func() {
-		if err := service.SetParams(p.ServiceParams); err != nil {
-			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
-			return
-		}
-		auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
-			return
-		}
-		if err := service.SetAuthData(auth.Data); err != nil {
-			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
-			return
-		}
-
-		if err := svc.importsStorage.SaveUsersFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(domain.UsersPipe), err)
-			return
-		}
-	}()
 	if err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
 	}
-	return nil
+	return svc.importsStorage.SaveUsersFor(pipeIntegration, response)
 }
 
-func (svc *PipeSyncService) postUsers(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	usersResponse, err := svc.importsStorage.LoadUsersFor(service)
+func (svc *PipeSyncService) postUsers(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	usersResponse, err := svc.importsStorage.LoadUsersFor(pipeIntegration)
 	if err != nil {
 		return errors.New("unable to get users from DB")
 	}
@@ -347,7 +320,7 @@ func (svc *PipeSyncService) postUsers(p *domain.Pipe, a *domain.Authorization) e
 		return err
 	}
 
-	idMapping, err := svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.UsersPipe))
+	idMapping, err := svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.UsersPipe))
 	if err != nil {
 		return err
 	}
@@ -364,74 +337,47 @@ func (svc *PipeSyncService) postUsers(p *domain.Pipe, a *domain.Authorization) e
 
 // --------------------------- PROJECTS ----------------------------------------
 
-func (svc *PipeSyncService) syncProjects(p *domain.Pipe, a *domain.Authorization) error {
-	err := svc.fetchProjects(p, a)
+func (svc *PipeSyncService) syncProjects(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	err := svc.fetchProjects(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
 
-	err = svc.postProjects(p, a)
+	err = svc.postProjects(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchProjects(p *domain.Pipe, a *domain.Authorization) error {
+func (svc *PipeSyncService) fetchProjects(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
 	response := domain.ProjectsResponse{}
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-
-	defer func() {
-		if err := service.SetParams(p.ServiceParams); err != nil {
-			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
-			return
-		}
-		auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
-			return
-		}
-		if err := service.SetAuthData(auth.Data); err != nil {
-			log.Printf("could not ser service auth data: %v, reason: %v", p.ID, err)
-			return
-		}
-
-		if err := svc.importsStorage.SaveProjectsFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(domain.ProjectsPipe), err)
-			return
-		}
-	}()
-
-	if err := svc.syncClients(p, a); err != nil {
+	if err := svc.syncClients(p, pipeIntegration); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveProjectsFor(pipeIntegration, response)
 	}
 
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	service.SetSince(p.LastSync)
-	projects, err := service.Projects()
+	pipeIntegration.SetSince(p.LastSync)
+	projects, err := pipeIntegration.Projects()
 	if err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveProjectsFor(pipeIntegration, response)
 	}
 
 	response.Projects = trimSpacesFromName(projects)
 
 	var clientsIDMapping, projectsIDMapping *domain.IDMapping
-	if clientsIDMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ClientsPipe)); err != nil {
+	if clientsIDMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ClientsPipe)); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveProjectsFor(pipeIntegration, response)
 	}
-	if projectsIDMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveProjectsFor(pipeIntegration, response)
 	}
 
 	for _, project := range response.Projects {
@@ -439,20 +385,11 @@ func (svc *PipeSyncService) fetchProjects(p *domain.Pipe, a *domain.Authorizatio
 		project.ClientID = clientsIDMapping.Data[project.ForeignClientID]
 	}
 
-	return nil
+	return svc.importsStorage.SaveProjectsFor(pipeIntegration, response)
 }
 
-func (svc *PipeSyncService) postProjects(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	projectsResponse, err := svc.importsStorage.LoadProjectsFor(service)
+func (svc *PipeSyncService) postProjects(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	projectsResponse, err := svc.importsStorage.LoadProjectsFor(pipeIntegration)
 	if err != nil {
 		return errors.New("unable to get projects from DB")
 	}
@@ -467,7 +404,7 @@ func (svc *PipeSyncService) postProjects(p *domain.Pipe, a *domain.Authorization
 		return err
 	}
 	var idMapping *domain.IDMapping
-	if idMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ProjectsPipe)); err != nil {
+	if idMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ProjectsPipe)); err != nil {
 		return err
 	}
 	for _, project := range projectsImport.Projects {
@@ -482,72 +419,47 @@ func (svc *PipeSyncService) postProjects(p *domain.Pipe, a *domain.Authorization
 
 // --------------------------- TO-DO LISTS -------------------------------------
 
-func (svc *PipeSyncService) syncTodoLists(p *domain.Pipe, a *domain.Authorization) error {
-	err := svc.fetchTodoLists(p, a)
+func (svc *PipeSyncService) syncTodoLists(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	err := svc.fetchTodoLists(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
-	err = svc.postTodoLists(p, a)
+	err = svc.postTodoLists(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe, a *domain.Authorization) error {
+func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
 	response := domain.TasksResponse{}
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 
-	defer func() {
-		if err := service.SetParams(p.ServiceParams); err != nil {
-			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
-			return
-		}
-		auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
-			return
-		}
-		if err := service.SetAuthData(auth.Data); err != nil {
-			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
-			return
-		}
-
-		if err := svc.importsStorage.SaveTodoListsFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(domain.TodoListsPipe), err)
-			return
-		}
-	}()
-
-	if err := svc.syncProjects(p, a); err != nil {
+	if err := svc.syncProjects(p, pipeIntegration); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTodoListsFor(pipeIntegration, response)
 	}
 
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	service.SetSince(p.LastSync)
-	tasks, err := service.TodoLists()
+	pipeIntegration.SetSince(p.LastSync)
+	tasks, err := pipeIntegration.TodoLists()
 	if err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTodoListsFor(pipeIntegration, response)
 	}
 
 	var projectsIDMapping, taskIDMapping *domain.IDMapping
 
-	if projectsIDMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTodoListsFor(pipeIntegration, response)
 	}
-	if taskIDMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.TodoListsPipe)); err != nil {
+
+	if taskIDMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.TodoListsPipe)); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTodoListsFor(pipeIntegration, response)
 	}
 
 	response.Tasks = make([]*domain.Task, 0)
@@ -559,20 +471,12 @@ func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe, a *domain.Authorizati
 			response.Tasks = append(response.Tasks, task)
 		}
 	}
-	return nil
+
+	return svc.importsStorage.SaveTodoListsFor(pipeIntegration, response)
 }
 
-func (svc *PipeSyncService) postTodoLists(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	tasksResponse, err := svc.importsStorage.LoadTodoListsFor(service)
+func (svc *PipeSyncService) postTodoLists(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	tasksResponse, err := svc.importsStorage.LoadTodoListsFor(pipeIntegration)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -590,7 +494,7 @@ func (svc *PipeSyncService) postTodoLists(p *domain.Pipe, a *domain.Authorizatio
 		if err != nil {
 			return err
 		}
-		idMapping, err := svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.TodoListsPipe))
+		idMapping, err := svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.TodoListsPipe))
 		if err != nil {
 			return err
 		}
@@ -609,69 +513,46 @@ func (svc *PipeSyncService) postTodoLists(p *domain.Pipe, a *domain.Authorizatio
 
 // --------------------------- TASKS -------------------------------------------
 
-func (svc *PipeSyncService) syncTasks(p *domain.Pipe, a *domain.Authorization) error {
-	err := svc.fetchTasks(p, a)
+func (svc *PipeSyncService) syncTasks(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	err := svc.fetchTasks(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
-	err = svc.postTasks(p, a)
+	err = svc.postTasks(p, pipeIntegration)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchTasks(p *domain.Pipe, a *domain.Authorization) error {
+func (svc *PipeSyncService) fetchTasks(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
 	response := domain.TasksResponse{}
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	defer func() {
-		if err := service.SetParams(p.ServiceParams); err != nil {
-			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
-			return
-		}
 
-		auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
-			return
-		}
-		if err := service.SetAuthData(auth.Data); err != nil {
-			log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
-			return
-		}
-
-		if err := svc.importsStorage.SaveTasksFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(domain.TasksPipe), err)
-			return
-		}
-	}()
-
-	if err := svc.syncProjects(p, a); err != nil {
+	if err := svc.syncProjects(p, pipeIntegration); err != nil {
 		response.Error = err.Error()
-		return err
-	}
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTasksFor(pipeIntegration, response)
 	}
 
-	service.SetSince(p.LastSync)
-	tasks, err := service.Tasks()
+	pipeIntegration.SetSince(p.LastSync)
+	tasks, err := pipeIntegration.Tasks()
 	if err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTasksFor(pipeIntegration, response)
 	}
 	var projectsIDMapping, taskIDMapping *domain.IDMapping
 
-	if projectsIDMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ProjectsPipe)); err != nil {
+	if projectsIDMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ProjectsPipe)); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTasksFor(pipeIntegration, response)
 	}
-	if taskIDMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.TasksPipe)); err != nil {
+
+	if taskIDMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.TasksPipe)); err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveTasksFor(pipeIntegration, response)
 	}
 
 	response.Tasks = make([]*domain.Task, 0)
@@ -683,19 +564,12 @@ func (svc *PipeSyncService) fetchTasks(p *domain.Pipe, a *domain.Authorization) 
 			response.Tasks = append(response.Tasks, task)
 		}
 	}
-	return nil
+
+	return svc.importsStorage.SaveTasksFor(pipeIntegration, response)
 }
 
-func (svc *PipeSyncService) postTasks(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	tasksResponse, err := svc.importsStorage.LoadTasksFor(service)
+func (svc *PipeSyncService) postTasks(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	tasksResponse, err := svc.importsStorage.LoadTasksFor(pipeIntegration)
 	if err != nil {
 		return errors.New("unable to get tasks from DB")
 	}
@@ -713,7 +587,7 @@ func (svc *PipeSyncService) postTasks(p *domain.Pipe, a *domain.Authorization) e
 		if err != nil {
 			return err
 		}
-		idMapping, err := svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.TasksPipe))
+		idMapping, err := svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.TasksPipe))
 		if err != nil {
 			return err
 		}
@@ -732,31 +606,23 @@ func (svc *PipeSyncService) postTasks(p *domain.Pipe, a *domain.Authorization) e
 
 // --------------------------- Time Entries ------------------------------------
 
-func (svc *PipeSyncService) syncTEs(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-
-	usersIDMapping, err := svc.idMappingsStorage.LoadReversed(service.GetWorkspaceID(), service.KeyFor(domain.UsersPipe))
+func (svc *PipeSyncService) syncTEs(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	usersIDMapping, err := svc.idMappingsStorage.LoadReversed(p.WorkspaceID, pipeIntegration.KeyFor(domain.UsersPipe))
 	if err != nil {
 		return err
 	}
 
-	tasksIDMapping, err := svc.idMappingsStorage.LoadReversed(service.GetWorkspaceID(), service.KeyFor(domain.TasksPipe))
+	tasksIDMapping, err := svc.idMappingsStorage.LoadReversed(p.WorkspaceID, pipeIntegration.KeyFor(domain.TasksPipe))
 	if err != nil {
 		return err
 	}
 
-	projectsIDMapping, err := svc.idMappingsStorage.LoadReversed(service.GetWorkspaceID(), service.KeyFor(domain.ProjectsPipe))
+	projectsIDMapping, err := svc.idMappingsStorage.LoadReversed(p.WorkspaceID, pipeIntegration.KeyFor(domain.ProjectsPipe))
 	if err != nil {
 		return err
 	}
 
-	entriesIDMapping, err := svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.TimeEntriesPipe))
+	entriesIDMapping, err := svc.idMappingsStorage.Load(p.WorkspaceID, pipeIntegration.KeyFor(domain.TimeEntriesPipe))
 	if err != nil {
 		return err
 	}
@@ -777,11 +643,11 @@ func (svc *PipeSyncService) syncTEs(p *domain.Pipe, a *domain.Authorization) err
 		entry.ForeignUserID = strconv.Itoa(usersIDMapping.GetForeignID(entry.UserID))
 		entry.ForeignProjectID = strconv.Itoa(projectsIDMapping.GetForeignID(entry.ProjectID))
 
-		entryID, err := service.ExportTimeEntry(&entry)
+		entryID, err := pipeIntegration.ExportTimeEntry(&entry)
 		if err != nil {
 			bugsnag.Notify(err, bugsnag.MetaData{
 				"Workspace": {
-					"IntegrationID": service.GetWorkspaceID(),
+					"IntegrationID": p.WorkspaceID,
 				},
 				"Entry": {
 					"IntegrationID": entry.ID,
@@ -812,71 +678,43 @@ func (svc *PipeSyncService) syncTEs(p *domain.Pipe, a *domain.Authorization) err
 
 // -------------------------------- CLIENTS ------------------------------------
 
-func (svc *PipeSyncService) syncClients(p *domain.Pipe, a *domain.Authorization) error {
-	if err := svc.fetchClients(p, a); err != nil {
+func (svc *PipeSyncService) syncClients(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	if err := svc.fetchClients(p, pipeIntegration); err != nil {
 		return err
 	}
-	if err := svc.postClients(p, a); err != nil {
+	if err := svc.postClients(p, pipeIntegration); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (svc *PipeSyncService) fetchClients(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
+func (svc *PipeSyncService) fetchClients(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	response := domain.ClientsResponse{}
 
-	clients, err := service.Clients()
-	response := domain.ClientsResponse{Clients: clients}
-	defer func() {
-		if err := service.SetParams(p.ServiceParams); err != nil {
-			log.Printf("could not set service params: %v, reason: %v", p.ID, err)
-			return
-		}
-		auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-		if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-			log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
-			return
-		}
-		if err := service.SetAuthData(auth.Data); err != nil {
-			log.Printf("could not ser service auth data: %v, reason: %v", p.ID, err)
-			return
-		}
-
-		if err := svc.importsStorage.SaveClientsFor(service, response); err != nil {
-			log.Printf("could not save object, workspaceID: %v key: %v, reason: %v", service.GetWorkspaceID(), service.KeyFor(domain.ClientsPipe), err)
-			return
-		}
-	}()
+	clients, err := pipeIntegration.Clients()
 	if err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveClientsFor(pipeIntegration, response)
 	}
-	clientsIDMapping, err := svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ClientsPipe))
+	response.Clients = clients
+
+	clientsIDMapping, err := svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ClientsPipe))
 	if err != nil {
 		response.Error = err.Error()
-		return err
+		svc.notifyBugSnag(p, err)
+		return svc.importsStorage.SaveClientsFor(pipeIntegration, response)
 	}
+
 	for _, client := range response.Clients {
 		client.ID = clientsIDMapping.Data[client.ForeignID]
 	}
-	return nil
+
+	return svc.importsStorage.SaveClientsFor(pipeIntegration, response)
 }
 
-func (svc *PipeSyncService) postClients(p *domain.Pipe, a *domain.Authorization) error {
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
-	if err := service.SetAuthData(a.Data); err != nil {
-		return err
-	}
-	clientsResponse, err := svc.importsStorage.LoadClientsFor(service)
+func (svc *PipeSyncService) postClients(p *domain.Pipe, pipeIntegration domain.PipeIntegration) error {
+	clientsResponse, err := svc.importsStorage.LoadClientsFor(pipeIntegration)
 	if err != nil {
 		return errors.New("unable to get clients from DB")
 	}
@@ -894,7 +732,7 @@ func (svc *PipeSyncService) postClients(p *domain.Pipe, a *domain.Authorization)
 		return err
 	}
 	var idMapping *domain.IDMapping
-	if idMapping, err = svc.idMappingsStorage.Load(service.GetWorkspaceID(), service.KeyFor(domain.ClientsPipe)); err != nil {
+	if idMapping, err = svc.idMappingsStorage.Load(pipeIntegration.GetWorkspaceID(), pipeIntegration.KeyFor(domain.ClientsPipe)); err != nil {
 		return err
 	}
 	for _, client := range clientsImport.Clients {
@@ -942,16 +780,15 @@ func (svc *PipeSyncService) refreshAuthorization(workspaceID int, serviceID doma
 	return auth, nil
 }
 
-func (svc *PipeSyncService) notifyBugsnag(p *domain.Pipe, err error) {
+func (svc *PipeSyncService) notifyBugSnag(p *domain.Pipe, err error) {
+	log.Println(err)
 	meta := bugsnag.MetaData{
 		"pipe": {
 			"IntegrationID": p.ID,
-			"Name":          p.Name,
 			"ServiceParams": string(p.ServiceParams),
 			"WorkspaceID":   p.WorkspaceID,
 			"ServiceID":     p.ServiceID,
 		},
 	}
-	log.Println(err, meta)
 	bugsnag.Notify(err, meta)
 }
