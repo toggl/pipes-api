@@ -14,9 +14,10 @@ import (
 )
 
 type Controller struct {
-	pipeService         domain.PipeService
-	integrationsStorage domain.IntegrationsStorage
-	queue               domain.Queue
+	authorizationService domain.AuthorizationService
+	pipeService          domain.PipeService
+	integrationsStorage  domain.IntegrationsStorage
+	queue                domain.Queue
 	Params
 }
 
@@ -26,9 +27,12 @@ type Params struct {
 	BuildTime string
 }
 
-func NewController(pipeService domain.PipeService, integrationsStorage domain.IntegrationsStorage, queue domain.Queue, params Params) *Controller {
+func NewController(pipeService domain.PipeService, authorizationService domain.AuthorizationService, integrationsStorage domain.IntegrationsStorage, queue domain.Queue, params Params) *Controller {
 	if pipeService == nil {
 		panic("Controller.pipeService should not be nil")
+	}
+	if authorizationService == nil {
+		panic("Controller.authorizationService should not be nil")
 	}
 	if integrationsStorage == nil {
 		panic("Controller.integrationsStorage should not be nil")
@@ -38,10 +42,11 @@ func NewController(pipeService domain.PipeService, integrationsStorage domain.In
 	}
 
 	return &Controller{
-		pipeService:         pipeService,
-		integrationsStorage: integrationsStorage,
-		queue:               queue,
-		Params:              params,
+		pipeService:          pipeService,
+		authorizationService: authorizationService,
+		integrationsStorage:  integrationsStorage,
+		queue:                queue,
+		Params:               params,
 	}
 }
 
@@ -133,7 +138,7 @@ func (c *Controller) GetAuthURLHandler(req Request) Response {
 		return badRequest("Missing or invalid callback_url")
 	}
 
-	url, err := c.pipeService.GetAuthURL(serviceID, accountName, callbackURL)
+	url, err := c.authorizationService.GetAuthURL(serviceID, accountName, callbackURL)
 	if err != nil {
 		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
@@ -162,7 +167,7 @@ func (c *Controller) CreateAuthorizationHandler(req Request) Response {
 		return badRequest("Bad payload")
 	}
 
-	err = c.pipeService.CreateAuthorization(workspaceID, serviceID, currentToken, params)
+	err = c.authorizationService.CreateAuthorization(workspaceID, serviceID, currentToken, params)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -175,7 +180,7 @@ func (c *Controller) DeleteAuthorizationHandler(req Request) Response {
 	if err != nil {
 		return badRequest(err.Error())
 	}
-	err = c.pipeService.DeleteAuthorization(workspaceID, serviceID)
+	err = c.authorizationService.DeleteAuthorization(workspaceID, serviceID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}

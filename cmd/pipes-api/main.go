@@ -103,6 +103,13 @@ func main() {
 		apiClient,
 	)
 
+	authorizationService := service.NewAuthorizationService(
+		pipeStorage,
+		authorizationStorage,
+		integrationStorage,
+		oauthProvider,
+	)
+
 	pipeQueue := sync.NewQueue(db, pipeService, pipeStorage)
 
 	syncService := sync.NewWorkerPool(pipeQueue, pipeService, env.Debug)
@@ -110,6 +117,7 @@ func main() {
 
 	controller := server.NewController(
 		pipeService,
+		authorizationService,
 		integrationStorage,
 		pipeQueue,
 		server.Params{

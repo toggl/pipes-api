@@ -26,20 +26,6 @@ func (_m *PipeService) ClearIDMappings(workspaceID int, sid domain.IntegrationID
 	return r0
 }
 
-// CreateAuthorization provides a mock function with given fields: workspaceID, sid, workspaceToken, params
-func (_m *PipeService) CreateAuthorization(workspaceID int, sid domain.IntegrationID, workspaceToken string, params domain.AuthParams) error {
-	ret := _m.Called(workspaceID, sid, workspaceToken, params)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, string, domain.AuthParams) error); ok {
-		r0 = rf(workspaceID, sid, workspaceToken, params)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // CreatePipe provides a mock function with given fields: workspaceID, sid, pid, params
 func (_m *PipeService) CreatePipe(workspaceID int, sid domain.IntegrationID, pid domain.PipeID, params []byte) error {
 	ret := _m.Called(workspaceID, sid, pid, params)
@@ -47,20 +33,6 @@ func (_m *PipeService) CreatePipe(workspaceID int, sid domain.IntegrationID, pid
 	var r0 error
 	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID, domain.PipeID, []byte) error); ok {
 		r0 = rf(workspaceID, sid, pid, params)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// DeleteAuthorization provides a mock function with given fields: workspaceID, sid
-func (_m *PipeService) DeleteAuthorization(workspaceID int, sid domain.IntegrationID) error {
-	ret := _m.Called(workspaceID, sid)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(int, domain.IntegrationID) error); ok {
-		r0 = rf(workspaceID, sid)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -80,27 +52,6 @@ func (_m *PipeService) DeletePipe(workspaceID int, sid domain.IntegrationID, pid
 	}
 
 	return r0
-}
-
-// GetAuthURL provides a mock function with given fields: sid, accountName, callbackURL
-func (_m *PipeService) GetAuthURL(sid domain.IntegrationID, accountName string, callbackURL string) (string, error) {
-	ret := _m.Called(sid, accountName, callbackURL)
-
-	var r0 string
-	if rf, ok := ret.Get(0).(func(domain.IntegrationID, string, string) string); ok {
-		r0 = rf(sid, accountName, callbackURL)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.IntegrationID, string, string) error); ok {
-		r1 = rf(sid, accountName, callbackURL)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // GetIntegrations provides a mock function with given fields: workspaceID
