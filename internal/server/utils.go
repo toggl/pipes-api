@@ -135,7 +135,7 @@ func handleRequest(handler HandlerFunc) http.HandlerFunc {
 		// log request
 		log.Println(uuidToken, "Start", r.Method, r.URL, "for", parseRemoteAddr(r))
 		defer func() {
-			log.Println(uuidToken, r.Method, resp.status, r.URL, "-", time.Since(requestStarted))
+			log.Println(uuidToken, resp.status, r.Method, r.URL, "-", time.Since(requestStarted))
 		}()
 
 		// Parse request body, if any

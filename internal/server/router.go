@@ -10,7 +10,6 @@ import (
 	"github.com/bugsnag/bugsnag-go"
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	gouuid "github.com/nu7hatch/gouuid"
 )
 
 type Router struct {
@@ -31,40 +30,27 @@ func NewRouter(corsWhiteList []string) *Router {
 func (router *Router) AttachHandlers(c *Controller, mw *Middleware) *Router {
 
 	v1 := router.Routes.PathPrefix("/api/v1").Subrouter()
-	v1.HandleFunc("/status", handleRequest(c.GetStatusHandler)).Methods("GET")
-	v1.HandleFunc("/integrations", mw.withAuth(handleRequest(c.GetIntegrationsHandler))).Methods("GET")
+	v1.HandleFunc("/status", mw.withUUID(handleRequest(c.GetStatusHandler))).Methods("GET")
+	v1.HandleFunc("/integrations", mw.withUUID(mw.withAuth(handleRequest(c.GetIntegrationsHandler)))).Methods("GET")
 
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}", mw.withAuth(handleRequest(c.ReadPipeHandler))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.UpdatePipeHandler))).Methods("PUT")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.CreatePipeHandler))).Methods("POST")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withAuth(handleRequest(c.DeletePipeHandler))).Methods("DELETE")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", mw.withService(mw.withAuth(handleRequest(c.GetServicePipeLogHandler)))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", mw.withService(mw.withAuth(handleRequest(c.PostServicePipeClearIDMappingsHandler)))).Methods("POST") // TODO: Remove (Probably dead endpoint).
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/users", mw.withAuth(handleRequest(c.GetServiceUsersHandler))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/run", mw.withService(mw.withAuth(handleRequest(c.PostPipeRunHandler)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}", mw.withUUID(mw.withAuth(handleRequest(c.ReadPipeHandler)))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withUUID(mw.withAuth(handleRequest(c.UpdatePipeHandler)))).Methods("PUT")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withUUID(mw.withAuth(handleRequest(c.CreatePipeHandler)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/setup", mw.withUUID(mw.withAuth(handleRequest(c.DeletePipeHandler)))).Methods("DELETE")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/log", mw.withUUID(mw.withService(mw.withAuth(handleRequest(c.GetServicePipeLogHandler))))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/clear_connections", mw.withUUID(mw.withService(mw.withAuth(handleRequest(c.PostServicePipeClearIDMappingsHandler))))).Methods("POST") // TODO: Remove (Probably dead endpoint).
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/users", mw.withUUID(mw.withAuth(handleRequest(c.GetServiceUsersHandler)))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/pipes/{pipe}/run", mw.withAuth(mw.withService(mw.withUUID(handleRequest(c.PostPipeRunHandler))))).Methods("POST")
 
-	v1.HandleFunc("/integrations/{service}/accounts", mw.withAuth(handleRequest(c.GetServiceAccountsHandler))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/auth_url", mw.withAuth(handleRequest(c.GetAuthURLHandler))).Methods("GET")
-	v1.HandleFunc("/integrations/{service}/authorizations", mw.withAuth(handleRequest(c.CreateAuthorizationHandler))).Methods("POST")
-	v1.HandleFunc("/integrations/{service}/authorizations", mw.withAuth(handleRequest(c.DeleteAuthorizationHandler))).Methods("DELETE")
+	v1.HandleFunc("/integrations/{service}/accounts", mw.withUUID(mw.withAuth(handleRequest(c.GetServiceAccountsHandler)))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/auth_url", mw.withUUID(mw.withAuth(handleRequest(c.GetAuthURLHandler)))).Methods("GET")
+	v1.HandleFunc("/integrations/{service}/authorizations", mw.withUUID(mw.withAuth(handleRequest(c.CreateAuthorizationHandler)))).Methods("POST")
+	v1.HandleFunc("/integrations/{service}/authorizations", mw.withUUID(mw.withAuth(handleRequest(c.DeleteAuthorizationHandler)))).Methods("DELETE")
 
 	return router
 }
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	defer context.Clear(r)
-
-	u4, err := gouuid.NewV4()
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	uuidToken := u4.String()
-	context.Set(r, uuidKey, uuidToken)
-
-	log.Println(uuidToken, "Start", r.Method, r.URL, "for", parseRemoteAddr(r))
-
 	w.Header().Set("Cache-Control", "no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0")
 
 	if origin, ok := router.isWhiteListedCorsOrigin(r); ok {
@@ -101,5 +87,5 @@ func Start(port int, routes *Router) {
 
 	listenAddress := fmt.Sprintf(":%d", port)
 	log.Printf("pipes (PID: %d) is starting on %s\n=> Ctrl-C to shutdown server\n", os.Getpid(), listenAddress)
-	log.Fatal(http.ListenAndServe(listenAddress, bugsnag.Handler(http.DefaultServeMux)))
+	log.Fatal(http.ListenAndServe(listenAddress, bugsnag.Handler(context.ClearHandler(http.DefaultServeMux))))
 }

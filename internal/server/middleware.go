@@ -1,10 +1,12 @@
 package server
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	gouuid "github.com/nu7hatch/gouuid"
 
 	"github.com/toggl/pipes-api/pkg/domain"
 )
@@ -66,6 +68,20 @@ func (mw *Middleware) withAuth(handler http.HandlerFunc) http.HandlerFunc {
 
 		context.Set(r, workspaceIDKey, workspaceID)
 		context.Set(r, workspaceTokenKey, authData.Username)
+		handler(w, r)
+	}
+}
+
+func (mw *Middleware) withUUID(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u4, err := gouuid.NewV4()
+		if err != nil {
+			log.Print(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		uuidToken := u4.String()
+		context.Set(r, uuidKey, uuidToken)
 		handler(w, r)
 	}
 }
