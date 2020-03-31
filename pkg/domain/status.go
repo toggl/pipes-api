@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +13,9 @@ const (
 	StatusError   = "error"
 	StatusSuccess = "success"
 )
+
+// ErrJSONParsing hides json marshalling errors from users
+var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
 
 type Status struct {
 	Status        string   `json:"status,omitempty"`
@@ -41,6 +46,12 @@ func NewStatus(workspaceID int, externalServiceID IntegrationID, pipeID PipeID, 
 
 func (p *Status) AddError(err error) {
 	p.Status = StatusError
+
+	// If it is JSON marshalling error suppress it for status
+	if _, ok := err.(*json.UnmarshalTypeError); ok {
+		err = ErrJSONParsing
+	}
+
 	p.Message = err.Error()
 }
 

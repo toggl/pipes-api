@@ -74,11 +74,8 @@ func (svc *PipeSyncService) ClearIDMappings(workspaceID int, serviceID domain.In
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth := domain.NewAuthorization(workspaceID, serviceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -98,13 +95,9 @@ func (svc *PipeSyncService) ClearIDMappings(workspaceID int, serviceID domain.In
 
 func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.IntegrationID, forceImport bool) (*domain.UsersResponse, error) {
 	service := integration.NewPipeIntegration(serviceID, workspaceID)
-	auth := domain.NewAuthorization(workspaceID, serviceID)
-	err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth)
+	auth, err := svc.refreshAuthorization(workspaceID, serviceID)
 	if err != nil {
-		return nil, LoadError{err}
-	}
-	if err := svc.refresh(auth); err != nil {
-		return nil, RefreshError{errors.New("oAuth refresh failed!")}
+		return nil, RefreshError{errors.New("oAuth refresh failed")}
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return nil, err
@@ -149,12 +142,9 @@ func (svc *PipeSyncService) GetServiceUsers(workspaceID int, serviceID domain.In
 func (svc *PipeSyncService) GetServiceAccounts(workspaceID int, serviceID domain.IntegrationID, forceImport bool) (*domain.AccountsResponse, error) {
 	service := integration.NewPipeIntegration(serviceID, workspaceID)
 	auth := domain.NewAuthorization(workspaceID, serviceID)
-	err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth)
+	auth, err := svc.refreshAuthorization(workspaceID, serviceID)
 	if err != nil {
-		return nil, LoadError{err}
-	}
-	if err := svc.refresh(auth); err != nil {
-		return nil, RefreshError{errors.New("oAuth refresh failed!")}
+		return nil, RefreshError{errors.New("oAuth refresh failed")}
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return nil, err
@@ -232,71 +222,56 @@ func (svc *PipeSyncService) GetIntegrations(workspaceID int) ([]domain.Integrati
 }
 
 func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
-	var err error
-	defer func() {
-		if err != nil {
-			// If it is JSON marshalling error suppress it for status
-			if _, ok := err.(*json.UnmarshalTypeError); ok {
-				err = ErrJSONParsing
-			}
-			p.PipeStatus.AddError(err)
-		}
-		if e := svc.pipesStorage.SaveStatus(p.PipeStatus); e != nil {
-			svc.notifyBugsnag(p, e)
-			log.Println(e)
-		}
-	}()
-
 	svc.pipesStorage.LoadLastSyncFor(p)
-
 	p.PipeStatus = domain.NewStatus(p.WorkspaceID, p.ServiceID, p.ID, p.PipesApiHost)
+	if err := svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
+		svc.notifyBugsnag(p, err)
+		log.Println(err)
+		return
+	}
+
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
+		p.PipeStatus.AddError(err)
+	}
+
+	// We start pipes synchronization only if there are no errors on initialization steps above.
+	if err == nil {
+		svc.togglClient.WithAuthToken(auth.WorkspaceToken)
+		switch p.ID {
+		case domain.UsersPipe:
+			err = svc.syncUsers(p)
+		case domain.ProjectsPipe:
+			err = svc.syncProjects(p)
+		case domain.TodoListsPipe:
+			err = svc.syncTodoLists(p)
+		case domain.TodosPipe, domain.TasksPipe:
+			err = svc.syncTasks(p)
+		case domain.TimeEntriesPipe:
+			err = svc.syncTEs(p)
+		}
+		p.PipeStatus.AddError(err)
+	}
+
 	if err = svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
 		svc.notifyBugsnag(p, err)
-		return
-	}
-
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(p.WorkspaceID, p.ServiceID, auth); err != nil {
-		svc.notifyBugsnag(p, err)
-		return
-	}
-	if err = svc.refresh(auth); err != nil {
-		svc.notifyBugsnag(p, err)
-		return
-	}
-	svc.togglClient.WithAuthToken(auth.WorkspaceToken)
-
-	switch p.ID {
-	case domain.UsersPipe:
-		svc.syncUsers(p)
-	case domain.ProjectsPipe:
-		svc.syncProjects(p)
-	case domain.TodoListsPipe:
-		svc.syncTodoLists(p)
-	case domain.TodosPipe, domain.TasksPipe:
-		svc.syncTasks(p)
-	case domain.TimeEntriesPipe:
-		svc.syncTEs(p)
-	default:
-		bugsnag.Notify(fmt.Errorf("unrecognized pipeID: %s", p.ID))
-		return
+		log.Println(err)
 	}
 }
 
 // --------------------------- USERS -------------------------------------------
 
-func (svc *PipeSyncService) syncUsers(p *domain.Pipe) {
+func (svc *PipeSyncService) syncUsers(p *domain.Pipe) error {
 	err := svc.FetchUsers(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
 
 	err = svc.postUsers(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
+	return nil
 }
 
 func (svc *PipeSyncService) FetchUsers(p *domain.Pipe) error {
@@ -305,12 +280,8 @@ func (svc *PipeSyncService) FetchUsers(p *domain.Pipe) error {
 		return err
 	}
 
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 
@@ -353,13 +324,11 @@ func (svc *PipeSyncService) postUsers(p *domain.Pipe) error {
 		return err
 	}
 
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
-	if err := svc.refresh(auth); err != nil {
-		return err
-	}
+
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -408,18 +377,17 @@ func (svc *PipeSyncService) postUsers(p *domain.Pipe) error {
 
 // --------------------------- PROJECTS ----------------------------------------
 
-func (svc *PipeSyncService) syncProjects(p *domain.Pipe) {
+func (svc *PipeSyncService) syncProjects(p *domain.Pipe) error {
 	err := svc.fetchProjects(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
 
 	err = svc.postProjects(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
+	return nil
 }
 
 func (svc *PipeSyncService) fetchProjects(p *domain.Pipe) error {
@@ -456,11 +424,8 @@ func (svc *PipeSyncService) fetchProjects(p *domain.Pipe) error {
 		return err
 	}
 
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -500,11 +465,8 @@ func (svc *PipeSyncService) postProjects(p *domain.Pipe) error {
 		return err
 	}
 
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -541,18 +503,16 @@ func (svc *PipeSyncService) postProjects(p *domain.Pipe) error {
 
 // --------------------------- TO-DO LISTS -------------------------------------
 
-func (svc *PipeSyncService) syncTodoLists(p *domain.Pipe) {
+func (svc *PipeSyncService) syncTodoLists(p *domain.Pipe) error {
 	err := svc.fetchTodoLists(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
-
 	err = svc.postTodoLists(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
+	return nil
 }
 
 func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe) error {
@@ -592,13 +552,12 @@ func (svc *PipeSyncService) fetchTodoLists(p *domain.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
-	if err := svc.refresh(auth); err != nil {
-		return err
-	}
+
 	if err := service.SetAuthData(auth.Data); err != nil {
 		return err
 	}
@@ -639,11 +598,8 @@ func (svc *PipeSyncService) postTodoLists(p *domain.Pipe) error {
 		return err
 	}
 
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -687,17 +643,16 @@ func (svc *PipeSyncService) postTodoLists(p *domain.Pipe) error {
 
 // --------------------------- TASKS -------------------------------------------
 
-func (svc *PipeSyncService) syncTasks(p *domain.Pipe) {
+func (svc *PipeSyncService) syncTasks(p *domain.Pipe) error {
 	err := svc.fetchTasks(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
 	err = svc.postTasks(p)
 	if err != nil {
-		svc.notifyBugsnag(p, err)
-		return
+		return err
 	}
+	return nil
 }
 
 func (svc *PipeSyncService) fetchTasks(p *domain.Pipe) error {
@@ -738,11 +693,8 @@ func (svc *PipeSyncService) fetchTasks(p *domain.Pipe) error {
 		return err
 	}
 
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -783,11 +735,8 @@ func (svc *PipeSyncService) postTasks(p *domain.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -831,30 +780,20 @@ func (svc *PipeSyncService) postTasks(p *domain.Pipe) error {
 
 // --------------------------- Time Entries ------------------------------------
 
-func (svc *PipeSyncService) syncTEs(p *domain.Pipe) {
+func (svc *PipeSyncService) syncTEs(p *domain.Pipe) error {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
+		return err
+	}
+
 	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := service.SetParams(p.ServiceParams); err != nil {
-		log.Printf("could not set service params: %v, reason: %v", p.ID, err)
-		return
-	}
-
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		log.Printf("could not get service auth: %v, reason: %v", p.ID, err)
-		return
+		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
-		log.Printf("could not set auth data: %v, reason: %v", p.ID, err)
-		return
+		return err
 	}
 
-	if err := svc.postTimeEntries(p, service); err != nil {
-		svc.notifyBugsnag(p, err)
-		return
-	}
-}
-
-func (svc *PipeSyncService) postTimeEntries(p *domain.Pipe, service domain.PipeIntegration) error {
 	usersIDMapping, err := svc.idMappingsStorage.LoadReversed(service.GetWorkspaceID(), service.KeyFor(domain.UsersPipe))
 	if err != nil {
 		return err
@@ -919,7 +858,8 @@ func (svc *PipeSyncService) postTimeEntries(p *domain.Pipe, service domain.PipeI
 	if err := svc.idMappingsStorage.Save(entriesIDMapping); err != nil {
 		return err
 	}
-	p.PipeStatus.Complete("timeentries", []string{}, len(timeEntries))
+
+	p.PipeStatus.Complete(domain.TimeEntriesPipe, []string{}, len(timeEntries))
 	return nil
 }
 
@@ -940,11 +880,8 @@ func (svc *PipeSyncService) fetchClients(p *domain.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
-		return err
-	}
-	if err := svc.refresh(auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -993,9 +930,8 @@ func (svc *PipeSyncService) postClients(p *domain.Pipe) error {
 	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
-
-	auth := domain.NewAuthorization(p.WorkspaceID, p.ServiceID)
-	if err := svc.authorizationsStorage.Load(service.GetWorkspaceID(), service.ID(), auth); err != nil {
+	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
+	if err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -1033,35 +969,39 @@ func (svc *PipeSyncService) postClients(p *domain.Pipe) error {
 	return nil
 }
 
-func (svc *PipeSyncService) refresh(a *domain.Authorization) error {
-	authType, err := svc.integrationsStorage.LoadAuthorizationType(a.ServiceID)
+func (svc *PipeSyncService) refreshAuthorization(workspaceID int, serviceID domain.IntegrationID) (*domain.Authorization, error) {
+	auth := domain.NewAuthorization(workspaceID, serviceID)
+	if err := svc.authorizationsStorage.Load(workspaceID, serviceID, auth); err != nil {
+		return auth, err
+	}
+	authType, err := svc.integrationsStorage.LoadAuthorizationType(auth.ServiceID)
 	if err != nil {
-		return err
+		return auth, err
 	}
 	if authType != domain.TypeOauth2 {
-		return nil
+		return auth, err
 	}
 	var token goauth2.Token
-	if err := json.Unmarshal(a.Data, &token); err != nil {
-		return err
+	if err := json.Unmarshal(auth.Data, &token); err != nil {
+		return auth, err
 	}
 	if !token.Expired() {
-		return nil
+		return auth, err
 	}
-	config, res := svc.oAuthProvider.OAuth2Configs(a.ServiceID)
+	config, res := svc.oAuthProvider.OAuth2Configs(auth.ServiceID)
 	if !res {
-		return errors.New("service OAuth config not found")
+		return auth, errors.New("service OAuth config not found")
 	}
 	if err := svc.oAuthProvider.OAuth2Refresh(config, &token); err != nil {
-		return fmt.Errorf("unable to refresh oAuth2 token, reason: %w", err)
+		return auth, fmt.Errorf("unable to refresh oAuth2 token, reason: %w", err)
 	}
-	if err := a.SetOAuth2Token(&token); err != nil {
-		return err
+	if err := auth.SetOAuth2Token(&token); err != nil {
+		return auth, err
 	}
-	if err := svc.authorizationsStorage.Save(a); err != nil {
-		return err
+	if err := svc.authorizationsStorage.Save(auth); err != nil {
+		return auth, err
 	}
-	return nil
+	return auth, nil
 }
 
 func (svc *PipeSyncService) notifyBugsnag(p *domain.Pipe, err error) {

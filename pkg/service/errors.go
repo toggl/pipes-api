@@ -4,9 +4,6 @@ import "errors"
 
 var ErrPipeNotConfigured = errors.New("pipe is not configured")
 
-// ErrJSONParsing hides json marshalling errors from users
-var ErrJSONParsing = errors.New("failed to parse response from service, please contact support")
-
 type SetParamsError struct{ Err error }
 
 func (e SetParamsError) Error() string { return e.Err.Error() }

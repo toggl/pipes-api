@@ -23,6 +23,7 @@ mocks:
 test:
 	go test -race -cover ./internal/... ./pkg/...
 
+.PHONY: build
 build:
 	go build -ldflags="$(LD_FLAGS)" -o bin/$(APPNAME) ./cmd/pipes-api
 	go build -o bin/toggl_api_stub ./cmd/toggl_api_stub # This binary needs only for testing purposes. For more information see main.go of this binary.
