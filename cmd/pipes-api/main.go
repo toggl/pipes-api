@@ -93,13 +93,20 @@ func main() {
 	authorizationStorage := storage.NewAuthorizationStorage(db)
 	integrationStorage := storage.NewIntegrationStorage(integrationsConfig)
 
-	pipeService := service.NewPipeService(
+	pipeService := service.NewPipeService(pipeStorage)
+
+	pipeSyncService := service.NewPipeSyncService(
 		pipeStorage,
 		authorizationStorage,
 		integrationStorage,
 		idMappingStorage,
 		importStorage,
 		oauthProvider,
+		apiClient,
+	)
+
+	healthCheckService := service.NewHealthCheckService(
+		pipeStorage,
 		apiClient,
 	)
 
@@ -110,13 +117,15 @@ func main() {
 		oauthProvider,
 	)
 
-	pipeQueue := sync.NewQueue(db, pipeService, pipeStorage)
+	pipeQueue := sync.NewQueue(db, pipeSyncService, pipeStorage)
 
-	syncService := sync.NewWorkerPool(pipeQueue, pipeService, env.Debug)
-	syncService.Start()
+	workerPool := sync.NewWorkerPool(pipeQueue, pipeSyncService, env.Debug)
+	workerPool.Start()
 
 	controller := server.NewController(
 		pipeService,
+		pipeSyncService,
+		healthCheckService,
 		authorizationService,
 		integrationStorage,
 		pipeQueue,

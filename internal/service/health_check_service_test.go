@@ -13,33 +13,18 @@ import (
 
 type ServiceTestSuite struct {
 	suite.Suite
-	db                   *sql.DB
-	svc                  *service.PipeService
-	pipeStorage          *mocks.PipesStorage
-	importStorage        *mocks.ImportsStorage
-	integrationStorage   *mocks.IntegrationsStorage
-	idMappingStorage     *mocks.IDMappingsStorage
-	authorizationStorage *mocks.AuthorizationsStorage
-	togglClient          *mocks.TogglClient
-	oauthProvider        *mocks.OAuthProvider
+	db          *sql.DB
+	svc         *service.HealthCheckService
+	pipeStorage *mocks.PipesStorage
+	togglClient *mocks.TogglClient
 }
 
 func (ts *ServiceTestSuite) SetupTest() {
 	ts.pipeStorage = &mocks.PipesStorage{}
-	ts.importStorage = &mocks.ImportsStorage{}
-	ts.integrationStorage = &mocks.IntegrationsStorage{}
-	ts.idMappingStorage = &mocks.IDMappingsStorage{}
 	ts.togglClient = &mocks.TogglClient{}
-	ts.authorizationStorage = &mocks.AuthorizationsStorage{}
-	ts.oauthProvider = &mocks.OAuthProvider{}
 
-	ts.svc = service.NewPipeService(
+	ts.svc = service.NewHealthCheckService(
 		ts.pipeStorage,
-		ts.authorizationStorage,
-		ts.integrationStorage,
-		ts.idMappingStorage,
-		ts.importStorage,
-		ts.oauthProvider,
 		ts.togglClient,
 	)
 }
@@ -47,12 +32,7 @@ func (ts *ServiceTestSuite) SetupTest() {
 func (ts *ServiceTestSuite) TearDownTest() {
 	ts.svc = nil
 	ts.pipeStorage = nil
-	ts.importStorage = nil
-	ts.integrationStorage = nil
-	ts.idMappingStorage = nil
-	ts.authorizationStorage = nil
 	ts.togglClient = nil
-	ts.oauthProvider = nil
 }
 
 func (ts *ServiceTestSuite) TestService_Ready() {

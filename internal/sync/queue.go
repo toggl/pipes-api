@@ -22,22 +22,22 @@ var postPipeRunWorkspaceLock = map[int]*sync.Mutex{}
 var postPipeRunLock sync.Mutex
 
 type Queue struct {
-	db          *sql.DB
-	pipeService domain.PipeService
-	pipeStorage domain.PipesStorage
+	db              *sql.DB
+	pipeSyncService domain.PipeSyncService
+	pipeStorage     domain.PipesStorage
 }
 
-func NewQueue(db *sql.DB, pipeService domain.PipeService, pipesStorage domain.PipesStorage) *Queue {
+func NewQueue(db *sql.DB, pipeSyncService domain.PipeSyncService, pipesStorage domain.PipesStorage) *Queue {
 	if db == nil {
 		panic("Queue.db should not be nil")
 	}
-	if pipeService == nil {
-		panic("Queue.pipeService should not be nil")
+	if pipeSyncService == nil {
+		panic("Queue.pipeSyncService should not be nil")
 	}
 	if pipesStorage == nil {
 		panic("Queue.pipeStorage should not be nil")
 	}
-	return &Queue{db: db, pipeService: pipeService, pipeStorage: pipesStorage}
+	return &Queue{db: db, pipeSyncService: pipeSyncService, pipeStorage: pipesStorage}
 }
 
 func (pq *Queue) ScheduleAutomaticPipesSynchronization() error {
@@ -109,7 +109,7 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.I
 
 		go func() {
 			wsLock.Lock()
-			pq.pipeService.Synchronize(p)
+			pq.pipeSyncService.Synchronize(p)
 			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D

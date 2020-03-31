@@ -21,19 +21,19 @@ const (
 )
 
 type WorkerPool struct {
-	Debug       bool
-	queue       domain.Queue
-	pipeService domain.PipeService
+	Debug           bool
+	queue           domain.Queue
+	pipeSyncService domain.PipeSyncService
 }
 
-func NewWorkerPool(queue domain.Queue, pipeService domain.PipeService, debug bool) *WorkerPool {
+func NewWorkerPool(queue domain.Queue, pipeSyncService domain.PipeSyncService, debug bool) *WorkerPool {
 	if queue == nil {
 		panic("WorkerPool.queue should not be nil")
 	}
-	if pipeService == nil {
-		panic("WorkerPool.pipeService should not be nil")
+	if pipeSyncService == nil {
+		panic("WorkerPool.pipeSyncService should not be nil")
 	}
-	return &WorkerPool{Debug: debug, queue: queue, pipeService: pipeService}
+	return &WorkerPool{Debug: debug, queue: queue, pipeSyncService: pipeSyncService}
 }
 
 func (s *WorkerPool) Start() {
@@ -67,7 +67,7 @@ func (s *WorkerPool) pipeWorker(id int) {
 		for _, pipe := range pipes {
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key())
 
-			s.pipeService.Synchronize(pipe)
+			s.pipeSyncService.Synchronize(pipe)
 
 			err := s.queue.MarkPipeSynchronized(pipe)
 			if err != nil {

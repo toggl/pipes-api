@@ -16,6 +16,8 @@ import (
 type Controller struct {
 	authorizationService domain.AuthorizationService
 	pipeService          domain.PipeService
+	pipeSyncService      domain.PipeSyncService
+	healthCheckService   domain.HealthCheckService
 	integrationsStorage  domain.IntegrationsStorage
 	queue                domain.Queue
 	Params
@@ -27,9 +29,15 @@ type Params struct {
 	BuildTime string
 }
 
-func NewController(pipeService domain.PipeService, authorizationService domain.AuthorizationService, integrationsStorage domain.IntegrationsStorage, queue domain.Queue, params Params) *Controller {
+func NewController(pipeService domain.PipeService, pipeSyncService domain.PipeSyncService, healthCheckService domain.HealthCheckService, authorizationService domain.AuthorizationService, integrationsStorage domain.IntegrationsStorage, queue domain.Queue, params Params) *Controller {
 	if pipeService == nil {
 		panic("Controller.pipeService should not be nil")
+	}
+	if pipeSyncService == nil {
+		panic("Controller.pipeSyncService should not be nil")
+	}
+	if healthCheckService == nil {
+		panic("Controller.healthCheckService should not be nil")
 	}
 	if authorizationService == nil {
 		panic("Controller.authorizationService should not be nil")
@@ -43,6 +51,8 @@ func NewController(pipeService domain.PipeService, authorizationService domain.A
 
 	return &Controller{
 		pipeService:          pipeService,
+		pipeSyncService:      pipeSyncService,
+		healthCheckService:   healthCheckService,
 		authorizationService: authorizationService,
 		integrationsStorage:  integrationsStorage,
 		queue:                queue,
@@ -52,7 +62,7 @@ func NewController(pipeService domain.PipeService, authorizationService domain.A
 
 func (c *Controller) GetIntegrationsHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
-	resp, err := c.pipeService.GetIntegrations(workspaceID)
+	resp, err := c.pipeSyncService.GetIntegrations(workspaceID)
 	if err != nil {
 		return internalServerError(err.Error())
 	}
@@ -200,7 +210,7 @@ func (c *Controller) GetServiceAccountsHandler(req Request) Response {
 		fi = false
 	}
 
-	accountsResponse, err := c.pipeService.GetServiceAccounts(workspaceID, serviceID, fi)
+	accountsResponse, err := c.pipeSyncService.GetServiceAccounts(workspaceID, serviceID, fi)
 	if err != nil {
 		if errors.Is(err, &service.LoadError{}) {
 			return badRequest(err.Error())
@@ -231,7 +241,7 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 		fi = false
 	}
 
-	usersResponse, err := c.pipeService.GetServiceUsers(workspaceID, serviceID, fi)
+	usersResponse, err := c.pipeSyncService.GetServiceUsers(workspaceID, serviceID, fi)
 	if err != nil {
 		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
@@ -256,7 +266,7 @@ func (c *Controller) GetServiceUsersHandler(req Request) Response {
 func (c *Controller) GetServicePipeLogHandler(req Request) Response {
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
-	pipesLog, err := c.pipeService.GetServicePipeLog(workspaceID, serviceID, pipeID)
+	pipesLog, err := c.pipeSyncService.GetServicePipeLog(workspaceID, serviceID, pipeID)
 	if err != nil {
 		if errors.Is(err, service.ErrNoContent) {
 			return noContent()
@@ -272,7 +282,7 @@ func (c *Controller) PostServicePipeClearIDMappingsHandler(req Request) Response
 	workspaceID := currentWorkspaceID(req.r)
 	serviceID, pipeID := currentServicePipeID(req.r)
 
-	err := c.pipeService.ClearIDMappings(workspaceID, serviceID, pipeID)
+	err := c.pipeSyncService.ClearIDMappings(workspaceID, serviceID, pipeID)
 	if err != nil {
 		if errors.Is(err, service.ErrPipeNotConfigured) {
 			return badRequest(err.Error())
@@ -312,7 +322,7 @@ func (c *Controller) GetStatusHandler(Request) Response {
 		Reasons []string `json:"reasons"`
 	}{}
 
-	errs := c.pipeService.Ready()
+	errs := c.healthCheckService.Ready()
 	for _, err := range errs {
 		resp.Reasons = append(resp.Reasons, err.Error())
 	}
