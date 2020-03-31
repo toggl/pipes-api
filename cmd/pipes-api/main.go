@@ -19,7 +19,6 @@ import (
 	"github.com/toggl/pipes-api/internal/server"
 	"github.com/toggl/pipes-api/internal/storage"
 	"github.com/toggl/pipes-api/internal/toggl"
-	"github.com/toggl/pipes-api/internal/workerpool"
 	"github.com/toggl/pipes-api/pkg/service"
 )
 
@@ -120,7 +119,7 @@ func main() {
 
 	pipeQueue := queue.NewQueue(db, pipeSyncService, pipeStorage)
 
-	workerPool := workerpool.NewWorkerPool(pipeQueue, pipeSyncService, env.Debug)
+	workerPool := service.NewWorkerPool(pipeQueue, pipeSyncService, env.Debug)
 	workerPool.Start()
 
 	controller := server.NewController(
