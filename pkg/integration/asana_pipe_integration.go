@@ -1,4 +1,4 @@
-package asana
+package integration
 
 import (
 	"context"
@@ -17,7 +17,7 @@ import (
 
 var asanaPerPageLimit uint32 = 100
 
-type Service struct {
+type AsanaPipeIntegration struct {
 	WorkspaceID int
 	*AsanaParams
 	token oauth.Token
@@ -27,22 +27,22 @@ type AsanaParams struct {
 	AccountID int64 `json:"account_id"`
 }
 
-func (s *Service) ID() domain.IntegrationID {
+func (s *AsanaPipeIntegration) ID() domain.IntegrationID {
 	return domain.Asana
 }
 
-func (s *Service) GetWorkspaceID() int {
+func (s *AsanaPipeIntegration) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType domain.PipeID) string {
+func (s *AsanaPipeIntegration) KeyFor(objectType domain.PipeID) string {
 	if s.AsanaParams == nil {
 		return fmt.Sprintf("asana:account:%s", objectType)
 	}
 	return fmt.Sprintf("asana:account:%d:%s", s.AccountID, objectType)
 }
 
-func (s *Service) SetParams(b []byte) error {
+func (s *AsanaPipeIntegration) SetParams(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
@@ -54,12 +54,12 @@ func (s *Service) SetParams(b []byte) error {
 
 // SetAuthData sets Asana API Authentication Token.
 // It should be `oauth.Token` structure from "code.google.com/p/goauth2/oauth"
-func (s *Service) SetAuthData(b []byte) error {
+func (s *AsanaPipeIntegration) SetAuthData(b []byte) error {
 	return json.Unmarshal(b, &s.token)
 }
 
 // Map Asana accounts to local accounts
-func (s *Service) Accounts() ([]*domain.Account, error) {
+func (s *AsanaPipeIntegration) Accounts() ([]*domain.Account, error) {
 	foreignObjects, err := s.client().ListWorkspaces(context.Background())
 	if err != nil {
 		bugsnag.Notify(err, bugsnag.MetaData{
@@ -84,7 +84,7 @@ func (s *Service) Accounts() ([]*domain.Account, error) {
 }
 
 // Map Asana users to users
-func (s *Service) Users() ([]*domain.User, error) {
+func (s *AsanaPipeIntegration) Users() ([]*domain.User, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
 		Limit:     asanaPerPageLimit,
@@ -115,7 +115,7 @@ func (s *Service) Users() ([]*domain.User, error) {
 }
 
 // Map Asana projects to projects
-func (s *Service) Projects() ([]*domain.Project, error) {
+func (s *AsanaPipeIntegration) Projects() ([]*domain.Project, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
 		Limit:     asanaPerPageLimit,
@@ -146,7 +146,7 @@ func (s *Service) Projects() ([]*domain.Project, error) {
 }
 
 // Map Asana tasks to tasks
-func (s *Service) Tasks() ([]*domain.Task, error) {
+func (s *AsanaPipeIntegration) Tasks() ([]*domain.Task, error) {
 	opt := &asana.Filter{
 		Workspace: s.AccountID,
 		Limit:     asanaPerPageLimit,
@@ -206,21 +206,21 @@ func numberStrToInt64(s string) int64 {
 	return res
 }
 
-func (s *Service) SetSince(*time.Time) {}
+func (s *AsanaPipeIntegration) SetSince(*time.Time) {}
 
-func (s *Service) Clients() ([]*domain.Client, error) {
+func (s *AsanaPipeIntegration) Clients() ([]*domain.Client, error) {
 	return []*domain.Client{}, nil
 }
 
-func (s *Service) TodoLists() ([]*domain.Task, error) {
+func (s *AsanaPipeIntegration) TodoLists() ([]*domain.Task, error) {
 	return []*domain.Task{}, nil
 }
 
-func (s *Service) ExportTimeEntry(*domain.TimeEntry) (int, error) {
+func (s *AsanaPipeIntegration) ExportTimeEntry(*domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 
-func (s *Service) client() *asana.Client {
+func (s *AsanaPipeIntegration) client() *asana.Client {
 	t := &oauth.Transport{Token: &s.token}
 	return asana.NewClient(t.Client())
 }

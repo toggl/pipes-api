@@ -1,4 +1,4 @@
-package basecamp
+package integration
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/domain"
 )
 
-type Service struct {
+type BaseCampPipeIntegration struct {
 	WorkspaceID int
 	*BasecampParams
 	token         oauth.Token
@@ -24,22 +24,22 @@ type BasecampParams struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() domain.IntegrationID {
+func (s *BaseCampPipeIntegration) ID() domain.IntegrationID {
 	return domain.BaseCamp
 }
 
-func (s *Service) GetWorkspaceID() int {
+func (s *BaseCampPipeIntegration) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType domain.PipeID) string {
+func (s *BaseCampPipeIntegration) KeyFor(objectType domain.PipeID) string {
 	if s.BasecampParams == nil {
 		return fmt.Sprintf("basecamp:account:%s", objectType)
 	}
 	return fmt.Sprintf("basecamp:account:%d:%s", s.AccountID, objectType)
 }
 
-func (s *Service) SetParams(b []byte) error {
+func (s *BaseCampPipeIntegration) SetParams(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
@@ -49,16 +49,16 @@ func (s *Service) SetParams(b []byte) error {
 	return nil
 }
 
-func (s *Service) SetAuthData(b []byte) error {
+func (s *BaseCampPipeIntegration) SetAuthData(b []byte) error {
 	return json.Unmarshal(b, &s.token)
 }
 
-func (s *Service) SetSince(since *time.Time) {
+func (s *BaseCampPipeIntegration) SetSince(since *time.Time) {
 	s.modifiedSince = since
 }
 
 // Map basecamp accounts to local accounts
-func (s *Service) Accounts() ([]*domain.Account, error) {
+func (s *BaseCampPipeIntegration) Accounts() ([]*domain.Account, error) {
 	foreignObjects, err := s.client().GetAccounts() // This will work only for Basecamp 2 account.
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (s *Service) Accounts() ([]*domain.Account, error) {
 }
 
 // Map basecamp people to local users
-func (s *Service) Users() ([]*domain.User, error) {
+func (s *BaseCampPipeIntegration) Users() ([]*domain.User, error) {
 	foreignObjects, err := s.client().GetPeople(s.AccountID)
 	if err != nil {
 		return nil, err
@@ -93,12 +93,12 @@ func (s *Service) Users() ([]*domain.User, error) {
 }
 
 // There are no clients in basecamp
-func (s *Service) Clients() ([]*domain.Client, error) {
+func (s *BaseCampPipeIntegration) Clients() ([]*domain.Client, error) {
 	return []*domain.Client{}, nil
 }
 
 // Map basecamp projects to projects
-func (s *Service) Projects() ([]*domain.Project, error) {
+func (s *BaseCampPipeIntegration) Projects() ([]*domain.Project, error) {
 	foreignObjects, err := s.client().GetProjects(s.AccountID)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s *Service) Projects() ([]*domain.Project, error) {
 }
 
 // Map basecamp todos to tasks
-func (s *Service) Tasks() ([]*domain.Task, error) {
+func (s *BaseCampPipeIntegration) Tasks() ([]*domain.Task, error) {
 	c := s.client()
 	foreignObjects, err := c.GetAllTodoLists(s.AccountID)
 	if err != nil {
@@ -169,7 +169,7 @@ func (s *Service) Tasks() ([]*domain.Task, error) {
 }
 
 // Map basecamp todolists to tasks
-func (s *Service) TodoLists() ([]*domain.Task, error) {
+func (s *BaseCampPipeIntegration) TodoLists() ([]*domain.Task, error) {
 	foreignObjects, err := s.client().GetAllTodoLists(s.AccountID)
 	if err != nil {
 		return nil, err
@@ -190,11 +190,11 @@ func (s *Service) TodoLists() ([]*domain.Task, error) {
 	return tasks, nil
 }
 
-func (s *Service) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
+func (s *BaseCampPipeIntegration) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 
-func (s *Service) client() *basecamp.Client {
+func (s *BaseCampPipeIntegration) client() *basecamp.Client {
 	return &basecamp.Client{
 		ModifiedSince: s.modifiedSince,
 		AccessToken:   s.token.AccessToken,

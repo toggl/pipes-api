@@ -1,4 +1,4 @@
-package togglplan
+package integration
 
 import (
 	"encoding/json"
@@ -13,7 +13,7 @@ import (
 	"github.com/toggl/pipes-api/pkg/domain"
 )
 
-type Service struct {
+type TogglPlanPipeIntegration struct {
 	WorkspaceID int
 	*Params
 	token oauth.Token
@@ -23,22 +23,22 @@ type Params struct {
 	AccountID int `json:"account_id"`
 }
 
-func (s *Service) ID() domain.IntegrationID {
+func (s *TogglPlanPipeIntegration) ID() domain.IntegrationID {
 	return domain.TogglPlan
 }
 
-func (s *Service) GetWorkspaceID() int {
+func (s *TogglPlanPipeIntegration) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType domain.PipeID) string {
+func (s *TogglPlanPipeIntegration) KeyFor(objectType domain.PipeID) string {
 	if s.Params == nil {
 		return fmt.Sprintf("%s:account:%s", domain.TogglPlan, objectType)
 	}
 	return fmt.Sprintf("%s:account:%d:%s", domain.TogglPlan, s.AccountID, objectType)
 }
 
-func (s *Service) SetParams(b []byte) error {
+func (s *TogglPlanPipeIntegration) SetParams(b []byte) error {
 	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (s *Service) SetParams(b []byte) error {
 	return nil
 }
 
-func (s *Service) SetAuthData(b []byte) error {
+func (s *TogglPlanPipeIntegration) SetAuthData(b []byte) error {
 	if err := json.Unmarshal(b, &s.token); err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (s *Service) SetAuthData(b []byte) error {
 }
 
 // Map Teamweek accounts to local accounts
-func (s *Service) Accounts() ([]*domain.Account, error) {
+func (s *TogglPlanPipeIntegration) Accounts() ([]*domain.Account, error) {
 	foreignObject, err := s.client().GetUserProfile()
 	if err != nil {
 		return nil, err
@@ -73,7 +73,7 @@ func (s *Service) Accounts() ([]*domain.Account, error) {
 }
 
 // Map Teamweek people to local users
-func (s *Service) Users() ([]*domain.User, error) {
+func (s *TogglPlanPipeIntegration) Users() ([]*domain.User, error) {
 	foreignObjects, err := s.client().ListWorkspaceMembers(int64(s.AccountID))
 	if err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (s *Service) Users() ([]*domain.User, error) {
 }
 
 // Map Teamweek projects to projects
-func (s *Service) Projects() ([]*domain.Project, error) {
+func (s *TogglPlanPipeIntegration) Projects() ([]*domain.Project, error) {
 	foreignObjects, err := s.client().ListWorkspaceProjects(int64(s.AccountID))
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (s *Service) Projects() ([]*domain.Project, error) {
 }
 
 // Map Teamweek tasks to tasks
-func (s *Service) Tasks() ([]*domain.Task, error) {
+func (s *TogglPlanPipeIntegration) Tasks() ([]*domain.Task, error) {
 	foreignObjects, err := s.client().ListWorkspaceTasks(int64(s.AccountID))
 	if err != nil {
 		return nil, err
@@ -133,21 +133,21 @@ func (s *Service) Tasks() ([]*domain.Task, error) {
 	return tasks, nil
 }
 
-func (s *Service) SetSince(*time.Time) {}
+func (s *TogglPlanPipeIntegration) SetSince(*time.Time) {}
 
-func (s *Service) TodoLists() ([]*domain.Task, error) {
+func (s *TogglPlanPipeIntegration) TodoLists() ([]*domain.Task, error) {
 	return []*domain.Task{}, nil
 }
 
-func (s *Service) Clients() ([]*domain.Client, error) {
+func (s *TogglPlanPipeIntegration) Clients() ([]*domain.Client, error) {
 	return []*domain.Client{}, nil
 }
 
-func (s *Service) ExportTimeEntry(*domain.TimeEntry) (int, error) {
+func (s *TogglPlanPipeIntegration) ExportTimeEntry(*domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 
-func (s *Service) client() *teamweek.Client {
+func (s *TogglPlanPipeIntegration) client() *teamweek.Client {
 	t := &oauth.Transport{Token: &s.token}
 	return teamweek.NewClient(t.Client())
 }

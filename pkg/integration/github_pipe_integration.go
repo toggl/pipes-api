@@ -1,4 +1,4 @@
-package github
+package integration
 
 import (
 	"context"
@@ -13,31 +13,31 @@ import (
 	"github.com/toggl/pipes-api/pkg/domain"
 )
 
-type Service struct {
+type GitHubPipeIntegration struct {
 	WorkspaceID int
 	token       oauth.Token
 }
 
-func (s *Service) ID() domain.IntegrationID {
+func (s *GitHubPipeIntegration) ID() domain.IntegrationID {
 	return domain.GitHub
 }
 
-func (s *Service) GetWorkspaceID() int {
+func (s *GitHubPipeIntegration) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType domain.PipeID) string {
+func (s *GitHubPipeIntegration) KeyFor(objectType domain.PipeID) string {
 	return fmt.Sprintf("github:%s", objectType)
 }
 
-func (s *Service) SetAuthData(b []byte) error {
+func (s *GitHubPipeIntegration) SetAuthData(b []byte) error {
 	if err := json.Unmarshal(b, &s.token); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) Accounts() ([]*domain.Account, error) {
+func (s *GitHubPipeIntegration) Accounts() ([]*domain.Account, error) {
 	var accounts []*domain.Account
 	account := domain.Account{ID: 1, Name: "Self"}
 	accounts = append(accounts, &account)
@@ -45,7 +45,7 @@ func (s *Service) Accounts() ([]*domain.Account, error) {
 }
 
 // Map Github repos to projects
-func (s *Service) Projects() ([]*domain.Project, error) {
+func (s *GitHubPipeIntegration) Projects() ([]*domain.Project, error) {
 	repos, _, err := s.client().Repositories.List(context.Background(), "", nil)
 	if err != nil {
 		return nil, err
@@ -62,33 +62,33 @@ func (s *Service) Projects() ([]*domain.Project, error) {
 	return projects, nil
 }
 
-func (s *Service) SetSince(*time.Time) {}
+func (s *GitHubPipeIntegration) SetSince(*time.Time) {}
 
-func (s *Service) SetParams([]byte) error {
+func (s *GitHubPipeIntegration) SetParams([]byte) error {
 	return nil
 }
 
-func (s *Service) Users() ([]*domain.User, error) {
+func (s *GitHubPipeIntegration) Users() ([]*domain.User, error) {
 	return []*domain.User{}, nil
 }
 
-func (s *Service) Clients() ([]*domain.Client, error) {
+func (s *GitHubPipeIntegration) Clients() ([]*domain.Client, error) {
 	return []*domain.Client{}, nil
 }
 
-func (s *Service) Tasks() ([]*domain.Task, error) {
+func (s *GitHubPipeIntegration) Tasks() ([]*domain.Task, error) {
 	return []*domain.Task{}, nil
 }
 
-func (s *Service) TodoLists() ([]*domain.Task, error) {
+func (s *GitHubPipeIntegration) TodoLists() ([]*domain.Task, error) {
 	return []*domain.Task{}, nil
 }
 
-func (s *Service) ExportTimeEntry(*domain.TimeEntry) (int, error) {
+func (s *GitHubPipeIntegration) ExportTimeEntry(*domain.TimeEntry) (int, error) {
 	return 0, nil
 }
 
-func (s *Service) client() *github.Client {
+func (s *GitHubPipeIntegration) client() *github.Client {
 	t := &oauth.Transport{Token: &s.token}
 	return github.NewClient(t.Client())
 }

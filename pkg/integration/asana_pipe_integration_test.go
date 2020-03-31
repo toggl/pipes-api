@@ -1,4 +1,4 @@
-package asana
+package integration
 
 import (
 	"encoding/json"
@@ -13,17 +13,17 @@ import (
 )
 
 func TestAsana_WorkspaceID(t *testing.T) {
-	s := &Service{WorkspaceID: 1}
+	s := &AsanaPipeIntegration{WorkspaceID: 1}
 	assert.Equal(t, 1, s.GetWorkspaceID())
 }
 
 func TestAsana_ID(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	assert.Equal(t, domain.Asana, s.ID())
 }
 
 func TestAsana_KeyFor(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	assert.Equal(t, "asana:account:accounts", s.KeyFor(domain.AccountsPipe))
 
 	tests := []struct {
@@ -40,14 +40,14 @@ func TestAsana_KeyFor(t *testing.T) {
 		{want: "asana:account:1:accounts", got: domain.AccountsPipe},
 	}
 
-	svc := &Service{AsanaParams: &AsanaParams{AccountID: 1}}
+	svc := &AsanaPipeIntegration{AsanaParams: &AsanaParams{AccountID: 1}}
 	for _, v := range tests {
 		assert.Equal(t, v.want, svc.KeyFor(v.got))
 	}
 }
 
 func TestAsana_SetAuthData(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	token := oauth.Token{
 		AccessToken:  "test",
 		RefreshToken: "test2",
@@ -69,7 +69,7 @@ func TestAsana_SetAuthData(t *testing.T) {
 }
 
 func TestAsana_SetParams(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	ap := AsanaParams{AccountID: 5}
 	b, err := json.Marshal(ap)
 	assert.NoError(t, err)
@@ -81,14 +81,14 @@ func TestAsana_SetParams(t *testing.T) {
 	b2, err := json.Marshal(AsanaParams{AccountID: 0})
 	assert.NoError(t, err)
 
-	s2 := &Service{}
+	s2 := &AsanaPipeIntegration{}
 	err = s2.SetParams(b2)
 	assert.Error(t, err)
 
 	b3, err := json.Marshal("")
 	assert.NoError(t, err)
 
-	s3 := &Service{}
+	s3 := &AsanaPipeIntegration{}
 	err = s3.SetParams(b3)
 	assert.Error(t, err)
 }
@@ -102,26 +102,26 @@ func TestAsana_numberStrToInt64(t *testing.T) {
 }
 
 func TestAsana_SetSince(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	s.SetSince(&time.Time{})
 }
 
 func TestIntegration_Asana_Clients(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	c, err := s.Clients()
 	assert.NoError(t, err)
 	assert.Equal(t, []*domain.Client{}, c)
 }
 
 func TestIntegration_Asana_TodoLists(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	tl, err := s.TodoLists()
 	assert.NoError(t, err)
 	assert.Equal(t, []*domain.Task{}, tl)
 }
 
 func TestIntegration_Asana_ExportTimeEntry(t *testing.T) {
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	te, err := s.ExportTimeEntry(&domain.TimeEntry{})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, te)
@@ -192,7 +192,7 @@ func resetAsanaLimit() {
 	asanaPerPageLimit = 100
 }
 
-func createAsanaService(t *testing.T) *Service {
+func createAsanaService(t *testing.T) *AsanaPipeIntegration {
 	testToken := os.Getenv("ASANA_PERSONAL_TOKEN")
 	testAccountID := os.Getenv("ASANA_ACCOUNT_ID")
 
@@ -200,7 +200,7 @@ func createAsanaService(t *testing.T) *Service {
 		t.Skipf("Skipped, because required environment variables (ASANA_PERSONAL_TOKEN, ASANA_ACCOUNT_ID) haven't been set.")
 	}
 
-	s := &Service{}
+	s := &AsanaPipeIntegration{}
 	s.token = oauth.Token{
 		AccessToken: testToken,
 	}

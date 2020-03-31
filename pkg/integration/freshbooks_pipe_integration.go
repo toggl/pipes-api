@@ -1,4 +1,4 @@
-package freshbooks
+package integration
 
 import (
 	"encoding/json"
@@ -12,29 +12,29 @@ import (
 	"github.com/toggl/pipes-api/pkg/domain"
 )
 
-type Service struct {
+type FreshBooksPipeIntegration struct {
 	WorkspaceID int
 	accountName string
 	token       oauthplain.Token
 }
 
-func (s *Service) ID() domain.IntegrationID {
+func (s *FreshBooksPipeIntegration) ID() domain.IntegrationID {
 	return domain.FreshBooks
 }
 
-func (s *Service) GetWorkspaceID() int {
+func (s *FreshBooksPipeIntegration) GetWorkspaceID() int {
 	return s.WorkspaceID
 }
 
-func (s *Service) KeyFor(objectType domain.PipeID) string {
+func (s *FreshBooksPipeIntegration) KeyFor(objectType domain.PipeID) string {
 	return fmt.Sprintf("freshbooks:%s", objectType)
 }
 
-func (s *Service) SetParams(b []byte) error {
+func (s *FreshBooksPipeIntegration) SetParams(b []byte) error {
 	return nil
 }
 
-func (s *Service) SetAuthData(b []byte) error {
+func (s *FreshBooksPipeIntegration) SetAuthData(b []byte) error {
 	if err := json.Unmarshal(b, &s.token); err != nil {
 		return err
 	}
@@ -42,9 +42,9 @@ func (s *Service) SetAuthData(b []byte) error {
 	return nil
 }
 
-func (s *Service) SetSince(*time.Time) {}
+func (s *FreshBooksPipeIntegration) SetSince(*time.Time) {}
 
-func (s *Service) Users() ([]*domain.User, error) {
+func (s *FreshBooksPipeIntegration) Users() ([]*domain.User, error) {
 	foreignObjects, err := s.client().Users()
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (s *Service) Users() ([]*domain.User, error) {
 	return users, nil
 }
 
-func (s *Service) Clients() ([]*domain.Client, error) {
+func (s *FreshBooksPipeIntegration) Clients() ([]*domain.Client, error) {
 	foreignObjects, err := s.client().Clients()
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (s *Service) Clients() ([]*domain.Client, error) {
 	return clients, nil
 }
 
-func (s *Service) Projects() ([]*domain.Project, error) {
+func (s *FreshBooksPipeIntegration) Projects() ([]*domain.Project, error) {
 	foreignObjects, err := s.client().Projects()
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (s *Service) Projects() ([]*domain.Project, error) {
 	return projects, nil
 }
 
-func (s *Service) Tasks() ([]*domain.Task, error) {
+func (s *FreshBooksPipeIntegration) Tasks() ([]*domain.Task, error) {
 	foreignProjects, err := s.client().Projects()
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (s *Service) Tasks() ([]*domain.Task, error) {
 	return tasks, nil
 }
 
-func (s *Service) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
+func (s *FreshBooksPipeIntegration) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
 	start, err := time.Parse(time.RFC3339, t.Start)
 	if err != nil {
 		return 0, err
@@ -146,15 +146,15 @@ func (s *Service) ExportTimeEntry(t *domain.TimeEntry) (int, error) {
 	return s.client().SaveTimeEntry(entry)
 }
 
-func (s *Service) Accounts() ([]*domain.Account, error) {
+func (s *FreshBooksPipeIntegration) Accounts() ([]*domain.Account, error) {
 	return []*domain.Account{}, nil
 }
 
-func (s *Service) TodoLists() ([]*domain.Task, error) {
+func (s *FreshBooksPipeIntegration) TodoLists() ([]*domain.Task, error) {
 	return []*domain.Task{}, nil
 }
 
-func (s *Service) client() *freshbooks.Api {
+func (s *FreshBooksPipeIntegration) client() *freshbooks.Api {
 	return freshbooks.NewApi(s.accountName, &s.token)
 }
 

@@ -1,4 +1,4 @@
-package freshbooks
+package integration
 
 import (
 	"encoding/json"
@@ -12,12 +12,12 @@ import (
 )
 
 func TestFreshbooks_WorkspaceID(t *testing.T) {
-	s := &Service{WorkspaceID: 1}
+	s := &FreshBooksPipeIntegration{WorkspaceID: 1}
 	assert.Equal(t, 1, s.GetWorkspaceID())
 }
 
 func TestFreshbooks_ID(t *testing.T) {
-	s := &Service{}
+	s := &FreshBooksPipeIntegration{}
 	assert.Equal(t, domain.FreshBooks, s.ID())
 }
 
@@ -36,14 +36,14 @@ func TestFreshbooks_KeyFor(t *testing.T) {
 		{want: "freshbooks:accounts", got: domain.AccountsPipe},
 	}
 
-	svc := &Service{}
+	svc := &FreshBooksPipeIntegration{}
 	for _, v := range tests {
 		assert.Equal(t, v.want, svc.KeyFor(v.got))
 	}
 }
 
 func TestFreshbooks_SetAuthData(t *testing.T) {
-	s := &Service{}
+	s := &FreshBooksPipeIntegration{}
 	token := oauthplain.Token{
 		ConsumerKey:      "",
 		ConsumerSecret:   "",
@@ -69,25 +69,25 @@ func TestFreshbooks_SetAuthData(t *testing.T) {
 }
 
 func TestFreshbooks_SetParams(t *testing.T) {
-	s := &Service{}
+	s := &FreshBooksPipeIntegration{}
 	err := s.SetParams([]byte("any"))
 	assert.NoError(t, err)
 }
 
 func TestFreshbooks_SetSince(t *testing.T) {
-	s := &Service{}
+	s := &FreshBooksPipeIntegration{}
 	s.SetSince(&time.Time{})
 }
 
 func TestIntegration_Freshbooks_Accounts(t *testing.T) {
-	s := &Service{}
+	s := &FreshBooksPipeIntegration{}
 	c, err := s.Accounts()
 	assert.NoError(t, err)
 	assert.Equal(t, []*domain.Account{}, c)
 }
 
 func TestIntegration_Freshbooks_TodoLists(t *testing.T) {
-	s := &Service{}
+	s := &FreshBooksPipeIntegration{}
 	te, err := s.TodoLists()
 	assert.NoError(t, err)
 	assert.Equal(t, []*domain.Task{}, te)

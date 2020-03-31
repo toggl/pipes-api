@@ -1,4 +1,4 @@
-package basecamp
+package integration
 
 import (
 	"encoding/json"
@@ -12,17 +12,17 @@ import (
 )
 
 func TestBasecamp_WorkspaceID(t *testing.T) {
-	s := &Service{WorkspaceID: 1}
+	s := &BaseCampPipeIntegration{WorkspaceID: 1}
 	assert.Equal(t, 1, s.GetWorkspaceID())
 }
 
 func TestBasecamp_ID(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	assert.Equal(t, domain.BaseCamp, s.ID())
 }
 
 func TestBasecamp_KeyFor(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	assert.Equal(t, "basecamp:account:accounts", s.KeyFor(domain.AccountsPipe))
 
 	tests := []struct {
@@ -39,14 +39,14 @@ func TestBasecamp_KeyFor(t *testing.T) {
 		{want: "basecamp:account:1:accounts", got: domain.AccountsPipe},
 	}
 
-	svc := &Service{BasecampParams: &BasecampParams{AccountID: 1}}
+	svc := &BaseCampPipeIntegration{BasecampParams: &BasecampParams{AccountID: 1}}
 	for _, v := range tests {
 		assert.Equal(t, v.want, svc.KeyFor(v.got))
 	}
 }
 
 func TestBasecamp_SetAuthData(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	token := oauth.Token{
 		AccessToken:  "test",
 		RefreshToken: "test2",
@@ -68,7 +68,7 @@ func TestBasecamp_SetAuthData(t *testing.T) {
 }
 
 func TestBasecamp_SetParams(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	ap := BasecampParams{AccountID: 5}
 	b, err := json.Marshal(ap)
 	assert.NoError(t, err)
@@ -80,32 +80,32 @@ func TestBasecamp_SetParams(t *testing.T) {
 	b2, err := json.Marshal(BasecampParams{AccountID: 0})
 	assert.NoError(t, err)
 
-	s2 := &Service{}
+	s2 := &BaseCampPipeIntegration{}
 	err = s2.SetParams(b2)
 	assert.Error(t, err)
 
 	b3, err := json.Marshal("")
 	assert.NoError(t, err)
 
-	s3 := &Service{}
+	s3 := &BaseCampPipeIntegration{}
 	err = s3.SetParams(b3)
 	assert.Error(t, err)
 }
 
 func TestBasecamp_SetSince(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	s.SetSince(&time.Time{})
 }
 
 func TestIntegration_Basecamp_Clients(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	c, err := s.Clients()
 	assert.NoError(t, err)
 	assert.Equal(t, []*domain.Client{}, c)
 }
 
 func TestIntegration_Basecamp_ExportTimeEntry(t *testing.T) {
-	s := &Service{}
+	s := &BaseCampPipeIntegration{}
 	te, err := s.ExportTimeEntry(&domain.TimeEntry{})
 	assert.NoError(t, err)
 	assert.Equal(t, 0, te)
