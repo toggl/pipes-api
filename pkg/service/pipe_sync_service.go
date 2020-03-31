@@ -227,20 +227,22 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 	p.PipeStatus = domain.NewStatus(p.WorkspaceID, p.ServiceID, p.ID, p.PipesApiHost)
 	if err := svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
 		svc.notifyBugSnag(p, err)
-		log.Println(err)
 		return
 	}
 
 	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
 	if err != nil {
+		svc.notifyBugSnag(p, err)
 		p.PipeStatus.AddError(err)
 	}
 
 	pipeIntegration := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
 	if err := pipeIntegration.SetParams(p.ServiceParams); err != nil {
+		svc.notifyBugSnag(p, err)
 		p.PipeStatus.AddError(err)
 	}
 	if err := pipeIntegration.SetAuthData(auth.Data); err != nil {
+		svc.notifyBugSnag(p, err)
 		p.PipeStatus.AddError(err)
 	}
 
@@ -259,6 +261,7 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 		case domain.TimeEntriesPipe:
 			err = svc.syncTEs(p, pipeIntegration)
 		}
+		svc.notifyBugSnag(p, err)
 		p.PipeStatus.AddError(err)
 	}
 
