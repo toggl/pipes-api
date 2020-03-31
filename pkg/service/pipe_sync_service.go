@@ -784,6 +784,10 @@ func (svc *PipeSyncService) refreshAuthorization(workspaceID int, serviceID doma
 }
 
 func (svc *PipeSyncService) notifyBugSnag(p *domain.Pipe, err error) {
+	if err == nil {
+		return
+	}
+
 	log.Println(err)
 	meta := bugsnag.MetaData{
 		"pipe": {
