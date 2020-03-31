@@ -3,8 +3,11 @@ package queue
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"sync"
 	"time"
+
+	"github.com/bugsnag/bugsnag-go"
 
 	"github.com/toggl/pipes-api/pkg/domain"
 	"github.com/toggl/pipes-api/pkg/service"
@@ -90,7 +93,6 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.I
 	if p == nil {
 		return service.ErrPipeNotConfigured
 	}
-
 	p.UsersSelector = usersSelector
 
 	// make sure no race condition on fetching workspace lock
@@ -104,12 +106,25 @@ func (pq *Queue) SchedulePipeSynchronization(workspaceID int, serviceID domain.I
 
 	if p.ID == domain.UsersPipe {
 		if len(p.UsersSelector.IDs) == 0 {
-			return service.SetParamsError{errors.New("Missing request payload")}
+			return service.SetParamsError{Err: errors.New("missing selected users required for the pipe: " + p.Key())}
 		}
 
 		go func() {
 			wsLock.Lock()
-			pq.pipeSyncService.Synchronize(p)
+			if err := pq.pipeSyncService.Synchronize(p); err != nil {
+				log.Printf("unable sycnhronize, pipe: %s, workspace: %d, started without queue, reason: %v\n", p.Key(), p.WorkspaceID, err)
+				meta := bugsnag.MetaData{
+					"pipe": {
+						"IntegrationID": p.ID,
+						"ServiceParams": string(p.ServiceParams),
+						"WorkspaceID":   p.WorkspaceID,
+						"ServiceID":     p.ServiceID,
+					},
+				}
+				if err := bugsnag.Notify(err, meta); err != nil {
+					log.Printf("unable to send error to BugSnag, reason: %v\n", err)
+				}
+			}
 			wsLock.Unlock()
 		}()
 		time.Sleep(500 * time.Millisecond) // TODO: Is that synchronization ? :D

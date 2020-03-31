@@ -67,17 +67,34 @@ func (s *WorkerPool) pipeWorker(id int) {
 		for _, pipe := range pipes {
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] starting\n", id, pipe.WorkspaceID, pipe.Key())
 
-			s.pipeSyncService.Synchronize(pipe)
-			err := s.queue.MarkPipeSynchronized(pipe)
-			if err != nil {
-				bugsnag.Notify(err, bugsnag.MetaData{
+			if err := s.pipeSyncService.Synchronize(pipe); err != nil {
+				log.Printf("unable sycnhronize, pipe: %s, workspace: %d, started by worker %d, reason: %v\n", pipe.Key(), pipe.WorkspaceID, id, err)
+				meta := bugsnag.MetaData{
 					"pipe": {
 						"IntegrationID": pipe.ID,
 						"ServiceParams": string(pipe.ServiceParams),
 						"WorkspaceID":   pipe.WorkspaceID,
 						"ServiceID":     pipe.ServiceID,
 					},
-				})
+				}
+				if err := bugsnag.Notify(err, meta); err != nil {
+					log.Printf("unable to send error to BugSnag, reason: %v\n", err)
+				}
+			}
+
+			err := s.queue.MarkPipeSynchronized(pipe)
+			if err != nil {
+				log.Printf("unable mark pipe sycnhronized, pipe: %s, workspace: %d, started by worker %d, reason: %v\n", pipe.Key(), pipe.WorkspaceID, id, err)
+				if err := bugsnag.Notify(err, bugsnag.MetaData{
+					"pipe": {
+						"IntegrationID": pipe.ID,
+						"ServiceParams": string(pipe.ServiceParams),
+						"WorkspaceID":   pipe.WorkspaceID,
+						"ServiceID":     pipe.ServiceID,
+					},
+				}); err != nil {
+					log.Printf("unable to send error to BugSnag, reason: %v\n", err)
+				}
 			}
 			s.debugf("[Worker %d] working on pipe [workspace_id: %d, key: %s] done, err: %t\n", id, pipe.WorkspaceID, pipe.Key(), err != nil)
 		}

@@ -14,7 +14,7 @@ type PipeSyncService interface {
 	GetServiceUsers(workspaceID int, sid IntegrationID, forceImport bool) (*UsersResponse, error)
 	GetServiceAccounts(workspaceID int, sid IntegrationID, forceImport bool) (*AccountsResponse, error)
 	GetIntegrations(workspaceID int) ([]Integration, error)
-	Synchronize(p *Pipe)
+	Synchronize(p *Pipe) error
 
 	// Deprecated: TODO: Remove dead method. It's used only in h4xx0rz(old Backoffice) https://github.com/toggl/support/blob/master/app/controllers/workspaces_controller.rb#L145
 	ClearIDMappings(workspaceID int, sid IntegrationID, pid PipeID) error

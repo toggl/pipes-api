@@ -70,12 +70,14 @@ func (svc *PipeSyncService) ClearIDMappings(workspaceID int, serviceID domain.In
 	if !p.Configured {
 		return ErrPipeNotConfigured
 	}
-	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
-	if err := service.SetParams(p.ServiceParams); err != nil {
-		return err
-	}
+
 	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
 	if err != nil {
+		return err
+	}
+
+	service := integration.NewPipeIntegration(p.ServiceID, p.WorkspaceID)
+	if err := service.SetParams(p.ServiceParams); err != nil {
 		return err
 	}
 	if err := service.SetAuthData(auth.Data); err != nil {
@@ -222,12 +224,11 @@ func (svc *PipeSyncService) GetIntegrations(workspaceID int) ([]domain.Integrati
 	return resultIntegrations, nil
 }
 
-func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
+func (svc *PipeSyncService) Synchronize(p *domain.Pipe) error {
 	svc.pipesStorage.LoadLastSyncFor(p)
 	p.PipeStatus = domain.NewStatus(p.WorkspaceID, p.ServiceID, p.ID, p.PipesApiHost)
 	if err := svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
-		svc.notifyBugSnag(p, err)
-		return
+		return err
 	}
 
 	auth, err := svc.refreshAuthorization(p.WorkspaceID, p.ServiceID)
@@ -266,9 +267,9 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) {
 	}
 
 	if err = svc.pipesStorage.SaveStatus(p.PipeStatus); err != nil {
-		svc.notifyBugSnag(p, err)
-		log.Println(err)
+		return err
 	}
+	return nil
 }
 
 // --------------------------- USERS -------------------------------------------

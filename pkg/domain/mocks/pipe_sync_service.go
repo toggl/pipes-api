@@ -117,6 +117,15 @@ func (_m *PipeSyncService) GetServiceUsers(workspaceID int, sid domain.Integrati
 }
 
 // Synchronize provides a mock function with given fields: p
-func (_m *PipeSyncService) Synchronize(p *domain.Pipe) {
-	_m.Called(p)
+func (_m *PipeSyncService) Synchronize(p *domain.Pipe) error {
+	ret := _m.Called(p)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*domain.Pipe) error); ok {
+		r0 = rf(p)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
