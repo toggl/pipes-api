@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/toggl/pipes-api/pkg/domain"
+	"github.com/toggl/pipes-api/pkg/integration"
 )
 
 var ErrNoContent = errors.New("no content")
@@ -37,7 +38,7 @@ func (svc *PipeService) GetPipe(workspaceID int, serviceID domain.IntegrationID,
 func (svc *PipeService) CreatePipe(workspaceID int, serviceID domain.IntegrationID, pipeID domain.PipeID, params []byte) error {
 	p := domain.NewPipe(workspaceID, serviceID, pipeID)
 
-	service := NewPipeIntegration(serviceID, workspaceID)
+	service := integration.NewPipeIntegration(serviceID, workspaceID)
 	err := service.SetParams(params)
 	if err != nil {
 		return SetParamsError{err}

@@ -14,12 +14,13 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/toggl/pipes-api/internal/config"
-	"github.com/toggl/pipes-api/internal/oauth"
+	"github.com/toggl/pipes-api/internal/oauthprovider"
+	"github.com/toggl/pipes-api/internal/queue"
 	"github.com/toggl/pipes-api/internal/server"
-	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/internal/storage"
-	"github.com/toggl/pipes-api/internal/sync"
 	"github.com/toggl/pipes-api/internal/toggl"
+	"github.com/toggl/pipes-api/internal/workerpool"
+	"github.com/toggl/pipes-api/pkg/service"
 )
 
 var (
@@ -81,7 +82,7 @@ func main() {
 	}
 	defer oAuth2Config.Close()
 
-	oauthProvider, err := oauth.NewProvider(env.Environment, oAuth1Config, oAuth2Config)
+	oauthProvider, err := oauthprovider.NewProvider(env.Environment, oAuth1Config, oAuth2Config)
 	if err != nil {
 		log.Fatalf("couldn't create oauth provider, reason: %v", err)
 	}
@@ -117,9 +118,9 @@ func main() {
 		oauthProvider,
 	)
 
-	pipeQueue := sync.NewQueue(db, pipeSyncService, pipeStorage)
+	pipeQueue := queue.NewQueue(db, pipeSyncService, pipeStorage)
 
-	workerPool := sync.NewWorkerPool(pipeQueue, pipeSyncService, env.Debug)
+	workerPool := workerpool.NewWorkerPool(pipeQueue, pipeSyncService, env.Debug)
 	workerPool.Start()
 
 	controller := server.NewController(

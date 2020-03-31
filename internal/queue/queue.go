@@ -1,4 +1,4 @@
-package sync
+package queue
 
 import (
 	"database/sql"
@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
+	"github.com/toggl/pipes-api/pkg/service"
 )
 
 const (

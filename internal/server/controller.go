@@ -9,8 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain"
+	"github.com/toggl/pipes-api/pkg/service"
 )
 
 type Controller struct {

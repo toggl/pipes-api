@@ -26,6 +26,12 @@ To see original source code use [legacy](https://github.com/toggl/pipes-api/tree
 * Fill in needed oauth tokens and URL-s under config json files
 * Start the server with `make run`
 
+### Architecture
+
+- `pkg` - Stores all abstract business and application logic.
+- `internal` - Stores all infrastructure packages.
+
+
 ## Testing
 
 ```bash

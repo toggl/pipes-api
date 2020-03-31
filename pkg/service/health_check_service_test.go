@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	"github.com/toggl/pipes-api/internal/service"
 	"github.com/toggl/pipes-api/pkg/domain/mocks"
+	"github.com/toggl/pipes-api/pkg/service"
 )
 
 type ServiceTestSuite struct {
