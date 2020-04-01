@@ -77,6 +77,8 @@ To register test BaseCamp 2 account: https://billing.37signals.com/bcx/trial/sig
 
 ### [FreshBooks Classic](https://classic.freshbooks.com/)
 
-**DOES NOT WORK**
+**WORKS FINE**
+
 Login Form for classic version is here: https://classic.freshbooks.com/
-NOTE: Integration supports only Freshbook Classic. It use [Freshbooks Classic](https://www.freshbooks.com/classic-api) API which is DEPRECATED.
+NOTE: Integration supports only Freshbook Classic. 
+It use [Freshbooks Classic](https://www.freshbooks.com/classic-api) API which is DEPRECATED.
