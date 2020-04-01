@@ -63,6 +63,7 @@ type Pipe struct {
 	UsersSelector   UserParams    `json:"-"`
 	LastSync        *time.Time    `json:"-"`
 	PipesApiHost    string        `json:"-"`
+	WorkspaceToken  string        `json:"-"`
 }
 
 func (p *Pipe) Key() string {

@@ -249,7 +249,7 @@ func (svc *PipeSyncService) Synchronize(p *domain.Pipe) error {
 
 	// We start pipes synchronization only if there are no errors on initialization steps above.
 	if err == nil {
-		svc.togglClient.WithAuthToken(auth.WorkspaceToken)
+		p.WorkspaceToken = auth.WorkspaceToken
 		switch p.ID {
 		case domain.UsersPipe:
 			err = svc.syncUsers(p, pipeIntegration)
@@ -319,7 +319,7 @@ func (svc *PipeSyncService) postUsers(p *domain.Pipe, pipeIntegration domain.Pip
 		}
 	}
 
-	usersImport, err := svc.togglClient.PostUsers(domain.UsersPipe, domain.UsersRequest{Users: users})
+	usersImport, err := svc.togglClient.PostUsers(p.WorkspaceToken, domain.UsersPipe, domain.UsersRequest{Users: users})
 	if err != nil {
 		return err
 	}
@@ -403,7 +403,7 @@ func (svc *PipeSyncService) postProjects(p *domain.Pipe, pipeIntegration domain.
 	projects := domain.ProjectRequest{
 		Projects: projectsResponse.Projects,
 	}
-	projectsImport, err := svc.togglClient.PostProjects(domain.ProjectsPipe, projects)
+	projectsImport, err := svc.togglClient.PostProjects(p.WorkspaceToken, domain.ProjectsPipe, projects)
 	if err != nil {
 		return err
 	}
@@ -494,7 +494,7 @@ func (svc *PipeSyncService) postTodoLists(p *domain.Pipe, pipeIntegration domain
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		tasksImport, err := svc.togglClient.PostTodoLists(domain.TasksPipe, tr) // TODO: WTF?? Why toggl.TasksPipe
+		tasksImport, err := svc.togglClient.PostTodoLists(p.WorkspaceToken, domain.TasksPipe, tr) // TODO: WTF?? Why toggl.TasksPipe
 		if err != nil {
 			return err
 		}
@@ -587,7 +587,7 @@ func (svc *PipeSyncService) postTasks(p *domain.Pipe, pipeIntegration domain.Pip
 	var notifications []string
 	var count int
 	for _, tr := range trs {
-		tasksImport, err := svc.togglClient.PostTasks(domain.TasksPipe, tr)
+		tasksImport, err := svc.togglClient.PostTasks(p.WorkspaceToken, domain.TasksPipe, tr)
 		if err != nil {
 			return err
 		}
@@ -636,7 +636,7 @@ func (svc *PipeSyncService) syncTEs(p *domain.Pipe, pipeIntegration domain.PipeI
 		p.LastSync = &currentTime
 	}
 
-	timeEntries, err := svc.togglClient.GetTimeEntries(*p.LastSync, usersIDMapping.GetKeys(), projectsIDMapping.GetKeys())
+	timeEntries, err := svc.togglClient.GetTimeEntries(p.WorkspaceToken, *p.LastSync, usersIDMapping.GetKeys(), projectsIDMapping.GetKeys())
 	if err != nil {
 		return err
 	}
@@ -731,7 +731,7 @@ func (svc *PipeSyncService) postClients(p *domain.Pipe, pipeIntegration domain.P
 	if len(clientsResponse.Clients) == 0 {
 		return nil
 	}
-	clientsImport, err := svc.togglClient.PostClients(domain.ClientsPipe, clients)
+	clientsImport, err := svc.togglClient.PostClients(p.WorkspaceToken, domain.ClientsPipe, clients)
 	if err != nil {
 		return err
 	}

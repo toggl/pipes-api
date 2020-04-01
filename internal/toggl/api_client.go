@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/toggl/pipes-api/pkg/domain"
@@ -25,9 +24,6 @@ var (
 
 type ApiClient struct {
 	URL string
-
-	autoToken string
-	mx        sync.Mutex
 }
 
 func NewApiClient(URL string) *ApiClient {
@@ -37,15 +33,7 @@ func NewApiClient(URL string) *ApiClient {
 	return &ApiClient{URL: URL}
 }
 
-func (c *ApiClient) WithAuthToken(authToken string) {
-	c.mx.Lock()
-	defer c.mx.Unlock()
-
-	c.autoToken = authToken
-}
-
 func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
-	c.WithAuthToken(token)
 
 	url := fmt.Sprintf("%s/api/pipes/workspace", c.URL)
 	req, err := http.NewRequest("GET", url, nil)
@@ -53,7 +41,7 @@ func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 		return 0, err
 	}
 	req.Header.Set("User-Agent", "toggl-pipes")
-	req.SetBasicAuth(c.autoToken, "api_token")
+	req.SetBasicAuth(token, "api_token")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -77,8 +65,8 @@ func (c *ApiClient) GetWorkspaceIdByToken(token string) (int, error) {
 	return response.Workspace.ID, nil
 }
 
-func (c *ApiClient) PostClients(clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
-	b, err := c.postPipesAPI(clientsPipeID, clients)
+func (c *ApiClient) PostClients(token string, clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
+	b, err := c.postPipesAPI(token, clientsPipeID, clients)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +79,8 @@ func (c *ApiClient) PostClients(clientsPipeID domain.PipeID, clients interface{}
 	return clientsImport, nil
 }
 
-func (c *ApiClient) PostProjects(projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
-	b, err := c.postPipesAPI(projectsPipeID, projects)
+func (c *ApiClient) PostProjects(token string, projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
+	b, err := c.postPipesAPI(token, projectsPipeID, projects)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +93,8 @@ func (c *ApiClient) PostProjects(projectsPipeID domain.PipeID, projects interfac
 	return projectsImport, nil
 }
 
-func (c *ApiClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
-	b, err := c.postPipesAPI(tasksPipeID, tasks)
+func (c *ApiClient) PostTasks(token string, tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
+	b, err := c.postPipesAPI(token, tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -119,8 +107,8 @@ func (c *ApiClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (*do
 	return tasksImport, nil
 }
 
-func (c *ApiClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
-	b, err := c.postPipesAPI(tasksPipeID, tasks)
+func (c *ApiClient) PostTodoLists(token string, tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
+	b, err := c.postPipesAPI(token, tasksPipeID, tasks)
 	if err != nil {
 		return nil, err
 	}
@@ -133,8 +121,8 @@ func (c *ApiClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{}) 
 	return tasksImport, nil
 }
 
-func (c *ApiClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
-	b, err := c.postPipesAPI(usersPipeID, users)
+func (c *ApiClient) PostUsers(token string, usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
+	b, err := c.postPipesAPI(token, usersPipeID, users)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +134,7 @@ func (c *ApiClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (*do
 	return usersImport, nil
 }
 
-func (c *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]domain.TimeEntry, error) {
+func (c *ApiClient) GetTimeEntries(token string, lastSync time.Time, userIDs, projectsIDs []int) ([]domain.TimeEntry, error) {
 	url := fmt.Sprintf("%s/api/pipes/time_entries?since=%d&user_ids=%s&project_ids=%s",
 		c.URL, lastSync.Unix(), stringify(userIDs), stringify(projectsIDs))
 
@@ -155,7 +143,7 @@ func (c *ApiClient) GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []in
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "toggl-pipes")
-	req.SetBasicAuth(c.autoToken, "api_token")
+	req.SetBasicAuth(token, "api_token")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -220,7 +208,7 @@ func (c *ApiClient) AdjustRequestSize(tasks []*domain.Task, split int) ([]*domai
 	return trs, nil
 }
 
-func (c *ApiClient) postPipesAPI(pipeID domain.PipeID, payload interface{}) ([]byte, error) {
+func (c *ApiClient) postPipesAPI(token string, pipeID domain.PipeID, payload interface{}) ([]byte, error) {
 	start := time.Now()
 	url := fmt.Sprintf("%s/api/pipes/%s", c.URL, pipeID)
 	b, err := json.Marshal(payload)
@@ -233,7 +221,7 @@ func (c *ApiClient) postPipesAPI(pipeID domain.PipeID, payload interface{}) ([]b
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "toggl-pipes")
-	req.SetBasicAuth(c.autoToken, "api_token")
+	req.SetBasicAuth(token, "api_token")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {

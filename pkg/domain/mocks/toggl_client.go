@@ -37,13 +37,13 @@ func (_m *TogglClient) AdjustRequestSize(tasks []*domain.Task, split int) ([]*do
 	return r0, r1
 }
 
-// GetTimeEntries provides a mock function with given fields: lastSync, userIDs, projectsIDs
-func (_m *TogglClient) GetTimeEntries(lastSync time.Time, userIDs []int, projectsIDs []int) ([]domain.TimeEntry, error) {
-	ret := _m.Called(lastSync, userIDs, projectsIDs)
+// GetTimeEntries provides a mock function with given fields: token, lastSync, userIDs, projectsIDs
+func (_m *TogglClient) GetTimeEntries(token string, lastSync time.Time, userIDs []int, projectsIDs []int) ([]domain.TimeEntry, error) {
+	ret := _m.Called(token, lastSync, userIDs, projectsIDs)
 
 	var r0 []domain.TimeEntry
-	if rf, ok := ret.Get(0).(func(time.Time, []int, []int) []domain.TimeEntry); ok {
-		r0 = rf(lastSync, userIDs, projectsIDs)
+	if rf, ok := ret.Get(0).(func(string, time.Time, []int, []int) []domain.TimeEntry); ok {
+		r0 = rf(token, lastSync, userIDs, projectsIDs)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]domain.TimeEntry)
@@ -51,8 +51,8 @@ func (_m *TogglClient) GetTimeEntries(lastSync time.Time, userIDs []int, project
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(time.Time, []int, []int) error); ok {
-		r1 = rf(lastSync, userIDs, projectsIDs)
+	if rf, ok := ret.Get(1).(func(string, time.Time, []int, []int) error); ok {
+		r1 = rf(token, lastSync, userIDs, projectsIDs)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -95,13 +95,13 @@ func (_m *TogglClient) Ping() error {
 	return r0
 }
 
-// PostClients provides a mock function with given fields: clientsPipeID, clients
-func (_m *TogglClient) PostClients(clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
-	ret := _m.Called(clientsPipeID, clients)
+// PostClients provides a mock function with given fields: token, clientsPipeID, clients
+func (_m *TogglClient) PostClients(token string, clientsPipeID domain.PipeID, clients interface{}) (*domain.ClientsImport, error) {
+	ret := _m.Called(token, clientsPipeID, clients)
 
 	var r0 *domain.ClientsImport
-	if rf, ok := ret.Get(0).(func(domain.PipeID, interface{}) *domain.ClientsImport); ok {
-		r0 = rf(clientsPipeID, clients)
+	if rf, ok := ret.Get(0).(func(string, domain.PipeID, interface{}) *domain.ClientsImport); ok {
+		r0 = rf(token, clientsPipeID, clients)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.ClientsImport)
@@ -109,8 +109,8 @@ func (_m *TogglClient) PostClients(clientsPipeID domain.PipeID, clients interfac
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.PipeID, interface{}) error); ok {
-		r1 = rf(clientsPipeID, clients)
+	if rf, ok := ret.Get(1).(func(string, domain.PipeID, interface{}) error); ok {
+		r1 = rf(token, clientsPipeID, clients)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -118,13 +118,13 @@ func (_m *TogglClient) PostClients(clientsPipeID domain.PipeID, clients interfac
 	return r0, r1
 }
 
-// PostProjects provides a mock function with given fields: projectsPipeID, projects
-func (_m *TogglClient) PostProjects(projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
-	ret := _m.Called(projectsPipeID, projects)
+// PostProjects provides a mock function with given fields: token, projectsPipeID, projects
+func (_m *TogglClient) PostProjects(token string, projectsPipeID domain.PipeID, projects interface{}) (*domain.ProjectsImport, error) {
+	ret := _m.Called(token, projectsPipeID, projects)
 
 	var r0 *domain.ProjectsImport
-	if rf, ok := ret.Get(0).(func(domain.PipeID, interface{}) *domain.ProjectsImport); ok {
-		r0 = rf(projectsPipeID, projects)
+	if rf, ok := ret.Get(0).(func(string, domain.PipeID, interface{}) *domain.ProjectsImport); ok {
+		r0 = rf(token, projectsPipeID, projects)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.ProjectsImport)
@@ -132,8 +132,8 @@ func (_m *TogglClient) PostProjects(projectsPipeID domain.PipeID, projects inter
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.PipeID, interface{}) error); ok {
-		r1 = rf(projectsPipeID, projects)
+	if rf, ok := ret.Get(1).(func(string, domain.PipeID, interface{}) error); ok {
+		r1 = rf(token, projectsPipeID, projects)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -141,13 +141,13 @@ func (_m *TogglClient) PostProjects(projectsPipeID domain.PipeID, projects inter
 	return r0, r1
 }
 
-// PostTasks provides a mock function with given fields: tasksPipeID, tasks
-func (_m *TogglClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
-	ret := _m.Called(tasksPipeID, tasks)
+// PostTasks provides a mock function with given fields: token, tasksPipeID, tasks
+func (_m *TogglClient) PostTasks(token string, tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
+	ret := _m.Called(token, tasksPipeID, tasks)
 
 	var r0 *domain.TasksImport
-	if rf, ok := ret.Get(0).(func(domain.PipeID, interface{}) *domain.TasksImport); ok {
-		r0 = rf(tasksPipeID, tasks)
+	if rf, ok := ret.Get(0).(func(string, domain.PipeID, interface{}) *domain.TasksImport); ok {
+		r0 = rf(token, tasksPipeID, tasks)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.TasksImport)
@@ -155,8 +155,8 @@ func (_m *TogglClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.PipeID, interface{}) error); ok {
-		r1 = rf(tasksPipeID, tasks)
+	if rf, ok := ret.Get(1).(func(string, domain.PipeID, interface{}) error); ok {
+		r1 = rf(token, tasksPipeID, tasks)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -164,13 +164,13 @@ func (_m *TogglClient) PostTasks(tasksPipeID domain.PipeID, tasks interface{}) (
 	return r0, r1
 }
 
-// PostTodoLists provides a mock function with given fields: tasksPipeID, tasks
-func (_m *TogglClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
-	ret := _m.Called(tasksPipeID, tasks)
+// PostTodoLists provides a mock function with given fields: token, tasksPipeID, tasks
+func (_m *TogglClient) PostTodoLists(token string, tasksPipeID domain.PipeID, tasks interface{}) (*domain.TasksImport, error) {
+	ret := _m.Called(token, tasksPipeID, tasks)
 
 	var r0 *domain.TasksImport
-	if rf, ok := ret.Get(0).(func(domain.PipeID, interface{}) *domain.TasksImport); ok {
-		r0 = rf(tasksPipeID, tasks)
+	if rf, ok := ret.Get(0).(func(string, domain.PipeID, interface{}) *domain.TasksImport); ok {
+		r0 = rf(token, tasksPipeID, tasks)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.TasksImport)
@@ -178,8 +178,8 @@ func (_m *TogglClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.PipeID, interface{}) error); ok {
-		r1 = rf(tasksPipeID, tasks)
+	if rf, ok := ret.Get(1).(func(string, domain.PipeID, interface{}) error); ok {
+		r1 = rf(token, tasksPipeID, tasks)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -187,13 +187,13 @@ func (_m *TogglClient) PostTodoLists(tasksPipeID domain.PipeID, tasks interface{
 	return r0, r1
 }
 
-// PostUsers provides a mock function with given fields: usersPipeID, users
-func (_m *TogglClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
-	ret := _m.Called(usersPipeID, users)
+// PostUsers provides a mock function with given fields: token, usersPipeID, users
+func (_m *TogglClient) PostUsers(token string, usersPipeID domain.PipeID, users interface{}) (*domain.UsersImport, error) {
+	ret := _m.Called(token, usersPipeID, users)
 
 	var r0 *domain.UsersImport
-	if rf, ok := ret.Get(0).(func(domain.PipeID, interface{}) *domain.UsersImport); ok {
-		r0 = rf(usersPipeID, users)
+	if rf, ok := ret.Get(0).(func(string, domain.PipeID, interface{}) *domain.UsersImport); ok {
+		r0 = rf(token, usersPipeID, users)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*domain.UsersImport)
@@ -201,16 +201,11 @@ func (_m *TogglClient) PostUsers(usersPipeID domain.PipeID, users interface{}) (
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(domain.PipeID, interface{}) error); ok {
-		r1 = rf(usersPipeID, users)
+	if rf, ok := ret.Get(1).(func(string, domain.PipeID, interface{}) error); ok {
+		r1 = rf(token, usersPipeID, users)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
-}
-
-// WithAuthToken provides a mock function with given fields: authToken
-func (_m *TogglClient) WithAuthToken(authToken string) {
-	_m.Called(authToken)
 }

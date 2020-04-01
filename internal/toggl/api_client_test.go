@@ -48,13 +48,6 @@ func TestApiClient_stringify(t *testing.T) {
 	assert.Equal(t, "1,2,3,4,5,6", str2)
 }
 
-func TestApiClient_WithAuthToken(t *testing.T) {
-	client := &ApiClient{URL: "http://localhost"}
-	client.WithAuthToken("token")
-
-	assert.Equal(t, "token", client.autoToken)
-}
-
 func TestApiClient_GetTimeEntries(t *testing.T) {
 	t.Run("GetTimeEntries Ok", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
@@ -98,8 +91,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		client.WithAuthToken("test")
-		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
+		te, err := client.GetTimeEntries("test", time.Now(), []int{}, []int{})
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, te)
@@ -109,7 +101,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(500) }))
 
 		client := &ApiClient{URL: srv.URL}
-		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
+		te, err := client.GetTimeEntries("test", time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "GET time_entries failed")
@@ -120,7 +112,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
+		te, err := client.GetTimeEntries("test", time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected end of JSON input")
@@ -132,7 +124,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 		srv.Close()
 
 		client := &ApiClient{URL: srv.URL}
-		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
+		te, err := client.GetTimeEntries("test", time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "connection refused")
@@ -141,7 +133,7 @@ func TestApiClient_GetTimeEntries(t *testing.T) {
 
 	t.Run("GetTimeEntries Bad Url", func(t *testing.T) {
 		client := &ApiClient{URL: "http://bad\\wtf"}
-		te, err := client.GetTimeEntries(time.Now(), []int{}, []int{})
+		te, err := client.GetTimeEntries("test", time.Now(), []int{}, []int{})
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
@@ -245,8 +237,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		client.WithAuthToken("test123")
-		res, err := client.postPipesAPI("test", nil)
+		res, err := client.postPipesAPI("test123", "test", nil)
 
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("test"), res)
@@ -256,7 +247,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(500) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.postPipesAPI("test", nil)
+		res, err := client.postPipesAPI("test", "test", nil)
 
 		assert.Error(t, err)
 		assert.Empty(t, res)
@@ -266,7 +257,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.postPipesAPI("test", nil)
+		res, err := client.postPipesAPI("test", "test", nil)
 
 		assert.NoError(t, err)
 		assert.Empty(t, res)
@@ -277,7 +268,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		srv.Close()
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.postPipesAPI("test", nil)
+		res, err := client.postPipesAPI("test", "test", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "connection refused")
@@ -289,7 +280,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 		srv.Close()
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.postPipesAPI("test", func() {})
+		res, err := client.postPipesAPI("test", "test", func() {})
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unsupported type")
@@ -298,7 +289,7 @@ func TestApiClient_postPipesAPI(t *testing.T) {
 
 	t.Run("postPipesAPI Bad Url", func(t *testing.T) {
 		client := &ApiClient{URL: "http://bad\\wtf"}
-		res, err := client.postPipesAPI("test", nil)
+		res, err := client.postPipesAPI("test", "test", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
@@ -327,7 +318,7 @@ func TestApiClient_PostClients(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		out, err := client.PostClients("clients", nil)
+		out, err := client.PostClients("test", "clients", nil)
 		assert.NoError(t, err)
 		assert.Equal(t, in, out)
 	})
@@ -336,7 +327,7 @@ func TestApiClient_PostClients(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.PostClients("clients", nil)
+		res, err := client.PostClients("test", "clients", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected end of JSON input")
@@ -367,7 +358,7 @@ func TestApiClient_PostProjects(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		out, err := client.PostProjects("projects", nil)
+		out, err := client.PostProjects("test", "projects", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
 	})
@@ -376,7 +367,7 @@ func TestApiClient_PostProjects(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.PostProjects("projects", nil)
+		res, err := client.PostProjects("test", "projects", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected end of JSON input")
@@ -406,7 +397,7 @@ func TestApiClient_PostTasks(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		out, err := client.PostTasks("tasks", nil)
+		out, err := client.PostTasks("test", "tasks", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
 	})
@@ -415,7 +406,7 @@ func TestApiClient_PostTasks(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.PostTasks("tasks", nil)
+		res, err := client.PostTasks("test", "tasks", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected end of JSON input")
@@ -445,7 +436,7 @@ func TestApiClient_PostTodoLists(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		out, err := client.PostTodoLists("todos", nil)
+		out, err := client.PostTodoLists("test", "todos", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
 	})
@@ -454,7 +445,7 @@ func TestApiClient_PostTodoLists(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.PostTodoLists("todos", nil)
+		res, err := client.PostTodoLists("test", "todos", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected end of JSON input")
@@ -484,7 +475,7 @@ func TestApiClient_PostUsers(t *testing.T) {
 		}))
 
 		client := &ApiClient{URL: srv.URL}
-		out, err := client.PostUsers("users", nil)
+		out, err := client.PostUsers("test", "users", nil)
 		assert.NoError(t, err)
 		assert.EqualValues(t, *in, *out)
 	})
@@ -493,7 +484,7 @@ func TestApiClient_PostUsers(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) { res.WriteHeader(200) }))
 
 		client := &ApiClient{URL: srv.URL}
-		res, err := client.PostUsers("users", nil)
+		res, err := client.PostUsers("test", "users", nil)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "unexpected end of JSON input")

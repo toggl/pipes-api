@@ -9,14 +9,13 @@ import (
 
 //go:generate mockery -name TogglClient -case underscore -outpkg mocks
 type TogglClient interface {
-	WithAuthToken(authToken string)
 	GetWorkspaceIdByToken(token string) (int, error)
-	PostClients(clientsPipeID PipeID, clients interface{}) (*ClientsImport, error)
-	PostProjects(projectsPipeID PipeID, projects interface{}) (*ProjectsImport, error)
-	PostTasks(tasksPipeID PipeID, tasks interface{}) (*TasksImport, error)
-	PostTodoLists(tasksPipeID PipeID, tasks interface{}) (*TasksImport, error)
-	PostUsers(usersPipeID PipeID, users interface{}) (*UsersImport, error)
-	GetTimeEntries(lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error)
+	PostClients(token string, clientsPipeID PipeID, clients interface{}) (*ClientsImport, error)
+	PostProjects(token string, projectsPipeID PipeID, projects interface{}) (*ProjectsImport, error)
+	PostTasks(token string, tasksPipeID PipeID, tasks interface{}) (*TasksImport, error)
+	PostTodoLists(token string, tasksPipeID PipeID, tasks interface{}) (*TasksImport, error)
+	PostUsers(token string, usersPipeID PipeID, users interface{}) (*UsersImport, error)
+	GetTimeEntries(token string, lastSync time.Time, userIDs, projectsIDs []int) ([]TimeEntry, error)
 	AdjustRequestSize(tasks []*Task, split int) ([]*TaskRequest, error)
 	Ping() error
 }
