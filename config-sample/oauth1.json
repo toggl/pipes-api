@@ -1,5 +1,5 @@
 {
-	"freshbooks": {
+	"freshbooks_development": {
 	  "ConsumerKey": "<consumer key>",
 	  "ConsumerSecret": "<consumer secret>",
 	  "RequestTokenUrl": "https://%s.freshbooks.com/oauth/oauth_request.php",

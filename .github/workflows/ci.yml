@@ -1,0 +1,49 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+
+  build:
+    name: Build an application
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up proper version of Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.1
+        id: go
+
+      - name: Configure git for private modules
+        env:
+          ACTION_GIT_USER: DexterHD
+          ACTION_GIT_TOKEN: ${{ secrets.PAT }}
+        run: git config --global url."https://${ACTION_GIT_USER}:${ACTION_GIT_TOKEN}@github.com".insteadOf "https://github.com"
+
+      - name: Build an application
+        run: make build
+
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+
+      - name: Set up proper version of Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.1
+        id: go
+
+      - name: Configure git for private modules
+        env:
+          ACTION_GIT_USER: DexterHD
+          ACTION_GIT_TOKEN: ${{ secrets.PAT }}
+        run: git config --global url."https://${ACTION_GIT_USER}:${ACTION_GIT_TOKEN}@github.com".insteadOf "https://github.com"
+
+      - name: Run unit tests
+        run: make test

@@ -1,149 +1,82 @@
 # Pipes API
 
-Backend for the Toggl Pipes project.
+Backend for the [Toggl Pipes](https://support.toggl.com/en/collections/1148668-import-export#integrations-via-toggl-pipes) project. 
+UI can be found in [toggl/pipes-ui](https://github.com/toggl/pipes-ui) repository.
+
+[![CI](https://github.com/toggl/pipes-api/workflows/CI/badge.svg)](https://github.com/toggl/pipes-api/actions?query=workflow%3ACI)
 
 Basically this is just job scheduler with REST-API. 
 It schedules job to do synchronization to a third party service.
 Pipes-api will fetch data then send them to pipes endpoints in "Toggl API".
 
-[![Build Status](https://travis-ci.org/toggl/pipes-api.svg?branch=master)](https://travis-ci.org/toggl/pipes-api)
+**THIS PROJECT WAS FULLY REFACTORED AT March 2020.**
+
+To see original source code use [legacy](https://github.com/toggl/pipes-api/tree/legacy) branch.
 
 ## Requirements
 
-* goenv - [github.com/syndbg/goenv](https://github.com/syndbg/goenv)
-* Go 1.11.8 - [http://golang.org/](http://golang.org/)
-* PostgreSQL 9.6 - [http://www.postgresql.org/](http://www.postgresql.org/)
+* [goenv](https://github.com/syndbg/goenv)
+    * [Go 1.14](http://golang.org/)
+* [PostgreSQL 9.6](http://www.postgresql.org/) (for development you can use provided Docker file)
 
 ## Getting Started
+
 * Clone the repo `git@github.com:toggl/pipes-api.git`
 * Copy configuration files `cp -r config-sample config`
 * Fill in needed oauth tokens and URL-s under config json files
 * Start the server with `make run`
 
-## Creating a new pipe
-Each new service must implement [Service][2] inteface. Currently only services with OAuth 2.0 or OAuth 1.0 "PLAINTEXT" authentication are supported.
+### Architecture
 
-## New pipe example
-Lets create a pipe to fetch Github repos to Toggl project. First, add the new integration to `config/integrations.json`
-```json
-{
-  "id": "github",
-  "name": "Github",
-  "auth_type": "oauth2",
-  "image": "/images/logo-github.png",
-  "link": "https://github.com/toggl/pipes-api",
-  "pipes": [
-    {
-      "id": "projects",
-      "name": "Github repos",
-      "premium": false,
-      "automatic_option": true,
-      "description": "Github repos will be imported as Toggl projects. Existing projects are matched by name."
-    }
-  ]
-}
+- `pkg` - Stores all abstract business and application logic.
+- `internal` - Stores all infrastructure packages.
+
+## Testing
+
+```bash
+# First make testing database works. You can use provided Docker container for that:
+$ make docker-services-up
+
+# Then just run tests. You also can use Goland IDE for testing:
+$ make test
+
+# To generate mocks from source code use:
+$ make mocks
 ```
 
-Next register a new [Github application](https://github.com/settings/applications) and add the new authorization details to `config/oauth2.json`
+- To generate Mocks, you should have [mockery](https://github.com/syndbg/goenv) installed.
+- In case there is no database installed, all database related tests will be **SKIPPED**.
+- All database related tests uses `PIPES_API_POSTGRES_DSN` environment variable to customize database connection string.
 
-```json
-"github_development": {
-  "ClientId": "<<GITHUB APP CLIENT ID>>",
-  "ClientSecret": "<<GITHUB APP CLIENT SECRET>>",
-  "AuthURL": "https://github.com/login/oauth/authorize",
-  "TokenURL": "https://github.com/login/oauth/access_token",
-  "RedirectURL": "<<REDIRECT URL>>"
-}
-```
+## Supported Integrations
 
-For accessing the GitHub API we are going to use the [go-github](https://github.com/google/go-github/) client library.
-Install the pacakge with `go get github.com/google/go-github/github`. Now the actual GithubService implementation.
+### [Asana](https://asana.com)
 
-```go
-package main
+**WORKS FINE**
 
-import (
-	"code.google.com/p/goauth2/oauth"
-	"encoding/json"
-	"fmt"
-	"github.com/google/go-github/github"
-	"strconv"
-)
+To register application use this link: https://app.asana.com/0/developer-console
 
-type GithubService struct {
-	emptyService
-	workspaceID int
-	token       oauth.Token
-}
+### [GitHub](https://github.com)
 
-func (s *GithubService) Name() string {
-  return "github"
-}
+**WORKS FINE**
 
-func (s *GithubService) WorkspaceID() int {
-	return s.workspaceID
-}
+To register OAuth2 application: https://github.com/settings/developers
 
-func (s *GithubService) keyFor(objectType string) string {
-	return fmt.Sprintf("github:%s", objectType)
-}
+### [Toggl.Plan](https://plan.toggl.com) (ex. TeamWeek)
 
-func (s *GithubService) setAuthData(b []byte) error {
-	if err := json.Unmarshal(b, &s.token); err != nil {
-		return err
-	}
-	return nil
-}
+**WORKS FINE**
 
-func (s *GithubService) Accounts() ([]*Account, error) {
-	var accounts []*Account
-	account := Account{ID: 1, Name: "Self"}
-	accounts = append(accounts, &account)
-	return accounts, nil
-}
+To register OAuth2 application: https://developers.plan.toggl.com/applications
 
-// Map Github repos to projects
-func (s *GithubService) Projects() ([]*Project, error) {
-	repos, _, err := s.client().Repositories.List("", nil)
-	if err != nil {
-	  return nil, err
-	}
-	var projects []*Project
-	for _, object := range repos {
-		project := Project{
-			Active:    true,
-			Name:      *object.Name,
-			ForeignID: strconv.Itoa(*object.ID),
-		}
-		projects = append(projects, &project)
-	}
-	return projects, nil
-}
+### [BaseCamp 2](https://basecamp.com/2)
 
-func (s *GithubService) client() *github.Client {
-	t := &oauth.Transport{Token: &s.token}
-	return github.NewClient(t.Client())
-}
-```
+**WORKS FINE**
 
-And finally and the new GithubService to supported services in `service.go`
+To register OAuth2 application: https://launchpad.37signals.com/integrations
+To register test BaseCamp 2 account: https://billing.37signals.com/bcx/trial/signup/
 
-```go
-case "github":
-  return Service(&GithubService{workspaceID: workspaceID})
-```
+### [FreshBooks Classic](https://classic.freshbooks.com/)
 
-All this in one [commit](https://github.com/toggl/pipes-api/commit/9307171c4dcad429cfaa3c406adde7b5ff765340).
-We also need to enable the Github integration in [pipes-ui](https://github.com/toggl/pipes-ui/commit/4039a2bc50294d4054d21918f0af627196ff1999) project.
-
-[1]: https://github.com/toggl/pipes-ui
-[2]: https://github.com/toggl/pipes-api/blob/master/service.go
-
-## Tests
-to run pipes test: `make test`
-
-to run integrations tests:
-	- get a token: https://app.asana.com/0/developer-console
-	- create a file: `./config/asana_test_account.sh`
-	- add your personal token: `export ASANA_PERSONAL_TOKEN=my_token...`
-	- run `make test-integration`
+**DOES NOT WORK**
+Login Form for classic version is here: https://classic.freshbooks.com/
+NOTE: Integration supports only Freshbook Classic. It use [Freshbooks Classic](https://www.freshbooks.com/classic-api) API which is DEPRECATED.
