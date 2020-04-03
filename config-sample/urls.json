@@ -15,8 +15,7 @@
     "production":  "<production url>"
   },
   "cors_whitelist": {
-    "development": ["<UI URL in development>"],
-    "staging":     ["<UI URL in staging>", "<2nd UI URL in staging>"],
-    "production":  ["<UI URL in production>", "<2nd UI URL in production>"]
+    "development": ["<UI location in development>"],
+    "staging":     ["<UI location in production>", "<2nd UI location in development>"]
   }
 }

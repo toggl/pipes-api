@@ -1,62 +1,48 @@
 APPNAME=pipes-api
 BUGSNAG_API_KEY:=0dd013f86222a229cc6116df663900c8
-BUGSNAG_DEPLOY_NOTIFY_URL:=https://build.bugsnag.com/
-APP_REVISION:=$(shell git rev-parse HEAD)
-APP_VERSION:=$(shell git describe --tags --abbrev=0 HEAD)
-BUILD_TIME := $(shell date '+%Y%m%d-%H:%M:%S')
-BUILD_AUTHOR := $(shell git config --get user.email)
+BUGSNAG_DEPLOY_NOTIFY_URL:=https://notify.bugsnag.com/deploy
+REVISION:=$(shell git rev-parse HEAD)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
-LD_FLAGS:=-X 'main.Version=$(APP_VERSION)' -X 'main.Revision=$(APP_REVISION)' -X 'main.BuildTime=$(BUILD_TIME)' -X 'main.BuildAuthor=$(BUILD_AUTHOR)'
 
-# Used for debugging purposes. To have possibility connect to a process with Delve debugger
-GC_FLAGS:=all=-N -l
+test: inittestdb
+	go test -v -race -cover
 
-all: build test
+test-integration: inittestdb
+	source config/test_accounts.sh && go test -v -race -cover -tags=integration
 
-clean: docker-services-down
-	rm -Rf ./bin ./dist ./out
-	go clean -testcache
-
-mocks:
-	go generate ./internal/... ./pkg/...
-
-test:
-	go test -race -cover ./internal/... ./pkg/...
-
-.PHONY: build
-build:
-	go build -ldflags="$(LD_FLAGS)" -o bin/$(APPNAME) ./cmd/pipes-api
-	go build -o bin/toggl_api_stub ./cmd/toggl_api_stub # This binary needs only for testing purposes. For more information see main.go of this binary.
-
-build-release:
-	rm -rf dist
-	mkdir -p dist
-	cp -r config dist/
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="$(LD_FLAGS)" -o dist/$(APPNAME) ./cmd/pipes-api
-	cd dist && tar czf pipes-api.tgz pipes-api config && cd ../
+inittestdb:
+	psql -c 'DROP database pipes_test;' -U postgres
+	psql -c 'CREATE database pipes_test;' -U postgres
+	psql pipes_test < db/schema.sql
 
 run:
 	mkdir -p bin
 	cp -r config bin/
-	go build -ldflags="$(LD_FLAGS)" -gcflags="$(GC_FLAGS)" -race -o bin/$(APPNAME) ./cmd/pipes-api && ./bin/$(APPNAME)
+	go build -race -o bin/$(APPNAME) && ./bin/$(APPNAME)
 
-staging: build-release
-	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/staging.tgz && \
-	crap staging && \
-	curl --silent --show-error --fail --include --request POST --header "Content-Type: application/json" --data-binary "{\"apiKey\": \"$(BUGSNAG_API_KEY)\",\"appVersion\": \"$(APP_VERSION)\",\"builderName\": \"$(BUILD_AUTHOR)\",\"sourceControl\": {\"repository\": \"$(REPOSITORY)\",\"revision\": \"$(APP_REVISION)\"},\"releaseStage\":\"staging\"}" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+.PHONY: dist
+dist:
+	rm -rf dist
+	mkdir -p dist
+	cp -r config dist/
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/$(APPNAME)
 
-production: build-release
-	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/production.tgz && \
-	crap production && \
-	curl --silent --show-error --fail --include --request POST --header "Content-Type: application/json" --data-binary "{\"apiKey\": \"$(BUGSNAG_API_KEY)\",\"appVersion\": \"$(APP_VERSION)\",\"builderName\": \"$(BUILD_AUTHOR)\",\"sourceControl\": {\"repository\": \"$(REPOSITORY)\",\"revision\": \"$(APP_REVISION)\"},\"releaseStage\":\"production\"}" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+build:
+	go build
 
-dependency-graph:
-	mkdir -p out
-	godepgraph -s -o github.com/toggl/pipes-api ./cmd/pipes-api | dot -Tpng -o out/deps.png
+vendor: dist
+	cd dist && tar czf pipes-api.tgz pipes-api config
 
-docker-services-up:
-	docker-compose -f ./build/docker/postgres/docker-compose.yml up -d --remove-orphans --force-recreate --build
+send-vendor-staging: vendor
+	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/staging.tgz
 
-docker-services-down:
-	docker-compose -f ./build/docker/postgres/docker-compose.yml down --rmi local --remove-orphans --volumes
+send-vendor-production: vendor
+	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/production.tgz
 
+staging: send-vendor-staging
+	crap staging; \
+		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=staging&revision=$(REVISION)&repository=$(REPOSITORY)" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+
+production: send-vendor-production
+	crap production; \
+		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=production&revision=$(REVISION)&repository=$(REPOSITORY)" $(BUGSNAG_DEPLOY_NOTIFY_URL)

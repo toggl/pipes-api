@@ -5,30 +5,38 @@
 		"Scope": "",
 		"AuthURL": "https://launchpad.37signals.com/authorization/new",
 		"TokenURL": "https://launchpad.37signals.com/authorization/token",
+		"RedirectURL": "<redirect url based on registrated one>",
 		"TokenCache": null,
 		"AccessType": "",
-		"ApprovalPrompt": "force",
-		"RedirectURL": "<redirect url based on registrated one>"
+		"ApprovalPrompt": "force"
+	},
+	"basecamp_staging": {
+		"ClientId": "<client id>",
+		"ClientSecret": "<client secret>",
+		"Scope": "",
+		"AuthURL": "https://launchpad.37signals.com/authorization/new",
+		"TokenURL": "https://launchpad.37signals.com/authorization/token",
+		"RedirectURL": "<redirect url based on registrated one>",
+		"TokenCache": null,
+		"AccessType": "",
+		"ApprovalPrompt": "force"
+	},
+	"basecamp_production": {
+		"ClientId": "<client id>",
+		"ClientSecret": "<client secret>",
+		"Scope": "",
+		"AuthURL": "https://launchpad.37signals.com/authorization/new",
+		"TokenURL": "https://launchpad.37signals.com/authorization/token",
+		"RedirectURL": "<redirect url based on registrated one>",
+		"TokenCache": null,
+		"AccessType": "",
+		"ApprovalPrompt": "force"
 	},
 	"github_development": {
 		"ClientId": "<client id>",
 		"ClientSecret": "<client secret>",
+		"RedirectURL": "<redirect url based on registrated one>",
 		"AuthURL": "https://github.com/login/oauth/authorize",
 		"TokenURL": "https://github.com/login/oauth/access_token",
-		"RedirectURL": "<redirect url based on registrated one>"
-	},
-	"teamweek_development": {
-		"ClientId": "<client id>",
-		"ClientSecret": "<client secret>",
-		"AuthURL": "https://plan.toggl.com/oauth/login",
-		"TokenURL": "https://plan.toggl.com/api/v4/authenticate/token",
-		"RedirectURL": "<redirect url based on registrated one>"
-	},
-	"asana_development": {
-		"ClientId": "<client id>",
-		"ClientSecret": "<client secret>",
-		"AuthURL": "https://app.asana.com/-/oauth_authorize",
-		"TokenURL": "https://app.asana.com/-/oauth_token",
-		"RedirectURL": "<redirect url based on registrated one>"
 	}
 }

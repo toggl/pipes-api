@@ -1,8 +1,0 @@
-version: "3.7"
-services:
-
-  postgres:
-    build: .
-    image: toggl-pipes-api-postgres:9.6
-    ports:
-      - "54320:5432"
