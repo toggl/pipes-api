@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -219,6 +221,48 @@ func TestApiClient_GetWorkspaceIdByToken(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
 		assert.Empty(t, id)
+	})
+
+	t.Run("GetWorkspaceIdByToken concurrent access", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			assert.Equal(t, "toggl-pipes", req.Header.Get("User-Agent"))
+			assert.Equal(t, http.MethodGet, req.Method)
+			u, _, ok := req.BasicAuth()
+			assert.True(t, ok)
+			workspaceID, _ := strconv.Atoi(u)
+			wr := domain.WorkspaceResponse{
+				Workspace: &domain.Workspace{
+					ID:   workspaceID,
+					Name: "",
+				}}
+			b, err := json.Marshal(wr)
+			if err != nil {
+				res.WriteHeader(500)
+				return
+			}
+
+			time.Sleep(100 * time.Millisecond)
+			_, err = res.Write(b)
+			if err != nil {
+				res.WriteHeader(500)
+				return
+			}
+		}))
+
+		client := &ApiClient{URL: srv.URL}
+		var wg sync.WaitGroup
+
+		for i := 1; i <= 20; i++ {
+			wg.Add(1)
+			go func(i int) {
+				id, err := client.GetWorkspaceIdByToken(fmt.Sprintf("%d", i))
+				assert.NoError(t, err)
+				assert.Equal(t, i, id)
+				wg.Done()
+			}(i)
+		}
+
+		wg.Wait()
 	})
 }
 
