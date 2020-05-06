@@ -88,7 +88,7 @@ func (s *emptyService) setSince(*time.Time)                     {}
 func (s *emptyService) setParams([]byte) error                  { return nil }
 func (s *emptyService) Users() ([]*User, error)                 { return nil, nil }
 func (s *emptyService) Tasks() ([]*Task, error)                 { return nil, nil }
-func (s *emptyService) Clients() ([]*Client, error)             { return nil, nil }
+func (s *emptyService) Clients() ([]*Client, error)             { return nil, fmt.Errorf("%w clients", ErrNotSupported) }
 func (s *emptyService) TodoLists() ([]*Task, error)             { return nil, nil }
 func (s *emptyService) Projects() ([]*Project, error)           { return nil, nil }
 func (s *emptyService) Accounts() ([]*Account, error)           { return nil, nil }

@@ -82,6 +82,7 @@ type (
 
 	ProjectsResponse struct {
 		Error    string     `json:"error"`
+		SupportsClient bool `json:"supports_client"`
 		Projects []*Project `json:"projects"`
 	}
 

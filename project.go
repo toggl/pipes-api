@@ -3,6 +3,7 @@ package main
 type (
 	projectRequest struct {
 		Projects []*Project `json:"projects"`
+		SupportsClient bool `json:"supports_client"`
 	}
 
 	ProjectsImport struct {

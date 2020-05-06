@@ -16,6 +16,8 @@ const projectsPipeID = "projects"
 const tasksPipeId = "tasks"
 const todoPipeId = "todolists"
 
+var ErrNotSupported = errors.New("service does not support")
+
 func getAccounts(s Service) (*AccountsResponse, error) {
 	var result []byte
 	rows, err := db.Query(`
@@ -260,6 +262,7 @@ func postProjects(p *Pipe) error {
 	}
 	projects := projectRequest{
 		Projects: projectsResponse.Projects,
+		SupportsClient: projectsResponse.SupportsClient,
 	}
 
 	b, err := postPipesAPI(p.authorization.WorkspaceToken, projectsPipeID, projects)
@@ -415,6 +418,10 @@ func fetchClients(p *Pipe) error {
 		return err
 	}
 	clients, err := s.Clients()
+	if errors.Is(err, ErrNotSupported) {
+		return err
+	}
+
 	response := ClientsResponse{Clients: clients}
 	defer func() { saveObject(p, clientsPipeID, response) }()
 	if err != nil {
@@ -436,13 +443,15 @@ func fetchProjects(p *Pipe) error {
 	response := ProjectsResponse{}
 	defer func() { saveObject(p, projectsPipeID, response) }()
 
-	if err := fetchClients(p); err != nil {
+	if err := fetchClients(p); err != nil && !errors.Is(err, ErrNotSupported) {
 		response.Error = err.Error()
 		return err
-	}
-	if err := postClients(p); err != nil {
-		response.Error = err.Error()
-		return err
+	} else if err == nil {
+		response.SupportsClient = true
+		if err := postClients(p); err != nil {
+			response.Error = err.Error()
+			return err
+		}
 	}
 
 	service, err := p.Service()

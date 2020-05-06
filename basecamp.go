@@ -12,6 +12,7 @@ import (
 )
 
 type BasecampService struct {
+	emptyService
 	workspaceID int
 	*BasecampParams
 	token         oauth.Token
@@ -95,11 +96,6 @@ func (s *BasecampService) Users() ([]*User, error) {
 		users = append(users, &user)
 	}
 	return users, nil
-}
-
-// There are no clients in basecamp
-func (s *BasecampService) Clients() ([]*Client, error) {
-	return nil, nil
 }
 
 // Map basecamp projects to projects
