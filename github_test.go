@@ -17,6 +17,10 @@ func createGithubService() Service {
 }
 
 func TestGithubProjects(t *testing.T) {
+	if os.Getenv("GITHUB_PERSONAL_TOKEN") == "" {
+		t.Skipf("missing GITHUB_PERSONAL_TOKEN in env")
+	}
+
 	s := createGithubService()
 
 	projects, err := s.Projects()
