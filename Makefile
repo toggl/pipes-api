@@ -5,10 +5,14 @@ REVISION:=$(shell git rev-parse HEAD)
 REPOSITORY:=git@github.com:toggl/pipes-api.git
 
 test: inittestdb
-	go test -v -race -cover
+	source config/test_accounts.sh && go test -v -race -cover
 
 test-integration: inittestdb
 	source config/test_accounts.sh && go test -v -race -cover -tags=integration
+
+.PHONY: config
+config:
+	@./scripts/update-config.sh
 
 inittestdb:
 	psql -c 'DROP database pipes_test;' -U postgres
@@ -21,7 +25,7 @@ run:
 	go build -race -o bin/$(APPNAME) && ./bin/$(APPNAME)
 
 .PHONY: dist
-dist:
+dist: config
 	rm -rf dist
 	mkdir -p dist
 	cp -r config dist/
@@ -31,18 +35,13 @@ build:
 	go build
 
 vendor: dist
-	cd dist && tar czf pipes-api.tgz pipes-api config
+	@cd dist && zip -r ${APPNAME}.zip pipes-api config
 
-send-vendor-staging: vendor
-	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/staging.tgz
+update-deploy-script:
+	@scripts/update-deploy-script.sh
 
-send-vendor-production: vendor
-	rsync -avz -e "ssh -p 22" dist/pipes-api.tgz toggl@appseed.toggl.space:/var/www/office/appseed/pipes-api/production.tgz
+production: vendor update-deploy-script
+	@tmp/deploy-script/crap.sh ${APPNAME} dist/${APPNAME}.zip ${REVISION} production
 
-staging: send-vendor-staging
-	crap staging; \
-		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=staging&revision=$(REVISION)&repository=$(REPOSITORY)" $(BUGSNAG_DEPLOY_NOTIFY_URL)
-
-production: send-vendor-production
-	crap production; \
-		curl --silent --show-error --fail -X POST -d "apiKey=$(BUGSNAG_API_KEY)&releaseStage=production&revision=$(REVISION)&repository=$(REPOSITORY)" $(BUGSNAG_DEPLOY_NOTIFY_URL)
+staging: vendor update-deploy-script
+	@tmp/deploy-script/crap.sh ${APPNAME} dist/${APPNAME}.zip ${REVISION} staging

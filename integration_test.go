@@ -26,8 +26,6 @@ func TestWorkspaceIntegrations(t *testing.T) {
 
 	want := []Integration{
 		{ID: "basecamp", Name: "Basecamp", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-basecamp", Image: "/images/logo-basecamp.png", AuthType: "oauth2"},
-		{ID: "freshbooks", Name: "Freshbooks", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-freshbooks-classic", Image: "/images/logo-freshbooks.png", AuthType: "oauth1"},
-		{ID: "teamweek", Name: "Toggl Plan", Link: "https://support.toggl.com/en/articles/2212490-integration-with-toggl-plan-teamweek", Image: "/images/logo-teamweek.png", AuthType: "oauth2"},
 		{ID: "asana", Name: "Asana", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-asana", Image: "/images/logo-asana.png", AuthType: "oauth2"},
 		{ID: "github", Name: "Github", Link: "https://support.toggl.com/import-and-export/integrations-via-toggl-pipes/integration-with-github", Image: "/images/logo-github.png", AuthType: "oauth2"},
 	}
@@ -56,17 +54,6 @@ func TestWorkspaceIntegrationPipes(t *testing.T) {
 			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
 			{ID: "todolists", Name: "Todo lists", Premium: true, AutomaticOption: true},
 			{ID: "todos", Name: "Todos", Premium: true, AutomaticOption: true},
-		},
-		{ // Freshbooks
-			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
-			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
-			{ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true},
-			{ID: "timeentries", Name: "Time entries", Premium: true, AutomaticOption: true},
-		},
-		{ // Teamweek
-			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
-			{ID: "projects", Name: "Projects", Premium: false, AutomaticOption: true},
-			{ID: "tasks", Name: "Tasks", Premium: true, AutomaticOption: true},
 		},
 		{ // Asana
 			{ID: "users", Name: "Users", Premium: false, AutomaticOption: false},
