@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -182,6 +183,12 @@ func postAuthorization(req Request) Response {
 
 	authorization := NewAuthorization(workspaceID, serviceID)
 	authorization.WorkspaceToken = currentWorkspaceToken(req.r)
+
+	for _, integration := range availableIntegrations {
+		if serviceID == integration.ID && integration.Deprecated {
+			return badRequest(fmt.Sprintf("Deprecated %s integration is not available for new authorizations", serviceID))
+		}
+	}
 
 	switch availableAuthorizations[serviceID] {
 	case "oauth1":
